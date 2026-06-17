@@ -1,0 +1,586 @@
+/* ===================================================== */
+/* VARIABLES */
+/* ===================================================== */
+:root{
+  --cream-1: #fdf7f5;
+  --cream-2: #f9f1ee;
+
+  --brown-main: #7a655b;
+  --rose-title: #a65f6d;
+
+  --rose-btn-1: #c67a8b;
+  --rose-btn-2: #b86b7d;
+  --rose-hover: #e2a6b2;
+
+  --rose-fill: rgba(250, 223, 229, 0.90);
+
+  --rose-gold-1: #9f706a;
+  --rose-gold-2: #d8a39d;
+  --rose-gold-3: #f1d0ca;
+  --rose-gold-4: #ba8179;
+}
+
+/* ===================================================== */
+/* BASE */
+/* ===================================================== */
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body{
+  width: 100%;
+  min-height: 100%;
+}
+
+body{
+  min-height: 100vh;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: var(--brown-main);
+
+  overflow-x: hidden;
+  position: relative;
+
+  background-image: url("assets/img/TR_Fondo_Vertical.png");
+  background-size: 420px;
+  background-repeat: repeat;
+  background-position: center;
+
+  padding-bottom: 0;
+}
+
+body::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    rgba(253,245,242,0.68),
+    rgba(247,240,235,0.70)
+  );
+}
+
+/* ===================================================== */
+/* ESTRUCTURA */
+/* ===================================================== */
+.login-page{
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.login-scene{
+  position: relative;
+  width: min(100%, 1200px);
+  min-height: 900px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-bottle{
+  position: relative;
+  z-index: 4;
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 18px 24px rgba(74,60,49,0.12));
+}
+
+/* ===================================================== */
+/* TAPA */
+/* ===================================================== */
+.bottle-cap{
+  width: 138px;
+  height: 238px;
+  position: relative;
+  z-index: 7;
+  overflow: hidden;
+
+  clip-path: polygon(
+    18% 0%,
+    82% 0%,
+    96% 100%,
+    4% 100%
+  );
+
+  border-radius: 18px 18px 10px 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--rose-gold-1) 0%,
+      var(--rose-gold-2) 18%,
+      var(--rose-gold-3) 42%,
+      #e6b5af 60%,
+      var(--rose-gold-4) 82%,
+      #8e615b 100%
+    );
+
+  box-shadow:
+    inset 8px 0 14px rgba(255,255,255,0.18),
+    inset -10px 0 16px rgba(74,60,49,0.14),
+    0 8px 14px rgba(74,60,49,0.10);
+
+  margin-bottom: -2px;
+}
+
+.cap-gloss{
+  position: absolute;
+  left: 30px;
+  top: 16px;
+  width: 28px;
+  height: 194px;
+  border-radius: 999px;
+  background: linear-gradient(
+    rgba(255,255,255,0.62),
+    rgba(255,255,255,0.10)
+  );
+  opacity: .74;
+}
+
+/* ===================================================== */
+/* CUELLO */
+/* ===================================================== */
+.bottle-neck{
+  width: 112px;
+  height: 11px;
+  margin-top: -8px;
+  position: relative;
+  z-index: 6;
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(150,102,96,0.92) 0%,
+      rgba(248,232,227,0.98) 50%,
+      rgba(150,102,96,0.92) 100%
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    0 2px 6px rgba(74,60,49,0.12);
+}
+
+.bottle-neck::before{
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: -4px;
+  height: 5px;
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(163,112,106,0.82),
+      rgba(255,241,237,0.98),
+      rgba(163,112,106,0.82)
+    );
+
+  opacity: 0.95;
+}
+
+.bottle-neck::after{
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -3px;
+  height: 4px;
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(140,95,89,0.55),
+      rgba(255,245,242,0.72),
+      rgba(140,95,89,0.55)
+    );
+
+  opacity: 0.75;
+}
+
+/* ===================================================== */
+/* FRASCO */
+/* ===================================================== */
+.bottle-body{
+  position: relative;
+  width: 440px;
+  height: 540px;
+  margin-top: -10px;
+  z-index: 4;
+}
+
+.bottle-svg{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.glass-shadow{
+  fill: rgba(255,255,255,0.25);
+  stroke: none;
+}
+
+.pink-fill{
+  fill: var(--rose-fill);
+}
+
+.inner-glass-zone{
+  fill: none;
+  stroke: rgba(255,255,255,0.18);
+  stroke-width: 18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .95;
+}
+
+.glass-border{
+  fill: rgba(255,255,255,0.10);
+  stroke: rgba(108,86,82,0.42);
+  stroke-width: 4.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.inner-border{
+  fill: none;
+  stroke: rgba(255,255,255,0.86);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bottle-base{
+  fill: none;
+  stroke: rgba(95,75,70,0.20);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* ===================================================== */
+/* CONTENIDO */
+/* ===================================================== */
+.login-content{
+  position: relative;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  padding: 96px 88px 36px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-back{
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+
+  background: rgba(255,255,255,0.62);
+  box-shadow:
+    0 4px 8px rgba(74,60,49,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.72);
+
+  margin-bottom: 10px;
+}
+
+.login-logo{
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(122,101,91,0.08));
+}
+
+.login-title{
+  color: var(--rose-title);
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 14px;
+  letter-spacing: .2px;
+}
+
+.login-form{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-wrap{
+  width: 100%;
+  max-width: 258px;
+  height: 40px;
+  margin-bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 0 13px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.88);
+  border: 1.3px solid rgba(173,103,114,0.32);
+
+  box-shadow: 0 4px 8px rgba(74,60,49,0.04);
+  transition: .2s ease;
+}
+
+.input-wrap i{
+  color: #b87b85;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.input-eye{
+  opacity: .82;
+}
+
+.input-wrap input{
+  width: 100%;
+  height: 34px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--brown-main);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input-wrap input::placeholder{
+  color: rgba(122,101,91,0.58);
+  font-weight: 500;
+}
+
+.input-wrap:hover,
+.input-wrap:focus-within{
+  background: rgba(249,232,238,0.58); /* un rosado azúcar */
+  border-color: var(--rose-hover);    /* tu rosado hover */
+  box-shadow:
+    0 0 0 4px rgba(238,187,187,0.22), /* halo suave */
+    0 6px 12px rgba(74,60,49,0.06);    /* sombra sutil */
+  outline: none;
+}
+
+/* ===================================================== */
+/* BOTÓN Y LINKS */
+/* ===================================================== */
+.login-btn{
+  width: 56%;
+  max-width: 150px;
+  height: 36px;
+  display: block;
+  margin: 5px auto 10px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: linear-gradient(135deg, var(--rose-btn-1), var(--rose-btn-2));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 10px rgba(155,95,105,0.14),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+
+  transition: .2s ease;
+}
+
+.login-btn:hover{
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--rose-btn-2), var(--rose-hover));
+}
+
+.login-links{
+  width: 100%;
+  margin-top: 2px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+
+  text-align: center;
+}
+
+.login-links a{
+  color: #9f6570;
+  text-decoration: none;
+  transition: .2s ease;
+  font-size: 11.4px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.login-links a:hover{
+  color: #bf8891;
+  text-decoration: underline;
+}
+
+/* ===================================================== */
+/* RESPONSIVE */
+/* ===================================================== */
+@media (max-width: 700px){
+  body{
+    background-size: 420px;
+  }
+
+  .login-scene{
+    min-height: 780px;
+  }
+
+  .login-bottle{
+    width: 350px;
+  }
+
+  .bottle-cap{
+    width: 114px;
+    height: 196px;
+    margin-bottom: -1px;
+  }
+
+  .cap-gloss{
+    height: 156px;
+  }
+
+  .bottle-neck{
+    width: 92px;
+    height: 6px;
+    margin-top: -6px;
+  }
+
+  .bottle-body{
+    width: 350px;
+    height: 445px;
+    margin-top: -6px;
+  }
+
+  .login-content{
+    padding: 78px 60px 28px;
+  }
+
+  .logo-back{
+    width: 62px;
+    height: 62px;
+  }
+
+  .login-logo{
+    width: 46px;
+    height: 46px;
+  }
+
+  .login-title{
+    font-size: 20px;
+  }
+
+  .input-wrap{
+    max-width: 220px;
+    height: 36px;
+  }
+
+  .login-btn{
+    width: 58%;
+    height: 34px;
+  }
+}
+
+@media (max-width: 420px){
+  body{
+    background-size: 420px;
+  }
+
+  .login-page{
+    padding: 18px 10px;
+  }
+
+  .login-scene{
+    min-height: 710px;
+  }
+
+  .login-bottle{
+    width: 300px;
+  }
+
+  .bottle-cap{
+    width: 98px;
+    height: 172px;
+    margin-bottom: -1px;
+  }
+
+  .cap-gloss{
+    height: 136px;
+  }
+
+  .bottle-neck{
+    width: 78px;
+    height: 5px;
+    margin-top: -5px;
+  }
+
+  .bottle-body{
+    width: 300px;
+    height: 390px;
+    margin-top: -5px;
+  }
+
+  .login-content{
+    padding: 68px 48px 24px;
+  }
+
+  .logo-back{
+    width: 56px;
+    height: 56px;
+  }
+
+  .login-logo{
+    width: 42px;
+    height: 42px;
+  }
+
+  .login-title{
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  .input-wrap{
+    max-width: 194px;
+    height: 34px;
+    margin-bottom: 9px;
+  }
+
+  .input-wrap input{
+    font-size: 12.5px;
+  }
+
+  .login-btn{
+    width: 58%;
+    height: 32px;
+    font-size: 12.5px;
+  }
+
+  .login-links a{
+    font-size: 10.5px;
+  }
+}
