@@ -1,4 +1,10 @@
-<?php require_once __DIR__ . '/Layout/Header.php'; ?>
+<?php
+
+$tituloPagina = 'Gestión de Clientes';
+
+require_once __DIR__ . '/Layout/Header.php';
+
+?>
 
 <section class="module-card clientes-module">
 
@@ -94,7 +100,7 @@
                                             data-nombre="<?php echo htmlspecialchars(($cliente['nombre'] ?? '') . ' ' . ($cliente['apellido'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                             title="Desactivar cliente"
                                         >
-                                            <i class="bi bi-person-dash-fill"></i>
+                                            <i class="bi bi-trash-fill"></i>
                                         </button>
 
                                     </div>
@@ -403,4 +409,7 @@
     </div>
 </div>
 
-<?php require_once __DIR__ . '/Layout/Footer.php'; ?>
+<<?php 
+$scriptVista = 'Assets/js/clientes.js'; 
+require_once __DIR__ . '/Layout/Footer.php'; 
+?>

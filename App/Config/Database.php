@@ -11,22 +11,28 @@ abstract class Database
 
     public function __construct()
     {
-        $this->getConnection(); 
+        $this->getConnection();
     }
 
     protected function getConnection(): PDO
-    { 
+    {
         try {
             $this->conexionDB = new PDO(
-                "mysql:host=localhost;dbname=templo_rosa_bd;charset=utf8",
+                "mysql:host=localhost;dbname=templo_rosa_bd;charset=utf8mb4",
                 "root",
                 ""
             );
 
-            $this->conexionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->conexionDB->setAttribute(
+                PDO::ATTR_ERRMODE,
+                PDO::ERRMODE_EXCEPTION
+            );
 
         } catch (PDOException $e) {
-            die('ERROR DE CONEXIÓN: No se ha podido conectar con la base de datos. ' . $e->getMessage());
+            die(
+                'ERROR DE CONEXIÓN: No se ha podido conectar con la base de datos. '
+                . $e->getMessage()
+            );
         }
 
         return $this->conexionDB;

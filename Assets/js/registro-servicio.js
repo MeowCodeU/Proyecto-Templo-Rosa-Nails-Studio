@@ -1,305 +1,810 @@
-/* ===================================================== */
-/* REGISTRO-SERVICIO.JS */
-/* ===================================================== */
+document.addEventListener("DOMContentLoaded", function () {
+    const panelAgendamientos = document.getElementById(
+        "panelAgendamientosServicio"
+    );
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const panelAgendamientos = document.getElementById("panelAgendamientosServicio");
-      const panelRegistro = document.getElementById("panelRegistroServicio");
+    const panelRegistro = document.getElementById(
+        "panelRegistroServicio"
+    );
 
-      const btnVolver = document.getElementById("btnVolverAgendamientos");
-      const btnRefrescar = document.getElementById("btnRefrescarRegistroServicio");
+    const btnVolver = document.getElementById(
+        "btnVolverAgendamientos"
+    );
 
-      const fichaNombreClienta = document.getElementById("fichaNombreClienta");
-      const fichaAlergias = document.getElementById("fichaAlergias");
-      const fichaObservacionAnterior = document.getElementById("fichaObservacionAnterior");
-      const fichaUltimoServicio = document.getElementById("fichaUltimoServicio");
-      const fichaUltimaAtencion = document.getElementById("fichaUltimaAtencion");
-      const fichaServicioAgendado = document.getElementById("fichaServicioAgendado");
-      const fichaValorServicio = document.getElementById("fichaValorServicio");
+    const btnRefrescar = document.getElementById(
+        "btnRefrescarRegistroServicio"
+    );
 
-      const servicioRealizado = document.getElementById("servicioRealizado");
-      const totalServicio = document.getElementById("totalServicio");
-      const estadoServicio = document.getElementById("estadoServicio");
-      const fechaServicio = document.getElementById("fechaServicio");
-      const categoriaCatalogo = document.getElementById("categoriaCatalogo");
+    const formServicio = document.getElementById(
+        "formServicioRealizado"
+    );
 
-      const fotoResultadoServicio = document.getElementById("fotoResultadoServicio");
-      const previewResultadoServicio = document.getElementById("previewResultadoServicio");
+    const formInsumos = document.getElementById(
+        "formInsumosUtilizados"
+    );
 
-      const insumoUtilizado = document.getElementById("insumoUtilizado");
-      const cantidadInsumo = document.getElementById("cantidadInsumo");
-      const presentacionInsumo = document.getElementById("presentacionInsumo");
-      const btnAgregarInsumo = document.getElementById("btnAgregarInsumo");
-      const tbodyInsumosSeleccionados = document.getElementById("tbodyInsumosSeleccionados");
+    const btnCancelarServicio = document.getElementById(
+        "btnCancelarServicio"
+    );
 
-      const tbodyHistorialServicios = document.getElementById("tbodyHistorialServicios");
+    const btnGuardarServicio = document.getElementById(
+        "btnGuardarServicio"
+    );
 
-      const btnGuardarServicio = document.getElementById("btnGuardarServicio");
-      const btnGuardarInsumos = document.getElementById("btnGuardarInsumos");
-      const btnFinalizarServicio = document.getElementById("btnFinalizarServicio");
+    const btnGuardarInsumos = document.getElementById(
+        "btnGuardarInsumos"
+    );
 
-      const filtroCatalogoServicio = document.getElementById("filtroCatalogoServicio");
-      const catalogoItems = document.querySelectorAll(".catalogo-item");
+    const btnFinalizarServicio = document.getElementById(
+        "btnFinalizarServicio"
+    );
 
-      const clientas = [
-        {
-          id: 1,
-          nombre: "Camila Prado",
-          alergias: "Acrílico / Látex",
-          observacionAnterior: "Presentó sensibilidad en la cutícula derecha. Se recomendó evitar torno profundo.",
-          ultimoServicio: "Capping con rubber base",
-          ultimaAtencion: "15/05/2026",
-          servicioAgendado: "Polygel",
-          valorServicio: "25$",
-          total: "25",
-          fechaHoy: "2026-06-02",
-          historial: [
-            {
-              fecha: "15/05/2026",
-              foto: "assets/img/LogoTR.png",
-              servicio: "Capping con rubber base",
-              total: "20$",
-              observacion: "Sensibilidad en cutícula derecha."
-            },
-            {
-              fecha: "02/05/2026",
-              foto: "assets/img/LogoTR.png",
-              servicio: "Retiro + manicura semipermanente",
-              total: "15$",
-              observacion: "Uñas débiles, se recomendó descanso."
-            }
-          ]
-        },
-        {
-          id: 2,
-          nombre: "María Pérez",
-          alergias: "No registradas",
-          observacionAnterior: "Sin observaciones relevantes.",
-          ultimoServicio: "Pedicura tradicional",
-          ultimaAtencion: "02/05/2026",
-          servicioAgendado: "Pedicura semipermanente",
-          valorServicio: "18$",
-          total: "18",
-          fechaHoy: "2026-06-02",
-          historial: [
-            {
-              fecha: "02/05/2026",
-              foto: "assets/img/LogoTR.png",
-              servicio: "Pedicura tradicional",
-              total: "12$",
-              observacion: "Servicio realizado sin novedad."
-            }
-          ]
-        },
-        {
-          id: 3,
-          nombre: "Valentina Gómez",
-          alergias: "Monómero",
-          observacionAnterior: "Preferencia por tonos nude y acabado natural.",
-          ultimoServicio: "Manicura semipermanente",
-          ultimaAtencion: "20/05/2026",
-          servicioAgendado: "Capping",
-          valorServicio: "22$",
-          total: "22",
-          fechaHoy: "2026-06-02",
-          historial: [
-            {
-              fecha: "20/05/2026",
-              foto: "assets/img/LogoTR.png",
-              servicio: "Manicura semipermanente",
-              total: "16$",
-              observacion: "Acabado natural en tono nude."
-            }
-          ]
+    const fotoResultado = document.getElementById(
+        "fotoResultadoServicio"
+    );
+
+    const previewResultado = document.getElementById(
+        "previewResultadoServicio"
+    );
+
+    const previewVacio = document.getElementById(
+        "previewResultadoVacio"
+    );
+
+    const insumoUtilizado = document.getElementById(
+        "insumoUtilizado"
+    );
+
+    const cantidadInsumo = document.getElementById(
+        "cantidadInsumo"
+    );
+
+    const presentacionInsumo = document.getElementById(
+        "presentacionInsumo"
+    );
+
+    const stockDisponible = document.getElementById(
+        "stockDisponibleInsumo"
+    );
+
+    const btnAgregarInsumo = document.getElementById(
+        "btnAgregarInsumo"
+    );
+
+    const tbodyInsumos = document.getElementById(
+        "tbodyInsumosSeleccionados"
+    );
+
+    const filtroCatalogo = document.getElementById(
+        "filtroCatalogoServicio"
+    );
+
+    const catalogoVacio = document.getElementById(
+        "catalogoTrabajosVacio"
+    );
+
+    const tablaServiciosPendientesElemento =
+        document.getElementById(
+            "tablaServiciosPendientes"
+        );
+
+    let tablaServiciosPendientes = null;
+    let urlVistaPrevia = null;
+    let insumosSeleccionados = [];
+
+    /* ===================================================== */
+    /* DATATABLE DE AGENDAMIENTOS PARA ATENDER */
+    /* ===================================================== */
+
+    function normalizarEstadoServicio(estado) {
+        return String(estado || "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function obtenerClaseEstadoServicio(estado) {
+        const clasesEstado = {
+            programada: "estado-programada",
+            confirmada: "estado-confirmada",
+            "en espera": "estado-en-espera",
+            demorada: "estado-demorada",
+            activa: "estado-activa",
+            activo: "estado-activa",
+            realizada: "estado-realizada",
+            realizado: "estado-realizada",
+            cancelada: "estado-cancelada",
+            cancelado: "estado-cancelada"
+        };
+
+        return (
+            clasesEstado[
+                normalizarEstadoServicio(estado)
+            ] || "estado-programada"
+        );
+    }
+
+    function aplicarBadgesEstadoServicio() {
+        if (!tablaServiciosPendientesElemento) {
+            return;
         }
-      ];
 
-      let insumosSeleccionados = [
-        { insumo: "Rubber base", cantidad: "2", presentacion: "ml" },
-        { insumo: "Top coat", cantidad: "1", presentacion: "ml" }
-      ];
+        const celdasEstado =
+            tablaServiciosPendientesElemento.querySelectorAll(
+                "tbody tr td:nth-child(6)"
+            );
 
-      function abrirRegistro(id) {
-        const clienta = clientas.find(item => item.id === id);
-        if (!clienta) return;
+        celdasEstado.forEach(function (celda) {
+            if (
+                celda.classList.contains(
+                    "dataTables_empty"
+                )
+            ) {
+                return;
+            }
 
-        fichaNombreClienta.textContent = clienta.nombre;
-        fichaAlergias.textContent = clienta.alergias;
-        fichaObservacionAnterior.textContent = clienta.observacionAnterior;
-        fichaUltimoServicio.textContent = clienta.ultimoServicio;
-        fichaUltimaAtencion.textContent = clienta.ultimaAtencion;
-        fichaServicioAgendado.textContent = clienta.servicioAgendado;
-        fichaValorServicio.textContent = clienta.valorServicio;
+            const badgeExistente =
+                celda.querySelector(".badge");
 
-        servicioRealizado.value = clienta.servicioAgendado;
-        totalServicio.value = clienta.total;
-        estadoServicio.value = "Realizada";
-        fechaServicio.value = clienta.fechaHoy;
-        categoriaCatalogo.value = clienta.servicioAgendado;
+            const estado = String(
+                celda.dataset.estadoAgendamiento ||
+                (
+                    badgeExistente
+                        ? badgeExistente.textContent
+                        : celda.textContent
+                ) ||
+                ""
+            ).trim();
 
-        cargarHistorial(clienta.historial);
-        renderizarInsumos();
+            if (estado === "") {
+                return;
+            }
 
-        panelAgendamientos.classList.add("d-none");
-        panelRegistro.classList.remove("d-none");
+            const badge =
+                badgeExistente ||
+                document.createElement("span");
 
-        btnVolver.classList.remove("d-none");
-        btnRefrescar.classList.add("d-none");
-      }
+            badge.className =
+                `badge ${obtenerClaseEstadoServicio(estado)}`;
 
-      function volverLista() {
-        panelRegistro.classList.add("d-none");
-        panelAgendamientos.classList.remove("d-none");
+            badge.textContent = estado;
 
-        btnVolver.classList.add("d-none");
-        btnRefrescar.classList.remove("d-none");
-      }
-
-      function cargarHistorial(historial) {
-        tbodyHistorialServicios.innerHTML = "";
-
-        historial.forEach(item => {
-          const tr = document.createElement("tr");
-
-          tr.innerHTML = `
-            <td>${item.fecha}</td>
-            <td>
-              <img 
-                src="${item.foto}" 
-                alt="Foto del servicio" 
-                style="width:54px; height:54px; object-fit:cover; border-radius:14px; border:2px solid rgba(216,167,177,0.55);"
-              >
-            </td>
-            <td>${item.servicio}</td>
-            <td>${item.total}</td>
-            <td>${item.observacion}</td>
-            <td class="text-center">
-              <button class="btn-action btn-edit" type="button" title="Ver detalle">
-                <i class="bi bi-eye"></i>
-              </button>
-            </td>
-          `;
-
-          tbodyHistorialServicios.appendChild(tr);
+            if (!badgeExistente) {
+                celda.textContent = "";
+                celda.appendChild(badge);
+            }
         });
-      }
+    }
 
-      function renderizarInsumos() {
-        tbodyInsumosSeleccionados.innerHTML = "";
+    function inicializarDataTableServiciosPendientes() {
+        if (
+            !tablaServiciosPendientesElemento ||
+            typeof window.jQuery === "undefined" ||
+            !window.jQuery.fn.DataTable
+        ) {
+            return;
+        }
+
+        const selector =
+            "#tablaServiciosPendientes";
+
+        if (
+            window.jQuery.fn.DataTable.isDataTable(
+                selector
+            )
+        ) {
+            tablaServiciosPendientes =
+                window.jQuery(selector).DataTable();
+
+            aplicarBadgesEstadoServicio();
+
+            return;
+        }
+
+        tablaServiciosPendientes =
+            window.jQuery(selector).DataTable({
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json",
+                    emptyTable:
+                        "No hay agendamientos para atender."
+                },
+                pageLength: 5,
+                lengthMenu: [5, 10, 25, 50],
+                responsive: false,
+                autoWidth: false,
+                order: [],
+                columnDefs: [
+                    {
+                        targets: -1,
+                        orderable: false,
+                        searchable: false
+                    }
+                ],
+                drawCallback: function () {
+                    aplicarBadgesEstadoServicio();
+                }
+            });
+
+        aplicarBadgesEstadoServicio();
+    }
+
+    function mostrarPanelRegistro() {
+        if (panelAgendamientos) {
+            panelAgendamientos.classList.add("d-none");
+        }
+
+        if (panelRegistro) {
+            panelRegistro.classList.remove("d-none");
+        }
+
+        if (btnVolver) {
+            btnVolver.classList.remove("d-none");
+        }
+
+        if (btnRefrescar) {
+            btnRefrescar.classList.add("d-none");
+        }
+    }
+
+    function mostrarPanelAgendamientos() {
+        if (panelRegistro) {
+            panelRegistro.classList.add("d-none");
+        }
+
+        if (panelAgendamientos) {
+            panelAgendamientos.classList.remove("d-none");
+        }
+
+        if (btnVolver) {
+            btnVolver.classList.add("d-none");
+        }
+
+        if (btnRefrescar) {
+            btnRefrescar.classList.remove("d-none");
+        }
+
+        if (tablaServiciosPendientes) {
+            window.requestAnimationFrame(
+                function () {
+                    tablaServiciosPendientes
+                        .columns
+                        .adjust();
+                }
+            );
+        }
+    }
+
+    function limpiarVistaPrevia() {
+        if (urlVistaPrevia) {
+            URL.revokeObjectURL(urlVistaPrevia);
+            urlVistaPrevia = null;
+        }
+
+        if (previewResultado) {
+            previewResultado.src = "";
+            previewResultado.classList.add("d-none");
+        }
+
+        if (previewVacio) {
+            previewVacio.classList.remove("d-none");
+        }
+
+        if (fotoResultado) {
+            fotoResultado.value = "";
+        }
+    }
+
+    function actualizarDatosInsumo() {
+        if (
+            !insumoUtilizado ||
+            !presentacionInsumo ||
+            !stockDisponible
+        ) {
+            return;
+        }
+
+        const opcion =
+            insumoUtilizado.options[
+                insumoUtilizado.selectedIndex
+            ];
+
+        if (
+            !opcion ||
+            insumoUtilizado.value === ""
+        ) {
+            presentacionInsumo.value = "";
+            stockDisponible.value = "";
+
+            return;
+        }
+
+        presentacionInsumo.value =
+            opcion.dataset.presentacion || "";
+
+        stockDisponible.value =
+            opcion.dataset.stock || "";
+    }
+
+    function crearCelda(texto) {
+        const celda = document.createElement("td");
+
+        celda.textContent = texto;
+
+        return celda;
+    }
+
+    function crearCampoOculto(nombre, valor) {
+        const campo = document.createElement("input");
+
+        campo.type = "hidden";
+        campo.name = nombre;
+        campo.value = valor;
+
+        return campo;
+    }
+
+    function mostrarFilaVaciaInsumos() {
+        if (!tbodyInsumos) {
+            return;
+        }
+
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+
+        celda.colSpan = 4;
+        celda.className = "text-center";
+        celda.textContent = "No hay insumos agregados.";
+
+        fila.appendChild(celda);
+        tbodyInsumos.appendChild(fila);
+    }
+
+    function renderizarInsumos() {
+        if (!tbodyInsumos) {
+            return;
+        }
+
+        tbodyInsumos.innerHTML = "";
 
         if (insumosSeleccionados.length === 0) {
-          tbodyInsumosSeleccionados.innerHTML = `
-            <tr>
-              <td colspan="4" class="text-center">No hay insumos agregados.</td>
-            </tr>
-          `;
-          return;
+            mostrarFilaVaciaInsumos();
+
+            return;
         }
 
-        insumosSeleccionados.forEach((item, index) => {
-          const tr = document.createElement("tr");
+        insumosSeleccionados.forEach(
+            function (insumo, indice) {
+                const fila = document.createElement("tr");
 
-          tr.innerHTML = `
-            <td>${item.insumo}</td>
-            <td>${item.cantidad}</td>
-            <td>${item.presentacion}</td>
-            <td class="text-center">
-              <button class="btn-action btn-delete btn-eliminar-insumo" type="button" data-index="${index}" title="Eliminar">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          `;
+                fila.appendChild(
+                    crearCelda(insumo.nombre)
+                );
 
-          tbodyInsumosSeleccionados.appendChild(tr);
-        });
-      }
+                fila.appendChild(
+                    crearCelda(insumo.cantidad)
+                );
 
-      function mostrarAlerta(titulo, texto, icono) {
-        if (typeof Swal !== "undefined") {
-          Swal.fire({
-            title: titulo,
-            text: texto,
-            icon: icono,
-            confirmButtonColor: "#D8A7B1"
-          });
-        } else {
-          alert(`${titulo}: ${texto}`);
+                fila.appendChild(
+                    crearCelda(insumo.presentacion)
+                );
+
+                const celdaAccion =
+                    document.createElement("td");
+
+                celdaAccion.className = "text-center";
+
+                const botonEliminar =
+                    document.createElement("button");
+
+                botonEliminar.type = "button";
+                botonEliminar.className =
+                    "btn-action btn-delete btn-eliminar-insumo";
+                botonEliminar.dataset.index = indice;
+                botonEliminar.title = "Eliminar insumo";
+                botonEliminar.innerHTML =
+                    '<i class="bi bi-trash"></i>';
+
+                celdaAccion.appendChild(
+                    botonEliminar
+                );
+
+                fila.appendChild(celdaAccion);
+
+                fila.appendChild(
+                    crearCampoOculto(
+                        `insumos[${indice}][id_insumo]`,
+                        insumo.id
+                    )
+                );
+
+                fila.appendChild(
+                    crearCampoOculto(
+                        `insumos[${indice}][cantidad]`,
+                        insumo.cantidad
+                    )
+                );
+
+                tbodyInsumos.appendChild(fila);
+            }
+        );
+    }
+
+    function agregarInsumo() {
+        if (
+            !insumoUtilizado ||
+            !cantidadInsumo
+        ) {
+            return;
         }
-      }
 
-      document.querySelectorAll(".btn-registrar-servicio").forEach(btn => {
-        btn.addEventListener("click", function () {
-          abrirRegistro(parseInt(this.dataset.id, 10));
-        });
-      });
+        const idInsumo =
+            insumoUtilizado.value;
 
-      btnVolver.addEventListener("click", volverLista);
+        const cantidad = parseFloat(
+            cantidadInsumo.value
+        );
 
-      btnRefrescar.addEventListener("click", function () {
-        mostrarAlerta("Actualizado", "La lista fue actualizada en el prototipo.", "success");
-      });
+        const opcion =
+            insumoUtilizado.options[
+                insumoUtilizado.selectedIndex
+            ];
 
-      if (fotoResultadoServicio) {
-        fotoResultadoServicio.addEventListener("change", function () {
-          const archivo = this.files[0];
-          if (!archivo) return;
-          previewResultadoServicio.src = URL.createObjectURL(archivo);
-        });
-      }
+        if (
+            idInsumo === "" ||
+            !opcion ||
+            Number.isNaN(cantidad) ||
+            cantidad <= 0
+        ) {
+            window.alert(
+                "Seleccione un insumo e indique una cantidad válida."
+            );
 
-      btnAgregarInsumo.addEventListener("click", function () {
-        const insumo = insumoUtilizado.value;
-        const cantidad = cantidadInsumo.value.trim();
-        const presentacion = presentacionInsumo.value.trim();
-
-        if (!insumo || !cantidad || !presentacion) {
-          mostrarAlerta("Faltan datos", "Seleccione un insumo, cantidad y presentación.", "warning");
-          return;
+            return;
         }
 
-        insumosSeleccionados.push({ insumo, cantidad, presentacion });
+        const stock = parseFloat(
+            opcion.dataset.stock || ""
+        );
+
+        if (
+            !Number.isNaN(stock) &&
+            cantidad > stock
+        ) {
+            window.alert(
+                "La cantidad indicada supera el stock disponible."
+            );
+
+            return;
+        }
+
+        const yaAgregado =
+            insumosSeleccionados.some(
+                function (insumo) {
+                    return (
+                        String(insumo.id) ===
+                        String(idInsumo)
+                    );
+                }
+            );
+
+        if (yaAgregado) {
+            window.alert(
+                "Ese insumo ya fue agregado. Elimínelo primero para cambiar la cantidad."
+            );
+
+            return;
+        }
+
+        insumosSeleccionados.push({
+            id: idInsumo,
+            nombre: opcion.textContent.trim(),
+            cantidad: cantidad,
+            presentacion:
+                opcion.dataset.presentacion || ""
+        });
 
         insumoUtilizado.value = "";
         cantidadInsumo.value = "";
-        presentacionInsumo.value = "";
+
+        if (presentacionInsumo) {
+            presentacionInsumo.value = "";
+        }
+
+        if (stockDisponible) {
+            stockDisponible.value = "";
+        }
 
         renderizarInsumos();
-      });
+    }
 
-      document.addEventListener("click", function (event) {
-        const botonEliminar = event.target.closest(".btn-eliminar-insumo");
-        if (!botonEliminar) return;
+    function eliminarInsumo(indice) {
+        if (
+            indice < 0 ||
+            indice >= insumosSeleccionados.length
+        ) {
+            return;
+        }
 
-        const index = parseInt(botonEliminar.dataset.index, 10);
-        insumosSeleccionados.splice(index, 1);
+        insumosSeleccionados.splice(
+            indice,
+            1
+        );
+
         renderizarInsumos();
-      });
+    }
 
-      btnGuardarServicio.addEventListener("click", function () {
-        mostrarAlerta("Servicio guardado", "El servicio fue registrado correctamente en el prototipo.", "success");
-      });
+    function filtrarCatalogo() {
+        if (!filtroCatalogo) {
+            return;
+        }
 
-      btnGuardarInsumos.addEventListener("click", function () {
-        mostrarAlerta("Insumos guardados", "Los insumos utilizados quedaron registrados en el prototipo.", "success");
-      });
+        const filtro =
+            filtroCatalogo.value
+                .trim()
+                .toLowerCase();
 
-      btnFinalizarServicio.addEventListener("click", function () {
-        mostrarAlerta("Registro finalizado", "El registro del servicio fue finalizado correctamente.", "success");
-      });
+        const trabajos =
+            document.querySelectorAll(
+                "#catalogoTrabajosGrid .catalogo-item"
+            );
 
-      filtroCatalogoServicio.addEventListener("change", function () {
-        const filtro = this.value;
+        let visibles = 0;
 
-        catalogoItems.forEach(item => {
-          const servicio = item.dataset.servicio;
+        trabajos.forEach(function (trabajo) {
+            const nombreServicio = String(
+                trabajo.dataset.servicio || ""
+            ).toLowerCase();
 
-          if (filtro === "todos" || servicio === filtro) {
-            item.classList.remove("d-none");
-          } else {
-            item.classList.add("d-none");
-          }
+            const coincide =
+                filtro === "" ||
+                nombreServicio.includes(filtro);
+
+            trabajo.classList.toggle(
+                "d-none",
+                !coincide
+            );
+
+            if (coincide) {
+                visibles++;
+            }
         });
-      });
 
-      renderizarInsumos();
-    });
+        if (catalogoVacio) {
+            catalogoVacio.classList.toggle(
+                "d-none",
+                visibles > 0
+            );
+        }
+    }
+
+    function enviarFormularioServicio(accion) {
+        if (!formServicio) {
+            return;
+        }
+
+        const campoAccion =
+            formServicio.querySelector(
+                'input[name="accion"]'
+            );
+
+        if (campoAccion) {
+            campoAccion.value = accion;
+        }
+
+        formServicio.requestSubmit();
+    }
+
+    if (btnVolver) {
+        btnVolver.addEventListener(
+            "click",
+            mostrarPanelAgendamientos
+        );
+    }
+
+    if (btnRefrescar) {
+        btnRefrescar.addEventListener(
+            "click",
+            function () {
+                window.location.reload();
+            }
+        );
+    }
+
+    document.addEventListener(
+        "click",
+        function (event) {
+            const botonRegistrar =
+                event.target.closest(
+                    ".btn-registrar-servicio"
+                );
+
+            if (botonRegistrar) {
+                mostrarPanelRegistro();
+            }
+
+            const botonEliminar =
+                event.target.closest(
+                    ".btn-eliminar-insumo"
+                );
+
+            if (botonEliminar) {
+                const indice = parseInt(
+                    botonEliminar.dataset.index,
+                    10
+                );
+
+                eliminarInsumo(indice);
+            }
+        }
+    );
+
+    if (fotoResultado) {
+        fotoResultado.addEventListener(
+            "change",
+            function () {
+                const archivo =
+                    fotoResultado.files[0];
+
+                limpiarVistaPrevia();
+
+                if (!archivo) {
+                    return;
+                }
+
+                urlVistaPrevia =
+                    URL.createObjectURL(archivo);
+
+                previewResultado.src =
+                    urlVistaPrevia;
+
+                previewResultado.classList.remove(
+                    "d-none"
+                );
+
+                previewVacio.classList.add(
+                    "d-none"
+                );
+            }
+        );
+    }
+
+    if (insumoUtilizado) {
+        insumoUtilizado.addEventListener(
+            "change",
+            actualizarDatosInsumo
+        );
+    }
+
+    if (btnAgregarInsumo) {
+        btnAgregarInsumo.addEventListener(
+            "click",
+            agregarInsumo
+        );
+    }
+
+    if (btnCancelarServicio) {
+        btnCancelarServicio.addEventListener(
+            "click",
+            mostrarPanelAgendamientos
+        );
+    }
+
+    if (btnGuardarServicio) {
+        btnGuardarServicio.addEventListener(
+            "click",
+            function () {
+                enviarFormularioServicio(
+                    "guardarServicio"
+                );
+            }
+        );
+    }
+
+    if (
+        btnGuardarInsumos &&
+        formInsumos
+    ) {
+        btnGuardarInsumos.addEventListener(
+            "click",
+            function () {
+                if (
+                    insumosSeleccionados.length === 0
+                ) {
+                    window.alert(
+                        "Agregue al menos un insumo utilizado."
+                    );
+
+                    return;
+                }
+
+                formInsumos.requestSubmit();
+            }
+        );
+    }
+
+    if (btnFinalizarServicio) {
+        btnFinalizarServicio.addEventListener(
+            "click",
+            function () {
+                enviarFormularioServicio(
+                    "finalizarRegistro"
+                );
+            }
+        );
+    }
+
+    if (filtroCatalogo) {
+        filtroCatalogo.addEventListener(
+            "change",
+            filtrarCatalogo
+        );
+    }
+
+    /* ===================================================== */
+    /* BUSCADOR DEL HISTORIAL DE SERVICIOS */
+    /* ===================================================== */
+
+    const buscarHistorialServicios =
+        document.getElementById(
+            "buscarHistorialServicios"
+        );
+
+    const tbodyHistorialServicios =
+        document.getElementById(
+            "tbodyHistorialServicios"
+        );
+
+    if (
+        buscarHistorialServicios &&
+        tbodyHistorialServicios
+    ) {
+        buscarHistorialServicios.addEventListener(
+            "input",
+            function () {
+                const filtro =
+                    buscarHistorialServicios.value
+                        .trim()
+                        .toLowerCase();
+
+                const filas =
+                    tbodyHistorialServicios.querySelectorAll(
+                        "tr"
+                    );
+
+                filas.forEach(function (fila) {
+                    /*
+                     * Conserva visible la fila que informa
+                     * que todavía no existen servicios.
+                     */
+                    const celdaVacia =
+                        fila.querySelector(
+                            "td[colspan]"
+                        );
+
+                    if (celdaVacia) {
+                        return;
+                    }
+
+                    const contenidoFila =
+                        fila.textContent
+                            .trim()
+                            .toLowerCase();
+
+                    const coincide =
+                        filtro === "" ||
+                        contenidoFila.includes(filtro);
+
+                    fila.style.display =
+                        coincide
+                            ? ""
+                            : "none";
+                });
+            }
+        );
+    }
+
+    inicializarDataTableServiciosPendientes();
+    renderizarInsumos();
+    filtrarCatalogo();
+});

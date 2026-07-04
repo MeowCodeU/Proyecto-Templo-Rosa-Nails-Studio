@@ -1,6 +1,7 @@
 /* ===================================================== */
 /* VARIABLES */
 /* ===================================================== */
+
 :root{
   --cream-1: #fdf7f5;
   --cream-2: #f9f1ee;
@@ -20,9 +21,11 @@
   --rose-gold-4: #ba8179;
 }
 
+
 /* ===================================================== */
 /* BASE */
 /* ===================================================== */
+
 *{
   box-sizing: border-box;
   margin: 0;
@@ -37,49 +40,60 @@ body{
 
 body{
   min-height: 100vh;
+
+  position: relative;
+  overflow-x: hidden;
+
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--brown-main);
 
-  overflow-x: hidden;
-  position: relative;
+  background-image:
+    url("../img/TR_Fondo_Vertical.png");
 
-  background-image: url("assets/img/TR_Fondo_Vertical.png");
   background-size: 420px;
   background-repeat: repeat;
   background-position: center;
-
-  padding-bottom: 0;
 }
 
 body::before{
   content: "";
+
   position: fixed;
   inset: 0;
   z-index: 0;
+
   pointer-events: none;
 
-  background: linear-gradient(
-    rgba(253,245,242,0.68),
-    rgba(247,240,235,0.70)
-  );
+  background:
+    linear-gradient(
+      rgba(253, 245, 242, 0.68),
+      rgba(247, 240, 235, 0.70)
+    );
 }
+
 
 /* ===================================================== */
 /* ESTRUCTURA */
 /* ===================================================== */
+
 .login-page{
   position: relative;
   z-index: 1;
+
   min-height: 100vh;
+
   display: grid;
   place-items: center;
+
   padding: 24px 16px;
 }
 
 .login-scene{
   position: relative;
+
   width: min(100%, 1200px);
   min-height: 900px;
+
   display: flex;
   justify-content: center;
   align-items: center;
@@ -88,29 +102,40 @@ body::before{
 .login-bottle{
   position: relative;
   z-index: 4;
+
   width: 440px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 18px 24px rgba(74,60,49,0.12));
+
+  filter:
+    drop-shadow(
+      0 18px 24px rgba(74, 60, 49, 0.12)
+    );
 }
+
 
 /* ===================================================== */
 /* TAPA */
 /* ===================================================== */
+
 .bottle-cap{
   width: 138px;
   height: 238px;
+
   position: relative;
   z-index: 7;
+
   overflow: hidden;
 
-  clip-path: polygon(
-    18% 0%,
-    82% 0%,
-    96% 100%,
-    4% 100%
-  );
+  clip-path:
+    polygon(
+      18% 0%,
+      82% 0%,
+      96% 100%,
+      4% 100%
+    );
 
   border-radius: 18px 18px 10px 10px;
 
@@ -126,66 +151,81 @@ body::before{
     );
 
   box-shadow:
-    inset 8px 0 14px rgba(255,255,255,0.18),
-    inset -10px 0 16px rgba(74,60,49,0.14),
-    0 8px 14px rgba(74,60,49,0.10);
+    inset 8px 0 14px rgba(255, 255, 255, 0.18),
+    inset -10px 0 16px rgba(74, 60, 49, 0.14),
+    0 8px 14px rgba(74, 60, 49, 0.10);
 
   margin-bottom: -2px;
 }
 
 .cap-gloss{
   position: absolute;
+
   left: 30px;
   top: 16px;
+
   width: 28px;
   height: 194px;
+
   border-radius: 999px;
-  background: linear-gradient(
-    rgba(255,255,255,0.62),
-    rgba(255,255,255,0.10)
-  );
-  opacity: .74;
+
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.62),
+      rgba(255, 255, 255, 0.10)
+    );
+
+  opacity: 0.74;
 }
+
 
 /* ===================================================== */
 /* CUELLO */
 /* ===================================================== */
+
 .bottle-neck{
   width: 112px;
   height: 11px;
+
   margin-top: -8px;
+
   position: relative;
   z-index: 6;
+
   border-radius: 999px;
 
   background:
     linear-gradient(
       90deg,
-      rgba(150,102,96,0.92) 0%,
-      rgba(248,232,227,0.98) 50%,
-      rgba(150,102,96,0.92) 100%
+      rgba(150, 102, 96, 0.92) 0%,
+      rgba(248, 232, 227, 0.98) 50%,
+      rgba(150, 102, 96, 0.92) 100%
     );
 
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.55),
-    0 2px 6px rgba(74,60,49,0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 2px 6px rgba(74, 60, 49, 0.12);
 }
 
 .bottle-neck::before{
   content: "";
+
   position: absolute;
+
   left: 8px;
   right: 8px;
   top: -4px;
+
   height: 5px;
+
   border-radius: 999px;
 
   background:
     linear-gradient(
       90deg,
-      rgba(163,112,106,0.82),
-      rgba(255,241,237,0.98),
-      rgba(163,112,106,0.82)
+      rgba(163, 112, 106, 0.82),
+      rgba(255, 241, 237, 0.98),
+      rgba(163, 112, 106, 0.82)
     );
 
   opacity: 0.95;
@@ -193,46 +233,56 @@ body::before{
 
 .bottle-neck::after{
   content: "";
+
   position: absolute;
+
   left: 14px;
   right: 14px;
   bottom: -3px;
+
   height: 4px;
+
   border-radius: 999px;
 
   background:
     linear-gradient(
       90deg,
-      rgba(140,95,89,0.55),
-      rgba(255,245,242,0.72),
-      rgba(140,95,89,0.55)
+      rgba(140, 95, 89, 0.55),
+      rgba(255, 245, 242, 0.72),
+      rgba(140, 95, 89, 0.55)
     );
 
   opacity: 0.75;
 }
 
+
 /* ===================================================== */
 /* FRASCO */
 /* ===================================================== */
+
 .bottle-body{
   position: relative;
+  z-index: 4;
+
   width: 440px;
   height: 540px;
+
   margin-top: -10px;
-  z-index: 4;
 }
 
 .bottle-svg{
   position: absolute;
   inset: 0;
+
   width: 100%;
   height: 100%;
+
   overflow: visible;
   pointer-events: none;
 }
 
 .glass-shadow{
-  fill: rgba(255,255,255,0.25);
+  fill: rgba(255, 255, 255, 0.25);
   stroke: none;
 }
 
@@ -242,16 +292,19 @@ body::before{
 
 .inner-glass-zone{
   fill: none;
-  stroke: rgba(255,255,255,0.18);
+
+  stroke: rgba(255, 255, 255, 0.18);
   stroke-width: 18;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: .95;
+
+  opacity: 0.95;
 }
 
 .glass-border{
-  fill: rgba(255,255,255,0.10);
-  stroke: rgba(108,86,82,0.42);
+  fill: rgba(255, 255, 255, 0.10);
+
+  stroke: rgba(108, 86, 82, 0.42);
   stroke-width: 4.2;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -259,7 +312,8 @@ body::before{
 
 .inner-border{
   fill: none;
-  stroke: rgba(255,255,255,0.86);
+
+  stroke: rgba(255, 255, 255, 0.86);
   stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -267,19 +321,24 @@ body::before{
 
 .bottle-base{
   fill: none;
-  stroke: rgba(95,75,70,0.20);
+
+  stroke: rgba(95, 75, 70, 0.20);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
+
 /* ===================================================== */
 /* CONTENIDO */
 /* ===================================================== */
+
 .login-content{
   position: relative;
   z-index: 6;
+
   width: 100%;
   height: 100%;
+
   padding: 96px 88px 36px;
 
   display: flex;
@@ -290,14 +349,17 @@ body::before{
 .logo-back{
   width: 72px;
   height: 72px;
-  border-radius: 50%;
+
   display: grid;
   place-items: center;
 
-  background: rgba(255,255,255,0.62);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.62);
+
   box-shadow:
-    0 4px 8px rgba(74,60,49,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.72);
+    0 4px 8px rgba(74, 60, 49, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 
   margin-bottom: 10px;
 }
@@ -305,116 +367,212 @@ body::before{
 .login-logo{
   width: 52px;
   height: 52px;
+
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(122,101,91,0.08));
+
+  filter:
+    drop-shadow(
+      0 2px 4px rgba(122, 101, 91, 0.08)
+    );
 }
 
 .login-title{
+  margin-bottom: 14px;
+
   color: var(--rose-title);
+
   font-size: 24px;
   font-weight: 700;
+  letter-spacing: 0.2px;
   text-align: center;
-  margin-bottom: 14px;
-  letter-spacing: .2px;
 }
 
 .login-form{
   width: 100%;
+
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+
+/* ===================================================== */
+/* CAMPOS */
+/* ===================================================== */
+
 .input-wrap{
   width: 100%;
   max-width: 258px;
   height: 40px;
+
   margin-bottom: 12px;
+  padding: 0 13px;
 
   display: flex;
   align-items: center;
   gap: 8px;
 
-  padding: 0 13px;
+  border: 1.3px solid rgba(173, 103, 114, 0.32);
   border-radius: 999px;
 
-  background: rgba(255,255,255,0.88);
-  border: 1.3px solid rgba(173,103,114,0.32);
+  background: rgba(255, 255, 255, 0.88);
 
-  box-shadow: 0 4px 8px rgba(74,60,49,0.04);
-  transition: .2s ease;
+  box-shadow:
+    0 4px 8px rgba(74, 60, 49, 0.04);
+
+  transition: 0.2s ease;
 }
 
-.input-wrap i{
+.input-wrap > i{
+  flex-shrink: 0;
+
   color: #b87b85;
   font-size: 14px;
-  flex-shrink: 0;
-}
-
-.input-eye{
-  opacity: .82;
 }
 
 .input-wrap input{
   width: 100%;
   height: 34px;
+
   border: none;
   outline: none;
+
   background: transparent;
   color: var(--brown-main);
+
   font-size: 13px;
   font-weight: 600;
 }
 
 .input-wrap input::placeholder{
-  color: rgba(122,101,91,0.58);
+  color: rgba(122, 101, 91, 0.58);
   font-weight: 500;
 }
 
 .input-wrap:hover,
 .input-wrap:focus-within{
-  background: rgba(249,232,238,0.58); /* un rosado azúcar */
-  border-color: var(--rose-hover);    /* tu rosado hover */
+  border-color: var(--rose-hover);
+
+  background: rgba(249, 232, 238, 0.58);
+
   box-shadow:
-    0 0 0 4px rgba(238,187,187,0.22), /* halo suave */
-    0 6px 12px rgba(74,60,49,0.06);    /* sombra sutil */
+    0 0 0 4px rgba(238, 187, 187, 0.22),
+    0 6px 12px rgba(74, 60, 49, 0.06);
+
   outline: none;
 }
 
+
 /* ===================================================== */
-/* BOTÓN Y LINKS */
+/* MOSTRAR U OCULTAR CONTRASEÑA */
 /* ===================================================== */
+
+.input-eye{
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: #b87b85;
+
+  cursor: pointer;
+
+  opacity: 0.82;
+
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.input-eye i{
+  display: block;
+  font-size: 14px;
+}
+
+.input-eye:hover{
+  color: var(--rose-title);
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.input-eye:focus-visible{
+  border-radius: 50%;
+  outline: 2px solid rgba(198, 122, 139, 0.36);
+  outline-offset: 2px;
+}
+
+
+/* ===================================================== */
+/* BOTÓN */
+/* ===================================================== */
+
 .login-btn{
   width: 56%;
   max-width: 150px;
   height: 36px;
+
   display: block;
+
   margin: 5px auto 10px;
 
   border: none;
   border-radius: 999px;
 
-  background: linear-gradient(135deg, var(--rose-btn-1), var(--rose-btn-2));
-  color: #fff;
+  background:
+    linear-gradient(
+      135deg,
+      var(--rose-btn-1),
+      var(--rose-btn-2)
+    );
+
+  color: #ffffff;
+
   font-size: 13px;
   font-weight: 800;
 
   cursor: pointer;
 
   box-shadow:
-    0 6px 10px rgba(155,95,105,0.14),
-    inset 0 1px 0 rgba(255,255,255,0.22);
+    0 6px 10px rgba(155, 95, 105, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 
-  transition: .2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .login-btn:hover{
   transform: translateY(-1px);
-  background: linear-gradient(135deg, var(--rose-btn-2), var(--rose-hover));
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--rose-btn-2),
+      var(--rose-hover)
+    );
 }
+
+.login-btn:active{
+  transform: translateY(0);
+}
+
+
+/* ===================================================== */
+/* ENLACES */
+/* ===================================================== */
 
 .login-links{
   width: 100%;
+
   margin-top: 2px;
 
   display: flex;
@@ -427,11 +585,16 @@ body::before{
 
 .login-links a{
   color: #9f6570;
+
   text-decoration: none;
-  transition: .2s ease;
+
   font-size: 11.4px;
   font-weight: 700;
   line-height: 1.2;
+
+  transition:
+    color 0.2s ease,
+    text-decoration-color 0.2s ease;
 }
 
 .login-links a:hover{
@@ -440,9 +603,49 @@ body::before{
 }
 
 /* ===================================================== */
+/* INFORMACIÓN DE CLAVE UNIVERSAL */
+/* ===================================================== */
+
+.clave-universal-info{
+  width: 100%;
+  max-width: 240px;
+
+  margin: 0 auto 12px;
+  padding: 0;
+
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0;
+
+  color: rgba(122, 101, 91, 0.78);
+  text-align: center;
+}
+
+.clave-universal-info i{
+  display: inline;
+
+  margin-right: 4px;
+
+  color: #B89344;
+
+  font-size: 0.74rem;
+  line-height: 1;
+  vertical-align: -1px;
+}
+
+.clave-universal-info span{
+  display: inline;
+}
+
+
+/* ===================================================== */
 /* RESPONSIVE */
 /* ===================================================== */
+
 @media (max-width: 700px){
+
   body{
     background-size: 420px;
   }
@@ -458,6 +661,7 @@ body::before{
   .bottle-cap{
     width: 114px;
     height: 196px;
+
     margin-bottom: -1px;
   }
 
@@ -468,12 +672,14 @@ body::before{
   .bottle-neck{
     width: 92px;
     height: 6px;
+
     margin-top: -6px;
   }
 
   .bottle-body{
     width: 350px;
     height: 445px;
+
     margin-top: -6px;
   }
 
@@ -504,9 +710,12 @@ body::before{
     width: 58%;
     height: 34px;
   }
+
 }
 
+
 @media (max-width: 420px){
+
   body{
     background-size: 420px;
   }
@@ -526,6 +735,7 @@ body::before{
   .bottle-cap{
     width: 98px;
     height: 172px;
+
     margin-bottom: -1px;
   }
 
@@ -536,12 +746,14 @@ body::before{
   .bottle-neck{
     width: 78px;
     height: 5px;
+
     margin-top: -5px;
   }
 
   .bottle-body{
     width: 300px;
     height: 390px;
+
     margin-top: -5px;
   }
 
@@ -560,13 +772,15 @@ body::before{
   }
 
   .login-title{
-    font-size: 17px;
     margin-bottom: 10px;
+
+    font-size: 17px;
   }
 
   .input-wrap{
     max-width: 194px;
     height: 34px;
+
     margin-bottom: 9px;
   }
 
@@ -577,10 +791,12 @@ body::before{
   .login-btn{
     width: 58%;
     height: 32px;
+
     font-size: 12.5px;
   }
 
   .login-links a{
     font-size: 10.5px;
   }
+
 }

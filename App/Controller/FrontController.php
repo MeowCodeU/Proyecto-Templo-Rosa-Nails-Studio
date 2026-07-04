@@ -13,7 +13,7 @@ class FrontController
         if (isset($_GET['url']) && !empty($_GET['url'])) {
             $this->url = $_GET['url'];
         } else {
-            $this->url = 'clientes';
+            $this->url = 'inicio';
         }
 
         $this->cargarControlador();

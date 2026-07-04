@@ -3,10 +3,8 @@
 <!-- Botones flotantes inferiores -->
 <div class="quick-actions">
 
-    <!-- Escudo con llave-corazón -->
-
-    <!-- Lista con corazones -->
-    <a href="#" class="quick-btn" title="Lista">
+    <!-- Manual de usuario -->
+    <a href="#" class="quick-btn" title="Manual de usuario">
         <svg class="quick-svg-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect x="8" y="8" width="48" height="48" rx="8" class="quick-svg-stroke" fill="none" stroke-width="3"/>
 
@@ -41,7 +39,13 @@
         </svg>
     </a>
 
-    <a href="#" class="quick-btn" title="Seguridad">
+    <!--Seguridad -->
+
+    <a
+    href="Index.php?url=seguridad"
+    class="quick-btn"
+    title="Seguridad"
+>
         <svg class="quick-svg-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M32 6
                      C27 8, 19 10, 13 12
@@ -77,19 +81,28 @@
     </a>
 
     <!-- Configuración -->
-    <a href="#" class="quick-btn" title="Configuración">
+    <a
+    href="Index.php?url=configuracion"
+    class="quick-btn"
+    title="Configuración"
+>
         <i class="bi bi-gear-wide-connected"></i>
     </a>
 
-    <!-- Estadísticas -->
-    <a href="#" class="quick-btn" title="Estadísticas">
+    <!-- Reportes -->
+    <a href="#" class="quick-btn" title="Reportes">
         <i class="bi bi-bar-chart-line"></i>
     </a>
 
     <!-- Cerrar sesión -->
-    <a href="#" class="quick-btn" title="Cerrar sesión">
-        <i class="bi bi-box-arrow-right"></i>
-    </a>
+<a
+    href="Index.php?url=login"
+    class="quick-btn"
+    title="Cerrar sesión"
+    aria-label="Cerrar sesión"
+>
+    <i class="bi bi-box-arrow-right"></i>
+</a>
 </div>
 
 <?php require_once __DIR__ . '/ModalesPerfil.php'; ?>
@@ -104,8 +117,38 @@
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 
-<!-- JS propio -->
+<?php if (!empty($usarFullCalendar)): ?>
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+<?php endif; ?>
+
+<!-- JS general del sistema -->
 <script src="Assets/js/script.js"></script>
+
+<!-- JS particular de una vista -->
+<?php if (!empty($scriptVista)): ?>
+    <script
+        src="<?= htmlspecialchars(
+            $scriptVista,
+            ENT_QUOTES,
+            'UTF-8'
+        ); ?>"
+    ></script>
+<?php endif; ?>
+
+<!-- Varios JS particulares de una vista -->
+<?php if (!empty($scriptsVista) && is_array($scriptsVista)): ?>
+    <?php foreach ($scriptsVista as $script): ?>
+        <script
+            src="<?= htmlspecialchars(
+                $script,
+                ENT_QUOTES,
+                'UTF-8'
+            ); ?>"
+        ></script>
+    <?php endforeach; ?>
+<?php endif; ?>
 
 </body>
 </html>
