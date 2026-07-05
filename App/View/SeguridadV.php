@@ -380,7 +380,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Cédula
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -402,7 +402,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Nombre
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -424,7 +424,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Apellido
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -470,7 +470,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Correo electrónico
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="email"
@@ -496,7 +496,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Rol
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 id="nuevoUsuarioRol"
@@ -535,7 +535,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Contraseña
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="password"
@@ -558,7 +558,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Confirmar contraseña
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="password"
@@ -702,7 +702,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Nombre
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -723,7 +723,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Apellido
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -767,7 +767,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Correo electrónico
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="email"
@@ -788,7 +788,7 @@ $escaparSeguridad = static function ($valor): string {
                                 class="form-label"
                             >
                                 Rol
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 id="editarUsuarioRol"
@@ -936,7 +936,7 @@ $escaparSeguridad = static function ($valor): string {
                             class="form-label"
                         >
                             Nueva contraseña
-                        </label>
+                         <span class="required-mark" aria-hidden="true">*</span></label>
 
                         <input
                             type="password"
@@ -959,7 +959,7 @@ $escaparSeguridad = static function ($valor): string {
                             class="form-label"
                         >
                             Confirmar nueva contraseña
-                        </label>
+                         <span class="required-mark" aria-hidden="true">*</span></label>
 
                         <input
                             type="password"

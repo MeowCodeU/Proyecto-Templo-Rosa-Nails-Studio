@@ -430,6 +430,16 @@ body::before{
   font-size: 14px;
 }
 
+/* Asterisco de campos obligatorios del acceso */
+.input-required-mark{
+  flex: 0 0 auto;
+
+  color: #c40056;
+
+  font-weight: 900;
+  line-height: 1;
+}
+
 .input-wrap input{
   width: 100%;
   height: 34px;
@@ -492,9 +502,25 @@ body::before{
     transform 0.2s ease;
 }
 
-.input-eye i{
+.input-eye .icono-eye{
+  width: 18px;
+  height: 18px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 18px;
+
+  color: inherit;
+  line-height: 1;
+}
+
+.input-eye .icono-eye svg{
+  width: 18px;
+  height: 18px;
+
   display: block;
-  font-size: 14px;
+  overflow: visible;
 }
 
 .input-eye:hover{

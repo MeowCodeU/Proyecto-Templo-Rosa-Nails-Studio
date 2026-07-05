@@ -94,7 +94,9 @@ $escaparHeader = static function ($valor): string {
 
 
 <!-- Usuario / sesión -->
-<div class="user-session dropdown">
+<div class="session-actions">
+
+    <div class="user-session dropdown">
 
     <button
         class="user-session-btn"
@@ -171,7 +173,18 @@ $escaparHeader = static function ($valor): string {
             </a>
 
         </li>
-
     </ul>
+
+</div>
+
+
+    <a
+        href="Index.php?url=login"
+        class="logout-header-btn"
+        title="Cerrar sesión"
+        aria-label="Cerrar sesión"
+    >
+        <i class="bi bi-box-arrow-right"></i>
+    </a>
 
 </div>

@@ -885,30 +885,6 @@ $moduloActual = $moduloActual ??
 
                     </li>
 
-
-                    <!-- Cerrar sesión -->
-                    <li>
-
-                        <a
-                            href="Index.php?url=login"
-                            class="mobile-access-link"
-                        >
-
-                            <span
-                                class="mobile-access-icon"
-                                aria-hidden="true"
-                            >
-                                <i class="bi bi-box-arrow-right"></i>
-                            </span>
-
-                            <span>
-                                Cerrar sesión
-                            </span>
-
-                        </a>
-
-                    </li>
-
                 </ul>
 
             </div>

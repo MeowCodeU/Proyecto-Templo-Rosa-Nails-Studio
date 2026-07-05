@@ -93,16 +93,7 @@
     <a href="#" class="quick-btn" title="Reportes">
         <i class="bi bi-bar-chart-line"></i>
     </a>
-
-    <!-- Cerrar sesión -->
-<a
-    href="Index.php?url=login"
-    class="quick-btn"
-    title="Cerrar sesión"
-    aria-label="Cerrar sesión"
->
-    <i class="bi bi-box-arrow-right"></i>
-</a>
+    
 </div>
 
 <?php require_once __DIR__ . '/ModalesPerfil.php'; ?>

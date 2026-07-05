@@ -648,155 +648,182 @@ document.addEventListener("DOMContentLoaded", function () {
         return itemVacio;
     }
 
-    function renderizarLista() {
-        if (!listaAgendamientos) {
-            return;
-        }
-
-        const filtro = inputBusqueda
-            ? inputBusqueda.value
-                  .trim()
-                  .toLowerCase()
-            : "";
-
-        let eventos = obtenerEventosDeHoy();
-
-        if (filtro !== "") {
-            eventos = eventos.filter(
-                function (evento) {
-                    const propiedades =
-                        evento.extendedProps || {};
-
-                    const contenido = [
-                        evento.title,
-                        propiedades.cliente,
-                        propiedades.especialista,
-                        propiedades.estado,
-                        propiedades.tipo_agendamiento,
-                        propiedades.observacion_inicial,
-                        obtenerServiciosTexto(
-                            propiedades
-                        )
-                    ]
-                        .join(" ")
-                        .toLowerCase();
-
-                    return contenido.includes(
-                        filtro
-                    );
-                }
-            );
-        }
-
-        listaAgendamientos.innerHTML = "";
-
-        if (eventos.length === 0) {
-            listaAgendamientos.appendChild(
-                crearEstadoVacio()
-            );
-
-            actualizarHoraTexto();
-
-            return;
-        }
-
-        eventos.forEach(function (evento) {
-            const propiedades =
-                evento.extendedProps || {};
-
-            const item =
-                document.createElement("li");
-
-            item.className =
-                "list-group-item d-flex justify-content-between align-items-center gap-3";
-
-            const informacion =
-                document.createElement("div");
-
-            const titulo =
-                document.createElement("h6");
-
-            titulo.className = "mb-1";
-
-            titulo.textContent =
-                `${formatearHora(evento.start)} - ` +
-                `${propiedades.cliente || evento.title}`;
-
-            const servicios =
-                document.createElement("small");
-
-            servicios.className = "d-block";
-
-            servicios.textContent =
-                obtenerServiciosTexto(
-                    propiedades
-                );
-
-            const especialista =
-                document.createElement("small");
-
-            especialista.className = "d-block";
-
-            especialista.textContent =
-                propiedades.especialista || "";
-
-            informacion.appendChild(titulo);
-            informacion.appendChild(servicios);
-            informacion.appendChild(
-                especialista
-            );
-
-            const acciones =
-                document.createElement("div");
-
-            acciones.className =
-                "d-flex align-items-center gap-2";
-
-            const badge =
-                document.createElement("span");
-
-            const estado =
-                propiedades.estado || "AGENDADO";
-
-            badge.className =
-                `badge ${obtenerClaseEstado(estado)}`;
-
-            badge.textContent = estado;
-
-            const boton =
-                document.createElement("button");
-
-            boton.type = "button";
-
-            boton.className =
-                "btn btn-sm btn-outline-secondary";
-
-            boton.title = "Ver detalle";
-
-            boton.innerHTML =
-                '<i class="bi bi-eye"></i>';
-
-            boton.addEventListener(
-                "click",
-                function () {
-                    mostrarDetalle(evento);
-                }
-            );
-
-            acciones.appendChild(badge);
-            acciones.appendChild(boton);
-
-            item.appendChild(informacion);
-            item.appendChild(acciones);
-
-            listaAgendamientos.appendChild(
-                item
-            );
-        });
-
-        actualizarHoraTexto();
+  function renderizarLista() {
+    if (!listaAgendamientos) {
+        return;
     }
 
+    const filtro = inputBusqueda
+        ? inputBusqueda.value
+              .trim()
+              .toLowerCase()
+        : "";
+
+    let eventos = obtenerEventosDeHoy();
+
+    if (filtro !== "") {
+        eventos = eventos.filter(
+            function (evento) {
+                const propiedades =
+                    evento.extendedProps || {};
+
+                const contenido = [
+                    evento.title,
+                    propiedades.cliente,
+                    propiedades.especialista,
+                    propiedades.estado,
+                    propiedades.tipo_agendamiento,
+                    propiedades.observacion_inicial,
+                    obtenerServiciosTexto(
+                        propiedades
+                    )
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+                return contenido.includes(
+                    filtro
+                );
+            }
+        );
+    }
+
+    listaAgendamientos.innerHTML = "";
+
+    if (eventos.length === 0) {
+        listaAgendamientos.appendChild(
+            crearEstadoVacio()
+        );
+
+        actualizarHoraTexto();
+
+        return;
+    }
+
+    eventos.forEach(function (evento) {
+        const propiedades =
+            evento.extendedProps || {};
+
+        const item =
+            document.createElement("li");
+
+        item.className =
+            "list-group-item d-flex justify-content-between align-items-center gap-3";
+
+        const informacion =
+            document.createElement("div");
+
+        const titulo =
+            document.createElement("h6");
+
+        titulo.className = "mb-1";
+
+        titulo.textContent =
+            `${formatearHora(evento.start)} - ` +
+            `${propiedades.cliente || evento.title}`;
+
+        const servicios =
+            document.createElement("small");
+
+        servicios.className = "d-block";
+
+        servicios.textContent =
+            obtenerServiciosTexto(
+                propiedades
+            );
+
+        const especialista =
+            document.createElement("small");
+
+        especialista.className = "d-block";
+
+        especialista.textContent =
+            propiedades.especialista || "";
+
+        informacion.appendChild(titulo);
+        informacion.appendChild(servicios);
+        informacion.appendChild(
+            especialista
+        );
+
+        const acciones =
+            document.createElement("div");
+
+        acciones.className =
+            "d-flex align-items-center gap-2";
+
+        const badge =
+            document.createElement("span");
+
+        const estado =
+            propiedades.estado || "AGENDADO";
+
+        badge.className =
+            `badge ${obtenerClaseEstado(estado)}`;
+
+        badge.textContent = estado;
+
+        const boton =
+            document.createElement("button");
+
+        boton.type = "button";
+
+        boton.className =
+            "btn btn-sm btn-outline-secondary";
+
+        boton.title = "Ver detalle";
+
+        boton.setAttribute(
+            "aria-label",
+            "Ver detalle del agendamiento"
+        );
+
+        boton.innerHTML = `
+            <span
+                class="agendamiento-detalle-icono"
+                aria-hidden="true"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                >
+                    <path
+                        d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        fill="none"
+                    />
+
+                    <path
+                        d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                        fill="currentColor"
+                    />
+                </svg>
+            </span>
+        `;
+
+        boton.addEventListener(
+            "click",
+            function () {
+                mostrarDetalle(evento);
+            }
+        );
+
+        acciones.appendChild(badge);
+        acciones.appendChild(boton);
+
+        item.appendChild(informacion);
+        item.appendChild(acciones);
+
+        listaAgendamientos.appendChild(
+            item
+        );
+    });
+
+    actualizarHoraTexto();
+}
     function enviarCambio(evento) {
         if (
             !formMover ||

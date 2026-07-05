@@ -118,7 +118,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label class="form-label">RIF</label>
+                            <label class="form-label">RIF <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -132,7 +132,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre de la empresa
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -146,7 +146,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Cédula del contacto
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -173,7 +173,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre del contacto
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -187,7 +187,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Apellido del contacto
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -310,7 +310,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label class="form-label">RIF</label>
+                            <label class="form-label">RIF <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -324,7 +324,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre de la empresa
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -365,7 +365,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre del contacto
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -379,7 +379,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Apellido del contacto
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"

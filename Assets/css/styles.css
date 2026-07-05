@@ -165,12 +165,73 @@ body{
 /* USUARIO / SESIÓN */
 /* ===================================================== */
 
-.user-session{
+.session-actions{
   position: absolute !important;
-  right: 0 !important;
+  right: 8px !important;
   left: auto !important;
   top: 1px !important;
   z-index: 1040 !important;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-session{
+  position: relative !important;
+  right: auto !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 1040 !important;
+}
+
+.logout-header-btn{
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(184,147,68,0.28);
+  border-radius: 50%;
+
+  background: rgba(253,245,242,0.92);
+  color: var(--gold-main);
+
+  box-shadow:
+    0 10px 20px rgba(74,60,49,0.10),
+    0 6px 18px var(--rose-shadow);
+
+  text-decoration: none;
+
+  transition:
+    transform .2s ease,
+    color .2s ease,
+    background-color .2s ease;
+}
+
+.logout-header-btn i{
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.logout-header-btn:hover{
+  transform: scale(1.08);
+  color: var(--rose-hover);
+}
+
+.logout-header-btn:focus,
+.logout-header-btn:focus-visible{
+  outline: none;
+  text-decoration: none;
+}
+
+.logout-header-btn:focus-visible{
+  box-shadow:
+    0 0 0 4px rgba(238,187,187,0.28),
+    0 10px 20px rgba(74,60,49,0.10),
+    0 6px 18px var(--rose-shadow);
 }
 
 .user-session-btn{
@@ -783,7 +844,7 @@ body{
 
 .quick-actions{
   position: fixed;
-  right: 22px;
+  right: 80px;
   bottom: 20px;
   display: flex;
   gap: 8px;
@@ -1222,27 +1283,66 @@ body{
 /* BOTONES DE ACCIÓN EN TABLAS */
 /* ===================================================== */
 
+/* Contenedor de botones */
+
 .btn-group-actions{
   display: flex;
-  gap: 7px;
+  align-items: center;
   justify-content: center;
+  gap: 7px;
 }
+
+
+/* Estructura general de cada botón */
 
 .btn-action{
   width: 38px;
   height: 38px;
-  border: none;
-  border-radius: 50%;
+
+  flex: 0 0 38px;
+
   display: grid;
   place-items: center;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
   color: white;
+
   cursor: pointer;
-  transition: .2s ease;
+
+  box-shadow:
+    0 5px 12px rgba(74,60,49,0.08);
+
+  transition:
+    transform .2s ease,
+    background-color .2s ease,
+    color .2s ease,
+    box-shadow .2s ease;
 }
 
 .btn-action:hover{
   transform: scale(1.08);
 }
+
+.btn-action:focus{
+  outline: none;
+}
+
+.btn-action:focus-visible{
+  outline: none;
+
+  box-shadow:
+    0 0 0 4px rgba(238,187,187,0.24),
+    0 5px 12px rgba(74,60,49,0.10);
+}
+
+
+/* ===================================================== */
+/* EDITAR */
+/* ===================================================== */
 
 .btn-edit{
   background: var(--rose-pagination);
@@ -1251,24 +1351,183 @@ body{
 
 .btn-edit:hover{
   background: #c98f9c;
+  color: white;
 }
+
+
+/* ===================================================== */
+/* ELIMINAR */
+/* ===================================================== */
 
 .btn-delete{
   background: #dc3545;
+  color: white;
 }
 
 .btn-delete:hover{
   background: #c82333;
-}
-
-.btn-detail{
-  background: var(--estado-realizada-text);
   color: white;
 }
 
-.btn-detail:hover{
-  background: #3f6f69;
+
+/* ===================================================== */
+/* VER DETALLES */
+/* Turquesa pastel de los estados finalizados */
+/* ===================================================== */
+
+.btn-detail{
+  background: var(--estado-realizada-bg);
+  color: #ffffff;
+  border: 1px solid rgba(63,111,105,0.14);
 }
+
+.btn-detail:hover{
+  background: #b9dcd6;
+  color: #ffffff;
+}
+
+/* Iconos personalizados para ver detalles */
+
+.cliente-detalle-icono,
+.agendamiento-detalle-icono{
+  width: 20px;
+  height: 20px;
+
+  flex: 0 0 20px;
+
+  display: grid;
+  place-items: center;
+
+  color: inherit;
+  line-height: 1;
+}
+
+.cliente-detalle-icono svg,
+.agendamiento-detalle-icono svg{
+  width: 20px;
+  height: 20px;
+
+  display: block;
+  overflow: visible;
+}
+
+
+/* ===================================================== */
+/* HISTORIAL DE SERVICIOS */
+/* Amarillo pastel del estado En espera */
+/* ===================================================== */
+
+.btn-history{
+  background: var(--estado-en-espera-bg);
+  color: #ffffff;
+  border: 1px solid rgba(142,93,15,0.12);
+}
+
+.btn-history:hover{
+  background: #e8d487;
+  color: #ffffff;
+}
+/* Icono personalizado del historial */
+
+.cliente-historial-icono{
+  width: 20px;
+  height: 20px;
+
+  flex: 0 0 20px;
+
+  display: inline-grid;
+  place-items: center;
+
+  color: inherit;
+  line-height: 1;
+}
+
+.cliente-historial-icono svg{
+  width: 20px;
+  height: 20px;
+
+  display: block;
+  overflow: visible;
+}
+
+
+/* Icono del encabezado del modal */
+
+#modalHistorialServiciosCliente
+.modal-title
+.cliente-historial-icono{
+  color: var(--estado-en-espera-text) !important;
+}
+
+
+/* ===================================================== */
+/* CONTENIDO DEL MODAL DE HISTORIAL */
+/* ===================================================== */
+
+.historial-cliente-resumen{
+  margin-bottom: 16px;
+  padding: 12px 15px;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  border:
+    1px solid
+    rgba(168,111,18,0.20);
+
+  border-radius: 14px;
+
+  background:
+    rgba(242,213,127,0.22);
+
+  color: var(--brown-main);
+}
+
+.historial-cliente-resumen span{
+  font-weight: 600;
+}
+
+.historial-cliente-resumen strong{
+  color: var(--estado-en-espera-text);
+  font-weight: 800;
+}
+
+
+/* Tabla del historial */
+
+.historial-servicios-table{
+  min-width: 760px;
+}
+
+
+/* Mensaje cuando no existen registros */
+
+.historial-servicios-vacio td{
+  padding: 32px 16px !important;
+
+  text-align: center;
+
+  color:
+    rgba(122,101,91,0.76) !important;
+
+  font-weight: 700;
+}
+
+.historial-servicios-vacio
+.cliente-historial-icono{
+  margin-right: 6px;
+
+  color:
+    var(--estado-en-espera-text) !important;
+
+  vertical-align: middle;
+}
+
+
+/* ===================================================== */
+/* DESACTIVAR */
+/* ===================================================== */
 
 .btn-deactivate{
   background: #dc3545;
@@ -1277,20 +1536,31 @@ body{
 
 .btn-deactivate:hover{
   background: #c82333;
+  color: white;
 }
+
+
+/* ===================================================== */
+/* DETALLES DEL CLIENTE */
+/* ===================================================== */
 
 .detalle-cliente .templo-input{
   min-height: 46px;
+
   display: flex;
   align-items: center;
 }
 
-.delete-client-name{
-  color: var(--gold-main) !important;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
 
+/* Nombre mostrado en confirmaciones */
+
+.delete-client-name{
+  margin-bottom: 8px;
+
+  color: var(--gold-main) !important;
+
+  font-weight: 800;
+}
 
 /* ===================================================== */
 /* DATATABLES */
@@ -1491,6 +1761,17 @@ body{
 .templo-modal input,
 .templo-modal .modal-title{
   color: var(--brown-main) !important;
+}
+
+/* Asterisco de campos obligatorios */
+.required-mark,
+.templo-modal label.form-label > .required-mark{
+  margin-left: 3px;
+
+  color: #c40056 !important;
+
+  font-weight: 900;
+  line-height: 1;
 }
 
 .templo-modal .form-control::placeholder,
@@ -4529,14 +4810,62 @@ body{
 
 
 /* ===================================================== */
-/* NAVEGACIÓN MÓVIL */
+/* NAVEGACIÓN RESPONSIVE */
 /* ===================================================== */
 
+
+/*
+ * ESCRITORIO ANGOSTO
+ *
+ * Se mantiene la navegación de escritorio, pero el usuario
+ * se convierte en círculo para que no se monte sobre
+ * la opción Proveedores.
+ */
+@media (min-width: 992px) and (max-width: 1100px){
+
+  .dock-menu{
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+
+  .session-actions{
+    gap: 6px;
+  }
+
+  .user-session-btn{
+    width: 50px;
+    height: 50px;
+
+    justify-content: center;
+
+    gap: 0;
+    margin: 0;
+    padding: 4px;
+
+    border-radius: 50%;
+  }
+
+  .user-session-photo{
+    width: 42px;
+    height: 42px;
+  }
+
+  .user-session-info,
+  .user-session-arrow{
+    display: none !important;
+  }
+}
+
+
+/*
+ * TABLETA Y TELÉFONO
+ */
 @media (max-width: 991.98px){
 
   .top-header{
     width: calc(100vw - 28px);
     min-height: 68px;
+
     margin: 18px auto 0;
   }
 
@@ -4546,22 +4875,50 @@ body{
 
   .mobile-nav-bar{
     display: flex !important;
+
+    /*
+     * Espacio reservado para los dos círculos:
+     * usuario + cerrar sesión.
+     */
+    padding-right: 116px;
   }
 
-  .user-session{
+  /*
+   * Ahora se posiciona el grupo completo.
+   */
+  .session-actions{
     top: 50% !important;
     right: 10px !important;
     left: auto !important;
+
+    gap: 6px;
+
     transform: translateY(-50%);
+  }
+
+  /*
+   * El usuario ya no se posiciona por separado.
+   */
+  .user-session{
+    position: relative !important;
+
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+
+    transform: none !important;
   }
 
   .user-session-btn{
     width: 48px;
     height: 48px;
+
     justify-content: center;
+
     gap: 0;
     margin: 0;
     padding: 3px;
+
     border-radius: 50%;
   }
 
@@ -4575,8 +4932,16 @@ body{
     display: none !important;
   }
 
+  .logout-header-btn{
+    width: 48px;
+    height: 48px;
+
+    flex-basis: 48px;
+  }
+
   .demo-content{
     width: calc(100vw - 28px);
+
     margin: 14px auto 0;
     padding-bottom: 24px;
   }
@@ -4591,11 +4956,15 @@ body{
 
   .mobile-offcanvas-body{
     overflow-y: auto;
+
     overscroll-behavior: contain;
   }
 }
 
 
+/*
+ * TELÉFONOS
+ */
 @media (max-width: 575.98px){
 
   .top-header,
@@ -4609,13 +4978,20 @@ body{
 
   .mobile-nav-bar{
     min-height: 64px;
-    padding: 6px 64px 6px 6px;
+
+    padding:
+      6px
+      108px
+      6px
+      6px;
+
     border-radius: 21px;
   }
 
   .mobile-menu-btn{
     width: 46px;
     height: 46px;
+
     flex-basis: 46px;
   }
 
@@ -4624,7 +5000,7 @@ body{
     height: 54px;
   }
 
-  .user-session{
+  .session-actions{
     right: 8px !important;
   }
 
@@ -4638,12 +5014,20 @@ body{
     height: 38px;
   }
 
+  .logout-header-btn{
+    width: 46px;
+    height: 46px;
+
+    flex-basis: 46px;
+  }
+
   .templo-offcanvas{
     --bs-offcanvas-width: min(330px, 90vw);
   }
 
   .mobile-offcanvas-header{
     min-height: 82px;
+
     padding: 12px 15px;
   }
 
@@ -4658,6 +5042,7 @@ body{
 
   .mobile-menu-link{
     min-height: 39px;
+
     padding: 6px 9px;
   }
 
@@ -4667,15 +5052,23 @@ body{
 
   .mobile-access-link{
     min-height: 35px;
+
     padding: 5px 9px;
   }
 }
 
 
-@media (max-width: 991.98px) and (hover: hover) and (pointer: fine){
+/*
+ * HOVER PARA DISPOSITIVOS CON CURSOR
+ */
+@media
+(max-width: 991.98px)
+and (hover: hover)
+and (pointer: fine){
 
   .mobile-menu-btn:hover{
     transform: translateY(-2px);
+
     background: var(--rose-row-hover);
     color: var(--rose-hover);
 
@@ -4686,35 +5079,42 @@ body{
 
   .mobile-menu-link:hover{
     transform: translateX(2px);
+
     border-color: rgba(216,167,177,0.42);
+
     background: rgba(249,232,238,0.78);
     color: var(--rose-hover);
-    box-shadow: 0 5px 12px rgba(74,60,49,0.06);
+
+    box-shadow:
+      0 5px 12px rgba(74,60,49,0.06);
   }
 
-  .mobile-menu-link:hover .mobile-menu-icon{
+  .mobile-menu-link:hover
+  .mobile-menu-icon{
     color: var(--rose-hover);
+
     transform: scale(1.05);
   }
 
   .mobile-access-link:hover{
     transform: translateX(2px);
+
     border-color: rgba(216,167,177,0.50);
+
     background: rgba(249,232,238,0.80);
     color: var(--rose-hover);
-    box-shadow: 0 5px 12px rgba(74,60,49,0.06);
+
+    box-shadow:
+      0 5px 12px rgba(74,60,49,0.06);
   }
 
-  .mobile-access-link:hover .mobile-access-icon{
+  .mobile-access-link:hover
+  .mobile-access-icon{
     color: var(--rose-hover);
+
     transform: scale(1.05);
   }
 }
-
-
-/* ===================================================== */
-/* REGISTRO DE SERVICIO */
-/* ===================================================== */
 
 @media (max-width: 992px){
 

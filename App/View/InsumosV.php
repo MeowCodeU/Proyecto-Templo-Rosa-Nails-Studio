@@ -98,7 +98,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre del insumo
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -138,7 +138,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-4">
                             <label class="form-label">
                                 Stock actual
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="number"
@@ -153,7 +153,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-4">
                             <label class="form-label">
                                 Stock mínimo
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="number"
@@ -180,7 +180,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Estado
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 name="estado_insumo"
@@ -265,7 +265,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Nombre del insumo
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="text"
@@ -305,7 +305,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-4">
                             <label class="form-label">
                                 Stock actual
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="number"
@@ -320,7 +320,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-4">
                             <label class="form-label">
                                 Stock mínimo
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="number"
@@ -348,7 +348,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         <div class="col-md-6">
                             <label class="form-label">
                                 Estado
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 name="estado_insumo"

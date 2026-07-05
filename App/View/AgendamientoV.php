@@ -206,7 +206,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Especialista asignada
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -244,7 +244,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Tipo de agendamiento
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -283,7 +283,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Estado
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -319,7 +319,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Fecha
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="date"
@@ -340,7 +340,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Hora
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="time"
@@ -589,7 +589,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Especialista asignada
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -627,7 +627,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Tipo de agendamiento
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -666,7 +666,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Estado
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <select
                                 class="form-select templo-input"
@@ -702,7 +702,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Fecha
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="date"
@@ -723,7 +723,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-label"
                             >
                                 Hora
-                            </label>
+                             <span class="required-mark" aria-hidden="true">*</span></label>
 
                             <input
                                 type="time"

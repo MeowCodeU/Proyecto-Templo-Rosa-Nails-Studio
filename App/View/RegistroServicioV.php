@@ -436,7 +436,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             class="form-label"
                                         >
                                             Servicio realizado
-                                        </label>
+                                         <span class="required-mark" aria-hidden="true">*</span></label>
 
                                         <select
                                             class="form-select templo-input"
@@ -485,7 +485,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             class="form-label"
                                         >
                                             Estado del agendamiento
-                                        </label>
+                                         <span class="required-mark" aria-hidden="true">*</span></label>
 
                                         <select
                                             class="form-select templo-input"

@@ -112,7 +112,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="nombres">
                         Nombres
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <input
                         type="text"
@@ -133,7 +133,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="apellidos">
                         Apellidos
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <input
                         type="text"
@@ -154,7 +154,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="cedula">
                         Cédula
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <input
                         type="text"
@@ -202,7 +202,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="correo">
                         Correo electrónico
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <input
                         type="email"
@@ -223,7 +223,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="clave">
                         Contraseña
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <input
                         type="password"
@@ -244,7 +244,7 @@ $escaparRegistro = static function ($valor): string {
 
                     <label for="rol">
                         Rol
-                    </label>
+                     <span class="required-mark" aria-hidden="true">*</span></label>
 
                     <select
                         id="rol"

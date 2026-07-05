@@ -330,7 +330,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del servicio</label>
+                            <label class="form-label">Nombre del servicio <span class="required-mark" aria-hidden="true">*</span></label>
                             <input
                                 type="text"
                                 name="nombre_servicio"
@@ -342,7 +342,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-3">
-                            <label class="form-label">Precio</label>
+                            <label class="form-label">Precio <span class="required-mark" aria-hidden="true">*</span></label>
                             <input
                                 type="number"
                                 name="precio"
@@ -377,7 +377,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_servicio" class="form-select templo-input" required>
                                 <option value="ACTIVO" selected>ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -420,12 +420,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del servicio</label>
+                            <label class="form-label">Nombre del servicio <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_servicio" id="editarNombreServicio" class="form-control templo-input" maxlength="120" required>
                         </div>
 
                         <div class="col-md-3">
-                            <label class="form-label">Precio</label>
+                            <label class="form-label">Precio <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="number" name="precio" id="editarPrecioServicio" class="form-control templo-input" min="0" step="0.01" required>
                         </div>
 
@@ -440,7 +440,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_servicio" id="editarEstadoServicio" class="form-select templo-input" required>
                                 <option value="ACTIVO">ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -525,12 +525,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del rol</label>
+                            <label class="form-label">Nombre del rol <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_rol" class="form-control templo-input" placeholder="Ingrese el nombre del rol" maxlength="40" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_rol" class="form-select templo-input" required>
                                 <option value="ACTIVO" selected>ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -577,12 +577,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del rol</label>
+                            <label class="form-label">Nombre del rol <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_rol" id="editarNombreRol" class="form-control templo-input" maxlength="40" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_rol" id="editarEstadoRol" class="form-select templo-input" required>
                                 <option value="ACTIVO">ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -670,12 +670,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del estado</label>
+                            <label class="form-label">Nombre del estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_estado" class="form-control templo-input" placeholder="Ingrese el nombre del estado" maxlength="50" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado del registro</label>
+                            <label class="form-label">Estado del registro <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_registro" class="form-select templo-input" required>
                                 <option value="ACTIVO" selected>ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -722,12 +722,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del estado</label>
+                            <label class="form-label">Nombre del estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_estado" id="editarNombreEstadoAgendamiento" class="form-control templo-input" maxlength="50" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado del registro</label>
+                            <label class="form-label">Estado del registro <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_registro" id="editarRegistroEstadoAgendamiento" class="form-select templo-input" required>
                                 <option value="ACTIVO">ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -815,12 +815,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del tipo</label>
+                            <label class="form-label">Nombre del tipo <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_tipo_agendamiento" class="form-control templo-input" placeholder="Ingrese el nombre del tipo" maxlength="60" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_tipo_agendamiento" class="form-select templo-input" required>
                                 <option value="ACTIVO" selected>ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
@@ -867,12 +867,12 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nombre del tipo</label>
+                            <label class="form-label">Nombre del tipo <span class="required-mark" aria-hidden="true">*</span></label>
                             <input type="text" name="nombre_tipo_agendamiento" id="editarNombreTipoAgendamiento" class="form-control templo-input" maxlength="60" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado</label>
+                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
                             <select name="estado_tipo_agendamiento" id="editarEstadoTipoAgendamiento" class="form-select templo-input" required>
                                 <option value="ACTIVO">ACTIVO</option>
                                 <option value="INACTIVO">INACTIVO</option>
