@@ -481,41 +481,6 @@ require_once __DIR__ . '/Layout/Header.php';
                                     <div class="col-md-6 mb-3">
 
                                         <label
-                                            for="estadoServicio"
-                                            class="form-label"
-                                        >
-                                            Estado del agendamiento
-                                         <span class="required-mark" aria-hidden="true">*</span></label>
-
-                                        <select
-                                            class="form-select templo-input"
-                                            id="estadoServicio"
-                                            name="id_estado_agendamiento"
-                                            required
-                                        >
-                                            <option value="">
-                                                Seleccionar estado...
-                                            </option>
-
-                                            <option value="ACTIVO">
-                                                Activo
-                                            </option>
-
-                                            <option value="REALIZADO">
-                                                Realizado
-                                            </option>
-
-                                            <option value="CANCELADO">
-                                                Cancelado
-                                            </option>
-                                        </select>
-
-                                    </div>
-
-
-                                    <div class="col-md-6 mb-3">
-
-                                        <label
                                             for="fechaServicio"
                                             class="form-label"
                                         >
@@ -1003,7 +968,7 @@ require_once __DIR__ . '/Layout/Header.php';
                             for="filtroCatalogoServicio"
                             class="form-label"
                         >
-                            Filtrar por técnica
+                            Filtrar por servicio
                         </label>
 
                         <select

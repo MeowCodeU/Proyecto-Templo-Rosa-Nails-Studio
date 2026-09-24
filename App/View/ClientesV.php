@@ -33,7 +33,7 @@ require_once __DIR__ . '/Layout/Header.php';
                             <th>Teléfono</th>
                             <th># Visitas</th>
                             <th>Alergias</th>
-                            <th>Acciones</th>
+                            <th class="columna-acciones">Acciones</th>
                         </tr>
                     </thead>
 
@@ -47,7 +47,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 <td><?php echo htmlspecialchars($cliente['visitas'] ?? 0, ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars($cliente['alergias'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                <td>
+                                <td class="columna-acciones">
                                     <div class="btn-group-actions">
 
                                         <!-- Botón Detalles -->
@@ -69,7 +69,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             title="Ver detalles"
                                             aria-label="Ver detalles del cliente"
                                         >
-                                            <span class="cliente-detalle-icono" aria-hidden="true">
+                                            <span class="detalle-accion-icono" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24" fill="none">
                                                     <path
                                                         d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
@@ -402,119 +402,314 @@ require_once __DIR__ . '/Layout/Header.php';
 
 
 <!-- Modal Detalle Cliente -->
-<div class="modal fade" id="modalDetalleCliente" tabindex="-1" aria-labelledby="modalDetalleClienteLabel" aria-hidden="true">
+<div
+    class="modal fade"
+    id="modalDetalleCliente"
+    tabindex="-1"
+    aria-labelledby="modalDetalleClienteLabel"
+    aria-hidden="true"
+>
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content templo-modal">
+        <div class="modal-content templo-modal detalle-ficha-modal">
 
             <div class="modal-header">
 
-    <h5
-        class="modal-title"
-        id="modalDetalleClienteLabel"
-    >
-        <span
-            class="cliente-detalle-icono"
-            aria-hidden="true"
-        >
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-                <path
-                    d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    fill="none"
-                />
+                <h5
+                    class="modal-title"
+                    id="modalDetalleClienteLabel"
+                >
+                    <span
+                        class="detalle-ficha-title-icon"
+                        aria-hidden="true"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        >
+                            <path
+                                d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                fill="none"
+                            />
 
-                <path
-                    d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
-                    fill="currentColor"
-                />
-            </svg>
-        </span>
+                            <path
+                                d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </span>
 
-        Detalles del Cliente
-    </h5>
+                    Detalles del Cliente
+                </h5>
 
-    <button
-        type="button"
-        class="btn-close"
-        data-bs-dismiss="modal"
-        aria-label="Cerrar"
-    ></button>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Cerrar"
+                ></button>
 
-</div>
+            </div>
 
-            <div class="modal-body">
-                <div class="row g-3 detalle-cliente">
 
-                    <div class="col-md-6">
-                        <label class="form-label">Cédula</label>
-                        <p id="detalleCedula" class="templo-input mb-0"></p>
+            <div class="modal-body detalle-ficha-modal-body">
+
+                <div class="detalle-ficha-panel">
+
+                    <!-- Encabezado de la ficha -->
+                    <div class="detalle-ficha-intro">
+
+                        <span
+                            class="detalle-ficha-intro-icon"
+                            aria-hidden="true"
+                        >
+                            <!-- Icono personalizado reutilizado de Manual de usuario -->
+                            <svg
+                                class="detalle-ficha-intro-svg"
+                                viewBox="0 0 64 64"
+                                fill="none"
+                            >
+                                <rect
+                                    x="8"
+                                    y="8"
+                                    width="48"
+                                    height="48"
+                                    rx="8"
+                                    stroke="currentColor"
+                                    stroke-width="2.5"
+                                    fill="none"
+                                ></rect>
+
+                                <path d="M27 18H48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M27 28H48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M27 38H48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M27 48H48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+
+                                <path
+                                    d="M18 14
+                                       C16.9 12.4 14.4 12.3 13.4 14
+                                       C12.3 15.8 13.3 17.9 18 21.5
+                                       C22.7 17.9 23.7 15.8 22.6 14
+                                       C21.6 12.3 19.1 12.4 18 14Z"
+                                    fill="currentColor"
+                                ></path>
+
+                                <path
+                                    d="M18 24
+                                       C16.9 22.4 14.4 22.3 13.4 24
+                                       C12.3 25.8 13.3 27.9 18 31.5
+                                       C22.7 27.9 23.7 25.8 22.6 24
+                                       C21.6 22.3 19.1 22.4 18 24Z"
+                                    fill="currentColor"
+                                ></path>
+
+                                <path
+                                    d="M18 34
+                                       C16.9 32.4 14.4 32.3 13.4 34
+                                       C12.3 35.8 13.3 37.9 18 41.5
+                                       C22.7 37.9 23.7 35.8 22.6 34
+                                       C21.6 32.3 19.1 32.4 18 34Z"
+                                    fill="currentColor"
+                                ></path>
+
+                                <path
+                                    d="M18 44
+                                       C16.9 42.4 14.4 42.3 13.4 44
+                                       C12.3 45.8 13.3 47.9 18 51.5
+                                       C22.7 47.9 23.7 45.8 22.6 44
+                                       C21.6 42.3 19.1 42.4 18 44Z"
+                                    fill="currentColor"
+                                ></path>
+                            </svg>
+                        </span>
+
+                        <div class="detalle-ficha-intro-content">
+                            <p class="detalle-ficha-intro-title mb-0">
+                                Ficha del cliente
+                            </p>
+                        </div>
+
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Teléfono</label>
-                        <p id="detalleTelefono" class="templo-input mb-0"></p>
-                    </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Nombre</label>
-                        <p id="detalleNombre" class="templo-input mb-0"></p>
-                    </div>
+                    <!-- Datos del cliente -->
+                    <div class="row g-2 detalle-ficha-grid">
 
-                    <div class="col-md-6">
-                        <label class="form-label">Apellido</label>
-                        <p id="detalleApellido" class="templo-input mb-0"></p>
-                    </div>
+                        <!-- Cédula -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-person-vcard"></i>
+                                </span>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Ciudad</label>
-                        <p id="detalleCiudad" class="templo-input mb-0"></p>
-                    </div>
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Cédula</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleCedula"></p>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Correo</label>
-                        <p id="detalleCorreo" class="templo-input mb-0"></p>
-                    </div>
 
-                    <div class="col-md-12">
-                        <label class="form-label">Dirección</label>
-                        <p id="detalleDireccion" class="templo-input mb-0"></p>
-                    </div>
+                        <!-- Teléfono -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-telephone-fill"></i>
+                                </span>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Alergias u observaciones</label>
-                        <p id="detalleAlergias" class="templo-input mb-0"></p>
-                    </div>
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Teléfono</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleTelefono"></p>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label"># Visitas</label>
-                        <p id="detalleVisitas" class="templo-input mb-0"></p>
-                    </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Estado</label>
-                        <p id="detalleEstado" class="templo-input mb-0">Activo</p>
+                        <!-- Nombre -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-person-heart"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Nombre</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleNombre"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Apellido -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-person-heart"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Apellido</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleApellido"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Ciudad -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Ciudad</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleCiudad"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Correo -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-envelope-heart"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Correo</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleCorreo"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Dirección -->
+                        <div class="col-12">
+                            <div class="detalle-ficha-card detalle-ficha-card-wide">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-house-heart-fill"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Dirección</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleDireccion"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Alergias / observaciones -->
+                        <div class="col-12">
+                            <div class="detalle-ficha-card detalle-ficha-card-wide detalle-ficha-card-emphasis">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-heart-pulse"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Alergias u observaciones</span>
+                                    <p class="detalle-ficha-value mb-0" id="detalleAlergias"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Número de visitas -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card detalle-ficha-card-emphasis h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-calendar-heart-fill"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Número de visitas</span>
+                                    <p class="detalle-ficha-value detalle-ficha-value-highlight mb-0" id="detalleVisitas"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <div class="detalle-ficha-card detalle-ficha-card-emphasis h-100">
+                                <span class="detalle-ficha-card-icon" aria-hidden="true">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
+
+                                <div class="detalle-ficha-card-content">
+                                    <span class="detalle-ficha-label">Estado</span>
+                                    <span class="detalle-ficha-status" id="detalleEstado">ACTIVO</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
+
             </div>
 
+
             <div class="modal-footer">
-                <button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">
+
+                <button
+                    type="button"
+                    class="btn-templo-secondary"
+                    data-bs-dismiss="modal"
+                >
                     <i class="bi bi-x-circle"></i>
                     Cerrar
                 </button>
+
             </div>
 
         </div>
     </div>
 </div>
-
 
 <!-- Modal Historial de Servicios del Cliente -->
 <div

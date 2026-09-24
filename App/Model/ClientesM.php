@@ -2,10 +2,11 @@
 
 namespace App\Model;
 
+use App\Interfaces\CrudInterface;
 use App\Config\Database;
 use PDO;
 
-class ClientesM extends Database
+class ClientesM extends Database implements CrudInterface
 {
     /* Atributo de conexión del modelo */
     private $conexionMD;
@@ -22,21 +23,55 @@ class ClientesM extends Database
     /* Atributos de la tabla clientes */
     private $alergias;
 
+
     /* Setters: asignan valores a los atributos privados */
-    public function set_Cedula($cedula) {$this->cedula = $cedula;}
-    public function set_Nombre($nombre) {$this->nombre = $nombre;}
-    public function set_Apellido($apellido) {$this->apellido = $apellido;}
-    public function set_Telefono($telefono) {$this->telefono = $telefono;}
-    public function set_Correo($correo) {$this->correo = $correo;}
-    public function set_Direccion($direccion) {$this->direccion = $direccion;}
-    public function set_Ciudad($ciudad) {$this->ciudad = $ciudad;}
-    public function set_Alergias($alergias) {$this->alergias = $alergias;}
+    public function set_Cedula($cedula)
+    {
+        $this->cedula = $cedula;
+    }
+
+    public function set_Nombre($nombre)
+    {
+        $this->nombre = $nombre;
+    }
+
+    public function set_Apellido($apellido)
+    {
+        $this->apellido = $apellido;
+    }
+
+    public function set_Telefono($telefono)
+    {
+        $this->telefono = $telefono;
+    }
+
+    public function set_Correo($correo)
+    {
+        $this->correo = $correo;
+    }
+
+    public function set_Direccion($direccion)
+    {
+        $this->direccion = $direccion;
+    }
+
+    public function set_Ciudad($ciudad)
+    {
+        $this->ciudad = $ciudad;
+    }
+
+    public function set_Alergias($alergias)
+    {
+        $this->alergias = $alergias;
+    }
+
 
     /* Constructor: obtiene la conexión heredada de Database */
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
+
 
     /* Consultar: obtiene los clientes activos y calcula sus visitas */
     public function consultar()
@@ -57,9 +92,10 @@ class ClientesM extends Database
                         SELECT COUNT(*)
                         FROM agendamientos a
                         INNER JOIN estados_agendamientos ea
-                            ON ea.id_estado_agendamiento = a.id_estado_agendamiento
+                            ON ea.id_estado_agendamiento =
+                               a.id_estado_agendamiento
                         WHERE a.id_cliente = c.id_cliente
-                        AND ea.nombre_estado = 'REALIZADO'
+                        AND ea.nombre_estado = 'REALIZADA'
                     ) AS visitas
                 FROM clientes c
                 INNER JOIN personas p
@@ -73,40 +109,96 @@ class ClientesM extends Database
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
     /* Registrar: inserta primero la persona y luego el cliente */
     public function registrar()
     {
         try {
             $this->conexionMD->beginTransaction();
 
-            $sqlPersona = "INSERT INTO personas
-                            (cedula, nombre, apellido, telefono, correo, direccion, ciudad)
-                           VALUES
-                            (:cedula, :nombre, :apellido, :telefono, :correo, :direccion, :ciudad)";
+            $sqlPersona = "INSERT INTO personas (
+                                cedula,
+                                nombre,
+                                apellido,
+                                telefono,
+                                correo,
+                                direccion,
+                                ciudad
+                            ) VALUES (
+                                :cedula,
+                                :nombre,
+                                :apellido,
+                                :telefono,
+                                :correo,
+                                :direccion,
+                                :ciudad
+                            )";
 
-            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
+            $stmtPersona =
+                $this->conexionMD->prepare($sqlPersona);
 
-            $stmtPersona->bindParam(':cedula', $this->cedula);
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
+            $stmtPersona->bindParam(
+                ':cedula',
+                $this->cedula
+            );
+
+            $stmtPersona->bindParam(
+                ':nombre',
+                $this->nombre
+            );
+
+            $stmtPersona->bindParam(
+                ':apellido',
+                $this->apellido
+            );
+
+            $stmtPersona->bindParam(
+                ':telefono',
+                $this->telefono
+            );
+
+            $stmtPersona->bindParam(
+                ':correo',
+                $this->correo
+            );
+
+            $stmtPersona->bindParam(
+                ':direccion',
+                $this->direccion
+            );
+
+            $stmtPersona->bindParam(
+                ':ciudad',
+                $this->ciudad
+            );
 
             $stmtPersona->execute();
 
-            $idPersona = $this->conexionMD->lastInsertId();
+            $idPersona =
+                $this->conexionMD->lastInsertId();
 
-            $sqlCliente = "INSERT INTO clientes
-                            (id_persona, alergias, estado_cliente)
-                           VALUES
-                            (:id_persona, :alergias, 'ACTIVO')";
+            $sqlCliente = "INSERT INTO clientes (
+                                id_persona,
+                                alergias,
+                                estado_cliente
+                            ) VALUES (
+                                :id_persona,
+                                :alergias,
+                                'ACTIVO'
+                            )";
 
-            $stmtCliente = $this->conexionMD->prepare($sqlCliente);
+            $stmtCliente =
+                $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(':id_persona', $idPersona);
-            $stmtCliente->bindParam(':alergias', $this->alergias);
+            $stmtCliente->bindParam(
+                ':id_persona',
+                $idPersona
+            );
+
+            $stmtCliente->bindParam(
+                ':alergias',
+                $this->alergias
+            );
 
             $stmtCliente->execute();
 
@@ -121,6 +213,7 @@ class ClientesM extends Database
             throw $e;
         }
     }
+
 
     /* Buscar: obtiene un cliente específico por su cédula */
     public function buscar()
@@ -141,9 +234,10 @@ class ClientesM extends Database
                         SELECT COUNT(*)
                         FROM agendamientos a
                         INNER JOIN estados_agendamientos ea
-                            ON ea.id_estado_agendamiento = a.id_estado_agendamiento
+                            ON ea.id_estado_agendamiento =
+                               a.id_estado_agendamiento
                         WHERE a.id_cliente = c.id_cliente
-                        AND ea.nombre_estado = 'REALIZADO'
+                        AND ea.nombre_estado = 'REALIZADA'
                     ) AS visitas
                 FROM clientes c
                 INNER JOIN personas p
@@ -153,11 +247,17 @@ class ClientesM extends Database
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindParam(':cedula', $this->cedula);
+
+        $stmt->bindParam(
+            ':cedula',
+            $this->cedula
+        );
+
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
 
     /* Modificar: actualiza los datos de la persona y del cliente */
     public function modificar()
@@ -174,15 +274,43 @@ class ClientesM extends Database
                                 ciudad = :ciudad
                            WHERE cedula = :cedula";
 
-            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
+            $stmtPersona =
+                $this->conexionMD->prepare($sqlPersona);
 
-            $stmtPersona->bindParam(':cedula', $this->cedula);
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
+            $stmtPersona->bindParam(
+                ':cedula',
+                $this->cedula
+            );
+
+            $stmtPersona->bindParam(
+                ':nombre',
+                $this->nombre
+            );
+
+            $stmtPersona->bindParam(
+                ':apellido',
+                $this->apellido
+            );
+
+            $stmtPersona->bindParam(
+                ':telefono',
+                $this->telefono
+            );
+
+            $stmtPersona->bindParam(
+                ':correo',
+                $this->correo
+            );
+
+            $stmtPersona->bindParam(
+                ':direccion',
+                $this->direccion
+            );
+
+            $stmtPersona->bindParam(
+                ':ciudad',
+                $this->ciudad
+            );
 
             $stmtPersona->execute();
 
@@ -192,10 +320,18 @@ class ClientesM extends Database
                            SET c.alergias = :alergias
                            WHERE p.cedula = :cedula";
 
-            $stmtCliente = $this->conexionMD->prepare($sqlCliente);
+            $stmtCliente =
+                $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(':cedula', $this->cedula);
-            $stmtCliente->bindParam(':alergias', $this->alergias);
+            $stmtCliente->bindParam(
+                ':cedula',
+                $this->cedula
+            );
+
+            $stmtCliente->bindParam(
+                ':alergias',
+                $this->alergias
+            );
 
             $stmtCliente->execute();
 
@@ -211,6 +347,7 @@ class ClientesM extends Database
         }
     }
 
+
     /* Eliminar: cambia el estado del cliente a INACTIVO */
     public function eliminar()
     {
@@ -221,7 +358,11 @@ class ClientesM extends Database
                 WHERE p.cedula = :cedula";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindParam(':cedula', $this->cedula);
+
+        $stmt->bindParam(
+            ':cedula',
+            $this->cedula
+        );
 
         return $stmt->execute();
     }

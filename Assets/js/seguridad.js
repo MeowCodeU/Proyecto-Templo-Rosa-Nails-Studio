@@ -1,16 +1,20 @@
 /* ===================================================== */
-/* DATATABLE DE USUARIOS */
+/* DATATABLES DE SEGURIDAD */
 /* ===================================================== */
 
 $(document).ready(function () {
 
-    const selectorTabla = "#tablaUsuarios";
+    /* ================================================= */
+    /* TABLA DE USUARIOS */
+    /* ================================================= */
+
+    const selectorTablaUsuarios = "#tablaUsuarios";
 
     if (
-        $(selectorTabla).length &&
-        !$.fn.DataTable.isDataTable(selectorTabla)
+        $(selectorTablaUsuarios).length &&
+        !$.fn.DataTable.isDataTable(selectorTablaUsuarios)
     ) {
-        $(selectorTabla).DataTable({
+        $(selectorTablaUsuarios).DataTable({
 
             language: {
                 url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
@@ -39,6 +43,73 @@ $(document).ready(function () {
 
         });
     }
+
+
+    /* ================================================= */
+    /* TABLA DE ROLES */
+    /* ================================================= */
+
+    const selectorTablaRoles = "#tablaRoles";
+
+    if (
+        $(selectorTablaRoles).length &&
+        !$.fn.DataTable.isDataTable(selectorTablaRoles)
+    ) {
+        $(selectorTablaRoles).DataTable({
+
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
+            },
+
+            pageLength: 4,
+
+            lengthMenu: [
+                4,
+                8,
+                16,
+                20
+            ],
+
+            responsive: false,
+
+            autoWidth: false,
+
+            columnDefs: [
+                {
+                    targets: -1,
+                    orderable: false,
+                    searchable: false
+                }
+            ]
+
+        });
+    }
+
+
+    /* ================================================= */
+    /* AJUSTAR DATATABLES AL CAMBIAR DE PESTAÑA */
+    /* ================================================= */
+
+    document
+        .querySelectorAll('#seguridadTabs button[data-bs-toggle="tab"]')
+        .forEach(function (boton) {
+
+            boton.addEventListener(
+                "shown.bs.tab",
+                function () {
+
+                    $.fn.dataTable
+                        .tables({
+                            visible: true,
+                            api: true
+                        })
+                        .columns
+                        .adjust();
+
+                }
+            );
+
+        });
 
 });
 
@@ -125,6 +196,285 @@ prepararConfirmacionClave(
 );
 
 
+
+/* ===================================================== */
+/* BUSCAR PERSONA POR CÉDULA */
+/* ===================================================== */
+
+const nuevoUsuarioCedula =
+    document.getElementById(
+        "nuevoUsuarioCedula"
+    );
+
+const nuevoUsuarioIdPersona =
+    document.getElementById(
+        "nuevoUsuarioIdPersona"
+    );
+
+const nuevoUsuarioNombre =
+    document.getElementById(
+        "nuevoUsuarioNombre"
+    );
+
+const nuevoUsuarioApellido =
+    document.getElementById(
+        "nuevoUsuarioApellido"
+    );
+
+const nuevoUsuarioTelefono =
+    document.getElementById(
+        "nuevoUsuarioTelefono"
+    );
+
+const nuevoUsuarioCorreo =
+    document.getElementById(
+        "nuevoUsuarioCorreo"
+    );
+
+const nuevoUsuarioDireccion =
+    document.getElementById(
+        "nuevoUsuarioDireccion"
+    );
+
+const nuevoUsuarioCiudad =
+    document.getElementById(
+        "nuevoUsuarioCiudad"
+    );
+
+let datosPersonaAutocompletados = false;
+
+
+function limpiarDatosPersonaUsuario() {
+
+    if (nuevoUsuarioIdPersona) {
+        nuevoUsuarioIdPersona.value = "";
+    }
+
+    if (nuevoUsuarioNombre) {
+        nuevoUsuarioNombre.value = "";
+    }
+
+    if (nuevoUsuarioApellido) {
+        nuevoUsuarioApellido.value = "";
+    }
+
+    if (nuevoUsuarioTelefono) {
+        nuevoUsuarioTelefono.value = "";
+    }
+
+    if (nuevoUsuarioCorreo) {
+        nuevoUsuarioCorreo.value = "";
+    }
+
+    if (nuevoUsuarioDireccion) {
+        nuevoUsuarioDireccion.value = "";
+    }
+
+    if (nuevoUsuarioCiudad) {
+        nuevoUsuarioCiudad.value = "";
+    }
+
+
+    datosPersonaAutocompletados = false;
+
+}
+
+
+function llenarDatosPersonaUsuario(persona) {
+
+    if (!persona) {
+        return;
+    }
+
+
+    if (nuevoUsuarioIdPersona) {
+        nuevoUsuarioIdPersona.value =
+            persona.id_persona || "";
+    }
+
+    if (nuevoUsuarioNombre) {
+        nuevoUsuarioNombre.value =
+            persona.nombre || "";
+    }
+
+    if (nuevoUsuarioApellido) {
+        nuevoUsuarioApellido.value =
+            persona.apellido || "";
+    }
+
+    if (nuevoUsuarioTelefono) {
+        nuevoUsuarioTelefono.value =
+            persona.telefono || "";
+    }
+
+    if (nuevoUsuarioCorreo) {
+        nuevoUsuarioCorreo.value =
+            persona.correo || "";
+    }
+
+    if (nuevoUsuarioDireccion) {
+        nuevoUsuarioDireccion.value =
+            persona.direccion || "";
+    }
+
+    if (nuevoUsuarioCiudad) {
+        nuevoUsuarioCiudad.value =
+            persona.ciudad || "";
+    }
+
+
+    datosPersonaAutocompletados = true;
+
+}
+
+
+function buscarPersonaUsuario() {
+
+    if (!nuevoUsuarioCedula) {
+        return;
+    }
+
+
+    const cedula =
+        nuevoUsuarioCedula.value.trim();
+
+
+    nuevoUsuarioCedula.setCustomValidity(
+        ""
+    );
+
+
+    if (cedula === "") {
+
+        if (datosPersonaAutocompletados) {
+            limpiarDatosPersonaUsuario();
+        } else if (nuevoUsuarioIdPersona) {
+            nuevoUsuarioIdPersona.value = "";
+        }
+
+        return;
+    }
+
+
+    const datos = new FormData();
+
+    datos.append(
+        "accion",
+        "buscar_persona"
+    );
+
+    datos.append(
+        "cedula",
+        cedula
+    );
+
+
+    fetch(
+        "Index.php?url=seguridad",
+        {
+            method: "POST",
+            body: datos
+        }
+    )
+        .then(function (respuesta) {
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    "No se pudo consultar la persona."
+                );
+            }
+
+            return respuesta.json();
+
+        })
+        .then(function (resultado) {
+
+            /*
+             * Si la cédula cambió mientras se hacía
+             * la consulta, se ignora la respuesta.
+             */
+            if (
+                nuevoUsuarioCedula.value.trim() !==
+                cedula
+            ) {
+                return;
+            }
+
+
+            if (!resultado.encontrada) {
+
+                if (datosPersonaAutocompletados) {
+                    limpiarDatosPersonaUsuario();
+                } else if (nuevoUsuarioIdPersona) {
+                    nuevoUsuarioIdPersona.value = "";
+                }
+
+                return;
+            }
+
+
+            llenarDatosPersonaUsuario(
+                resultado.persona
+            );
+
+
+            if (resultado.es_usuario) {
+
+                nuevoUsuarioCedula.setCustomValidity(
+                    "Esta persona ya se encuentra registrada como usuario."
+                );
+
+                nuevoUsuarioCedula.reportValidity();
+
+            } else {
+
+                nuevoUsuarioCedula.setCustomValidity(
+                    ""
+                );
+            }
+
+        })
+        .catch(function (error) {
+
+            console.error(error);
+
+        });
+
+}
+
+
+if (nuevoUsuarioCedula) {
+
+    nuevoUsuarioCedula.addEventListener(
+        "input",
+        function () {
+
+            nuevoUsuarioCedula.setCustomValidity(
+                ""
+            );
+
+
+            if (datosPersonaAutocompletados) {
+
+                limpiarDatosPersonaUsuario();
+
+            } else if (nuevoUsuarioIdPersona) {
+
+                nuevoUsuarioIdPersona.value = "";
+            }
+
+        }
+    );
+
+
+    nuevoUsuarioCedula.addEventListener(
+        "blur",
+        buscarPersonaUsuario
+    );
+
+}
+
+
 /* ===================================================== */
 /* MODAL EDITAR USUARIO */
 /* ===================================================== */
@@ -179,6 +529,17 @@ document.addEventListener(
                 "editarUsuarioCorreo"
             );
 
+        const direccion =
+            document.getElementById(
+                "editarUsuarioDireccion"
+            );
+
+        const ciudad =
+            document.getElementById(
+                "editarUsuarioCiudad"
+            );
+
+
         const rol =
             document.getElementById(
                 "editarUsuarioRol"
@@ -219,6 +580,17 @@ document.addEventListener(
             correo.value =
                 boton.dataset.correo || "";
         }
+
+        if (direccion) {
+            direccion.value =
+                boton.dataset.direccion || "";
+        }
+
+        if (ciudad) {
+            ciudad.value =
+                boton.dataset.ciudad || "";
+        }
+
 
         if (rol) {
             rol.value =
@@ -385,7 +757,7 @@ document.addEventListener(
 
             if (icono) {
                 icono.className =
-                    "bi bi-person-dash";
+                    "bi bi-trash-fill";
             }
 
             if (botonConfirmar) {
@@ -394,7 +766,7 @@ document.addEventListener(
                     "btn-templo-danger";
 
                 botonConfirmar.innerHTML =
-                    '<i class="bi bi-person-dash"></i> Sí, desactivar';
+                    '<i class="bi bi-trash-fill"></i> Sí, desactivar';
 
             }
 
@@ -437,6 +809,140 @@ document.addEventListener(
 
 
 /* ===================================================== */
+/* MODAL EDITAR ROL */
+/* ===================================================== */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const boton =
+            event.target.closest(
+                ".btnEditarRol"
+            );
+
+
+        if (!boton) {
+            return;
+        }
+
+
+        const idRol =
+            document.getElementById(
+                "editarIdRol"
+            );
+
+        const nombreRol =
+            document.getElementById(
+                "editarNombreRol"
+            );
+
+        const descripcionRol =
+            document.getElementById(
+                "editarDescripcionRol"
+            );
+
+        const estadoRol =
+            document.getElementById(
+                "editarEstadoRol"
+            );
+
+
+        if (idRol) {
+            idRol.value =
+                boton.dataset.idRol || "";
+        }
+
+        if (nombreRol) {
+            nombreRol.value =
+                boton.dataset.nombreRol || "";
+        }
+
+        if (descripcionRol) {
+            descripcionRol.value =
+                boton.dataset.descripcion || "";
+        }
+
+        if (estadoRol) {
+            estadoRol.value =
+                boton.dataset.estadoRol || "";
+        }
+
+    }
+);
+
+
+/* ===================================================== */
+/* MODAL CAMBIAR ESTADO DEL ROL */
+/* ===================================================== */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const boton =
+            event.target.closest(
+                ".btnDesactivarRol"
+            );
+
+
+        if (!boton) {
+            return;
+        }
+
+
+        const idRol =
+            boton.dataset.idRol || "";
+
+        const nombreRol =
+            boton.dataset.nombreRol || "";
+
+        const estadoActual =
+            (
+                boton.dataset.estadoRol ||
+                "ACTIVO"
+            ).toUpperCase();
+
+        const nuevoEstado =
+            estadoActual === "ACTIVO"
+                ? "INACTIVO"
+                : "ACTIVO";
+
+
+        const campoId =
+            document.getElementById(
+                "estadoIdRol"
+            );
+
+        const campoNuevoEstado =
+            document.getElementById(
+                "nuevoEstadoRol"
+            );
+
+        const nombre =
+            document.getElementById(
+                "nombreEstadoRol"
+            );
+
+
+        if (campoId) {
+            campoId.value = idRol;
+        }
+
+        if (campoNuevoEstado) {
+            campoNuevoEstado.value =
+                nuevoEstado;
+        }
+
+        if (nombre) {
+            nombre.textContent = nombreRol;
+        }
+
+    }
+);
+
+
+/* ===================================================== */
 /* LIMPIAR FORMULARIOS AL CERRAR LOS MODALES */
 /* ===================================================== */
 
@@ -448,6 +954,11 @@ const modalNuevoUsuario =
 const modalRestablecerClave =
     document.getElementById(
         "modalRestablecerClave"
+    );
+
+const modalNuevoRol =
+    document.getElementById(
+        "modalNuevoRol"
     );
 
 
@@ -465,6 +976,18 @@ if (modalNuevoUsuario) {
             if (formulario) {
                 formulario.reset();
             }
+
+            if (nuevoUsuarioCedula) {
+                nuevoUsuarioCedula.setCustomValidity(
+                    ""
+                );
+            }
+
+            if (nuevoUsuarioIdPersona) {
+                nuevoUsuarioIdPersona.value = "";
+            }
+
+            datosPersonaAutocompletados = false;
 
         }
     );
@@ -494,6 +1017,25 @@ if (modalRestablecerClave) {
 
             if (usuario) {
                 usuario.value = "";
+            }
+
+        }
+    );
+
+}
+
+
+if (modalNuevoRol) {
+
+    modalNuevoRol.addEventListener(
+        "hidden.bs.modal",
+        function () {
+
+            const formulario =
+                modalNuevoRol.querySelector("form");
+
+            if (formulario) {
+                formulario.reset();
             }
 
         }

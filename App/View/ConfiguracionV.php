@@ -52,23 +52,6 @@ require_once __DIR__ . '/Layout/Header.php';
                     Servicios
                 </button>
             </li>
-
-            <li class="nav-item" role="presentation">
-                <button
-                    class="nav-link"
-                    id="roles-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#roles"
-                    type="button"
-                    role="tab"
-                    aria-controls="roles"
-                    aria-selected="false"
-                >
-                    <i class="bi bi-person-heart"></i>
-                    Roles
-                </button>
-            </li>
-
             <li class="nav-item" role="presentation">
                 <button
                     class="nav-link"
@@ -148,7 +131,134 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </thead>
 
                                 <tbody>
-                                    <!-- Los registros vendrán del modelo. -->
+                                    <?php foreach (($listaServicios ?? []) as $servicio) { ?>
+                                        <tr>
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $servicio['nombre_servicio'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $servicio['descripcion'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $servicio['precio'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $servicio['duracion_estimada'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php
+                                                $estadoServicioVista = strtoupper(trim((string) (
+                                                    $servicio['estado_servicio'] ?? ''
+                                                )));
+                                                ?>
+
+                                                <span class="badge <?php echo $estadoServicioVista === 'ACTIVO'
+                                                    ? 'estado-registro-activo'
+                                                    : 'estado-registro-inactivo'; ?>">
+                                                    <?php echo htmlspecialchars(
+                                                        $estadoServicioVista,
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ); ?>
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group-actions">
+
+                                                    <!-- Botón Editar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-edit btnEditarServicio"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarServicio"
+                                                        data-id-servicio="<?php echo htmlspecialchars(
+                                                            (string) ($servicio['id_servicio'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-servicio="<?php echo htmlspecialchars(
+                                                            $servicio['nombre_servicio'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-descripcion="<?php echo htmlspecialchars(
+                                                            $servicio['descripcion'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-precio="<?php echo htmlspecialchars(
+                                                            $servicio['precio'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-duracion-estimada="<?php echo htmlspecialchars(
+                                                            $servicio['duracion_estimada'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-estado-servicio="<?php echo htmlspecialchars(
+                                                            $servicio['estado_servicio'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Editar servicio"
+                                                        aria-label="Editar servicio"
+                                                    >
+                                                        <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                    <!-- Botón Desactivar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-deactivate btnDesactivarServicio"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEstadoServicio"
+                                                        data-id-servicio="<?php echo htmlspecialchars(
+                                                            (string) ($servicio['id_servicio'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-servicio="<?php echo htmlspecialchars(
+                                                            $servicio['nombre_servicio'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-estado-servicio="<?php echo htmlspecialchars(
+                                                            $servicio['estado_servicio'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Desactivar servicio"
+                                                        aria-label="Desactivar servicio"
+                                                    >
+                                                        <i class="bi bi-trash-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
                                 </tbody>
                             </table>
                         </div>
@@ -156,54 +266,6 @@ require_once __DIR__ . '/Layout/Header.php';
                 </div>
             </div>
 
-            <!-- ================================================= -->
-            <!-- ROLES -->
-            <!-- ================================================= -->
-            <div
-                class="tab-pane fade"
-                id="roles"
-                role="tabpanel"
-                aria-labelledby="roles-tab"
-                tabindex="0"
-            >
-                <div class="config-tab-head">
-                    <h5 class="config-title">Gestión de Roles</h5>
-
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoRol"
-                    >
-                        <i class="bi bi-plus-circle"></i>
-                        Nuevo Rol
-                    </button>
-                </div>
-
-                <div class="table-zone configuracion-table-zone">
-                    <div class="templo-table-wrapper">
-                        <div class="table-responsive">
-                            <table
-                                id="tablaConfigRoles"
-                                class="table table-hover templo-table w-100"
-                            >
-                                <thead>
-                                    <tr>
-                                        <th>Rol</th>
-                                        <th>Descripción</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    <!-- Los registros vendrán del modelo. -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ================================================= -->
             <!-- ESTADOS DE AGENDAMIENTO -->
@@ -246,7 +308,103 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </thead>
 
                                 <tbody>
-                                    <!-- Los registros vendrán del modelo. -->
+                                    <?php foreach (($listaEstadosAgendamiento ?? []) as $estadoAgendamiento) { ?>
+                                        <tr>
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $estadoAgendamiento['nombre_estado'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $estadoAgendamiento['descripcion'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php
+                                                $estadoRegistroVista = strtoupper(trim((string) (
+                                                    $estadoAgendamiento['estado_registro'] ?? ''
+                                                )));
+                                                ?>
+
+                                                <span class="badge <?php echo $estadoRegistroVista === 'ACTIVO'
+                                                    ? 'estado-registro-activo'
+                                                    : 'estado-registro-inactivo'; ?>">
+                                                    <?php echo htmlspecialchars(
+                                                        $estadoRegistroVista,
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ); ?>
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group-actions">
+
+                                                    <!-- Botón Editar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-edit btnEditarEstadoAgendamiento"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarEstadoAgendamiento"
+                                                        data-id-estado-agendamiento="<?php echo htmlspecialchars(
+                                                            (string) ($estadoAgendamiento['id_estado_agendamiento'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-estado="<?php echo htmlspecialchars(
+                                                            $estadoAgendamiento['nombre_estado'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-descripcion="<?php echo htmlspecialchars(
+                                                            $estadoAgendamiento['descripcion'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-estado-registro="<?php echo htmlspecialchars(
+                                                            $estadoAgendamiento['estado_registro'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Editar estado de agendamiento"
+                                                        aria-label="Editar estado de agendamiento"
+                                                    >
+                                                        <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                    <!-- Botón Desactivar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-deactivate btnDesactivarEstadoAgendamiento"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEstadoEstadoAgendamiento"
+                                                        data-id-estado-agendamiento="<?php echo htmlspecialchars(
+                                                            (string) ($estadoAgendamiento['id_estado_agendamiento'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-estado="<?php echo htmlspecialchars(
+                                                            $estadoAgendamiento['nombre_estado'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Desactivar estado de agendamiento"
+                                                        aria-label="Desactivar estado de agendamiento"
+                                                    >
+                                                        <i class="bi bi-trash-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
                                 </tbody>
                             </table>
                         </div>
@@ -295,7 +453,103 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </thead>
 
                                 <tbody>
-                                    <!-- Los registros vendrán del modelo. -->
+                                    <?php foreach (($listaTiposAgendamiento ?? []) as $tipoAgendamiento) { ?>
+                                        <tr>
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $tipoAgendamiento['nombre_tipo_agendamiento'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo htmlspecialchars(
+                                                    $tipoAgendamiento['descripcion'] ?? '',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php
+                                                $estadoTipoVista = strtoupper(trim((string) (
+                                                    $tipoAgendamiento['estado_tipo_agendamiento'] ?? ''
+                                                )));
+                                                ?>
+
+                                                <span class="badge <?php echo $estadoTipoVista === 'ACTIVO'
+                                                    ? 'estado-registro-activo'
+                                                    : 'estado-registro-inactivo'; ?>">
+                                                    <?php echo htmlspecialchars(
+                                                        $estadoTipoVista,
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ); ?>
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group-actions">
+
+                                                    <!-- Botón Editar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-edit btnEditarTipoAgendamiento"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarTipoAgendamiento"
+                                                        data-id-tipo-agendamiento="<?php echo htmlspecialchars(
+                                                            (string) ($tipoAgendamiento['id_tipo_agendamiento'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-tipo-agendamiento="<?php echo htmlspecialchars(
+                                                            $tipoAgendamiento['nombre_tipo_agendamiento'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-descripcion="<?php echo htmlspecialchars(
+                                                            $tipoAgendamiento['descripcion'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-estado-tipo-agendamiento="<?php echo htmlspecialchars(
+                                                            $tipoAgendamiento['estado_tipo_agendamiento'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Editar tipo de agendamiento"
+                                                        aria-label="Editar tipo de agendamiento"
+                                                    >
+                                                        <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                    <!-- Botón Desactivar -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-deactivate btnDesactivarTipoAgendamiento"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEstadoTipoAgendamiento"
+                                                        data-id-tipo-agendamiento="<?php echo htmlspecialchars(
+                                                            (string) ($tipoAgendamiento['id_tipo_agendamiento'] ?? ''),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        data-nombre-tipo-agendamiento="<?php echo htmlspecialchars(
+                                                            $tipoAgendamiento['nombre_tipo_agendamiento'] ?? '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ); ?>"
+                                                        title="Desactivar tipo de agendamiento"
+                                                        aria-label="Desactivar tipo de agendamiento"
+                                                    >
+                                                        <i class="bi bi-trash-fill" aria-hidden="true"></i>
+                                                    </button>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
                                 </tbody>
                             </table>
                         </div>
@@ -377,11 +631,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_servicio" class="form-select templo-input" required>
-                                <option value="ACTIVO" selected>ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado</label>
+                            <input
+                                type="text"
+                                name="estado_servicio"
+                                class="form-control templo-input"
+                                value="ACTIVO"
+                                readonly
+                            >
                         </div>
                     </div>
                 </div>
@@ -440,11 +697,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_servicio" id="editarEstadoServicio" class="form-select templo-input" required>
-                                <option value="ACTIVO">ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado</label>
+                            <input
+                                type="text"
+                                name="estado_servicio"
+                                id="editarEstadoServicio"
+                                class="form-control templo-input"
+                                readonly
+                            >
                         </div>
                     </div>
                 </div>
@@ -504,150 +764,6 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
-<!-- ===================================================== -->
-<!-- MODALES DE ROLES -->
-<!-- ===================================================== -->
-
-<div class="modal fade" id="modalNuevoRol" tabindex="-1" aria-labelledby="modalNuevoRolLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content templo-modal">
-            <form action="Index.php?url=configuracion" method="POST">
-                <input type="hidden" name="accion" value="registrar_rol">
-
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalNuevoRolLabel">
-                        <i class="bi bi-plus-circle"></i>
-                        Registrar Nuevo Rol
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre del rol <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="nombre_rol" class="form-control templo-input" placeholder="Ingrese el nombre del rol" maxlength="40" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_rol" class="form-select templo-input" required>
-                                <option value="ACTIVO" selected>ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label">Descripción</label>
-                            <textarea name="descripcion" class="form-control templo-input" rows="3" maxlength="150" placeholder="Ingrese la descripción del rol"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn-templo-primary">
-                        <i class="bi bi-save"></i>
-                        Guardar
-                    </button>
-                    <button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i>
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalEditarRol" tabindex="-1" aria-labelledby="modalEditarRolLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content templo-modal">
-            <form action="Index.php?url=configuracion" method="POST">
-                <input type="hidden" name="accion" value="modificar_rol">
-                <input type="hidden" name="id_rol" id="editarIdRol">
-
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEditarRolLabel">
-                        <i class="bi bi-pencil-square"></i>
-                        Editar Rol
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre del rol <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="nombre_rol" id="editarNombreRol" class="form-control templo-input" maxlength="40" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_rol" id="editarEstadoRol" class="form-select templo-input" required>
-                                <option value="ACTIVO">ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label">Descripción</label>
-                            <textarea name="descripcion" id="editarDescripcionRol" class="form-control templo-input" rows="3" maxlength="150"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn-templo-primary">
-                        <i class="bi bi-save"></i>
-                        Guardar Cambios
-                    </button>
-                    <button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i>
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalEstadoRol" tabindex="-1" aria-labelledby="modalEstadoRolLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content templo-modal status-modal">
-            <form action="Index.php?url=configuracion" method="POST">
-                <input type="hidden" name="accion" value="cambiar_estado_rol">
-                <input type="hidden" name="id_rol" id="estadoIdRol">
-                <input type="hidden" name="estado_rol" id="nuevoEstadoRol">
-
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEstadoRolLabel">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Cambiar estado del rol
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-
-                <div class="modal-body text-center">
-                    <p class="status-question">¿Deseas cambiar el estado de este rol?</p>
-                    <p class="status-client-name" id="nombreEstadoRol"></p>
-                    <p class="status-warning">El registro permanecerá guardado en el sistema.</p>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i>
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn-templo-danger">
-                        <i class="bi bi-check-circle"></i>
-                        Confirmar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 
 <!-- ===================================================== -->
 <!-- MODALES DE ESTADOS DE AGENDAMIENTO -->
@@ -675,11 +791,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado del registro <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_registro" class="form-select templo-input" required>
-                                <option value="ACTIVO" selected>ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado del registro</label>
+                            <input
+                                type="text"
+                                name="estado_registro"
+                                class="form-control templo-input"
+                                value="ACTIVO"
+                                readonly
+                            >
                         </div>
 
                         <div class="col-md-12">
@@ -727,11 +846,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado del registro <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_registro" id="editarRegistroEstadoAgendamiento" class="form-select templo-input" required>
-                                <option value="ACTIVO">ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado del registro</label>
+                            <input
+                                type="text"
+                                name="estado_registro"
+                                id="editarRegistroEstadoAgendamiento"
+                                class="form-control templo-input"
+                                readonly
+                            >
                         </div>
 
                         <div class="col-md-12">
@@ -820,11 +942,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_tipo_agendamiento" class="form-select templo-input" required>
-                                <option value="ACTIVO" selected>ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado</label>
+                            <input
+                                type="text"
+                                name="estado_tipo_agendamiento"
+                                class="form-control templo-input"
+                                value="ACTIVO"
+                                readonly
+                            >
                         </div>
 
                         <div class="col-md-12">
@@ -872,11 +997,14 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Estado <span class="required-mark" aria-hidden="true">*</span></label>
-                            <select name="estado_tipo_agendamiento" id="editarEstadoTipoAgendamiento" class="form-select templo-input" required>
-                                <option value="ACTIVO">ACTIVO</option>
-                                <option value="INACTIVO">INACTIVO</option>
-                            </select>
+                            <label class="form-label">Estado</label>
+                            <input
+                                type="text"
+                                name="estado_tipo_agendamiento"
+                                id="editarEstadoTipoAgendamiento"
+                                class="form-control templo-input"
+                                readonly
+                            >
                         </div>
 
                         <div class="col-md-12">

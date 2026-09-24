@@ -113,7 +113,6 @@ document.addEventListener("DOMContentLoaded", function () {
             activa: "estado-activa",
             activo: "estado-activa",
             realizada: "estado-realizada",
-            realizado: "estado-realizada",
             cancelada: "estado-cancelada",
             cancelado: "estado-cancelada"
         };
@@ -209,11 +208,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     emptyTable:
                         "No hay agendamientos para atender."
                 },
+
                 pageLength: 5,
-                lengthMenu: [5, 10, 25, 50],
+
+                lengthMenu: [
+                    5,
+                    10,
+                    25,
+                    50
+                ],
+
                 responsive: false,
                 autoWidth: false,
                 order: [],
+
                 columnDefs: [
                     {
                         targets: -1,
@@ -221,6 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         searchable: false
                     }
                 ],
+
                 drawCallback: function () {
                     aplicarBadgesEstadoServicio();
                 }
@@ -231,37 +240,53 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function mostrarPanelRegistro() {
         if (panelAgendamientos) {
-            panelAgendamientos.classList.add("d-none");
+            panelAgendamientos.classList.add(
+                "d-none"
+            );
         }
 
         if (panelRegistro) {
-            panelRegistro.classList.remove("d-none");
+            panelRegistro.classList.remove(
+                "d-none"
+            );
         }
 
         if (btnVolver) {
-            btnVolver.classList.remove("d-none");
+            btnVolver.classList.remove(
+                "d-none"
+            );
         }
 
         if (btnRefrescar) {
-            btnRefrescar.classList.add("d-none");
+            btnRefrescar.classList.add(
+                "d-none"
+            );
         }
     }
 
     function mostrarPanelAgendamientos() {
         if (panelRegistro) {
-            panelRegistro.classList.add("d-none");
+            panelRegistro.classList.add(
+                "d-none"
+            );
         }
 
         if (panelAgendamientos) {
-            panelAgendamientos.classList.remove("d-none");
+            panelAgendamientos.classList.remove(
+                "d-none"
+            );
         }
 
         if (btnVolver) {
-            btnVolver.classList.add("d-none");
+            btnVolver.classList.add(
+                "d-none"
+            );
         }
 
         if (btnRefrescar) {
-            btnRefrescar.classList.remove("d-none");
+            btnRefrescar.classList.remove(
+                "d-none"
+            );
         }
 
         if (tablaServiciosPendientes) {
@@ -277,17 +302,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function limpiarVistaPrevia() {
         if (urlVistaPrevia) {
-            URL.revokeObjectURL(urlVistaPrevia);
+            URL.revokeObjectURL(
+                urlVistaPrevia
+            );
+
             urlVistaPrevia = null;
         }
 
         if (previewResultado) {
             previewResultado.src = "";
-            previewResultado.classList.add("d-none");
+
+            previewResultado.classList.add(
+                "d-none"
+            );
         }
 
         if (previewVacio) {
-            previewVacio.classList.remove("d-none");
+            previewVacio.classList.remove(
+                "d-none"
+            );
         }
 
         if (fotoResultado) {
@@ -327,7 +360,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function crearCelda(texto) {
-        const celda = document.createElement("td");
+        const celda =
+            document.createElement("td");
 
         celda.textContent = texto;
 
@@ -335,7 +369,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function crearCampoOculto(nombre, valor) {
-        const campo = document.createElement("input");
+        const campo =
+            document.createElement("input");
 
         campo.type = "hidden";
         campo.name = nombre;
@@ -349,14 +384,20 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const fila = document.createElement("tr");
-        const celda = document.createElement("td");
+        const fila =
+            document.createElement("tr");
+
+        const celda =
+            document.createElement("td");
 
         celda.colSpan = 4;
         celda.className = "text-center";
-        celda.textContent = "No hay insumos agregados.";
+
+        celda.textContent =
+            "No hay insumos agregados.";
 
         fila.appendChild(celda);
+
         tbodyInsumos.appendChild(fila);
     }
 
@@ -367,7 +408,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         tbodyInsumos.innerHTML = "";
 
-        if (insumosSeleccionados.length === 0) {
+        if (
+            insumosSeleccionados.length === 0
+        ) {
             mostrarFilaVaciaInsumos();
 
             return;
@@ -375,7 +418,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         insumosSeleccionados.forEach(
             function (insumo, indice) {
-                const fila = document.createElement("tr");
+                const fila =
+                    document.createElement("tr");
 
                 fila.appendChild(
                     crearCelda(insumo.nombre)
@@ -392,16 +436,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 const celdaAccion =
                     document.createElement("td");
 
-                celdaAccion.className = "text-center";
+                celdaAccion.className =
+                    "text-center";
 
                 const botonEliminar =
-                    document.createElement("button");
+                    document.createElement(
+                        "button"
+                    );
 
                 botonEliminar.type = "button";
+
                 botonEliminar.className =
-                    "btn-action btn-delete btn-eliminar-insumo";
-                botonEliminar.dataset.index = indice;
-                botonEliminar.title = "Eliminar insumo";
+                    "btn-action " +
+                    "btn-delete " +
+                    "btn-eliminar-insumo";
+
+                botonEliminar.dataset.index =
+                    indice;
+
+                botonEliminar.title =
+                    "Eliminar insumo";
+
                 botonEliminar.innerHTML =
                     '<i class="bi bi-trash"></i>';
 
@@ -409,7 +464,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     botonEliminar
                 );
 
-                fila.appendChild(celdaAccion);
+                fila.appendChild(
+                    celdaAccion
+                );
 
                 fila.appendChild(
                     crearCampoOculto(
@@ -425,7 +482,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     )
                 );
 
-                tbodyInsumos.appendChild(fila);
+                tbodyInsumos.appendChild(
+                    fila
+                );
             }
         );
     }
@@ -498,7 +557,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         insumosSeleccionados.push({
             id: idInsumo,
-            nombre: opcion.textContent.trim(),
+            nombre:
+                opcion.textContent.trim(),
             cantidad: cantidad,
             presentacion:
                 opcion.dataset.presentacion || ""
@@ -546,29 +606,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const trabajos =
             document.querySelectorAll(
-                "#catalogoTrabajosGrid .catalogo-item"
+                "#catalogoTrabajosGrid " +
+                ".catalogo-item"
             );
 
         let visibles = 0;
 
-        trabajos.forEach(function (trabajo) {
-            const nombreServicio = String(
-                trabajo.dataset.servicio || ""
-            ).toLowerCase();
+        trabajos.forEach(
+            function (trabajo) {
+                const nombreServicio =
+                    String(
+                        trabajo.dataset.servicio ||
+                        ""
+                    ).toLowerCase();
 
-            const coincide =
-                filtro === "" ||
-                nombreServicio.includes(filtro);
+                const coincide =
+                    filtro === "" ||
+                    nombreServicio.includes(
+                        filtro
+                    );
 
-            trabajo.classList.toggle(
-                "d-none",
-                !coincide
-            );
+                trabajo.classList.toggle(
+                    "d-none",
+                    !coincide
+                );
 
-            if (coincide) {
-                visibles++;
+                if (coincide) {
+                    visibles++;
+                }
             }
-        });
+        );
 
         if (catalogoVacio) {
             catalogoVacio.classList.toggle(
@@ -653,7 +720,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 urlVistaPrevia =
-                    URL.createObjectURL(archivo);
+                    URL.createObjectURL(
+                        archivo
+                    );
 
                 previewResultado.src =
                     urlVistaPrevia;
@@ -709,7 +778,8 @@ document.addEventListener("DOMContentLoaded", function () {
             "click",
             function () {
                 if (
-                    insumosSeleccionados.length === 0
+                    insumosSeleccionados.length ===
+                    0
                 ) {
                     window.alert(
                         "Agregue al menos un insumo utilizado."
@@ -768,38 +838,43 @@ document.addEventListener("DOMContentLoaded", function () {
                         .toLowerCase();
 
                 const filas =
-                    tbodyHistorialServicios.querySelectorAll(
-                        "tr"
-                    );
-
-                filas.forEach(function (fila) {
-                    /*
-                     * Conserva visible la fila que informa
-                     * que todavía no existen servicios.
-                     */
-                    const celdaVacia =
-                        fila.querySelector(
-                            "td[colspan]"
+                    tbodyHistorialServicios
+                        .querySelectorAll(
+                            "tr"
                         );
 
-                    if (celdaVacia) {
-                        return;
+                filas.forEach(
+                    function (fila) {
+                        /*
+                         * Conserva visible la fila que informa
+                         * que todavía no existen servicios.
+                         */
+                        const celdaVacia =
+                            fila.querySelector(
+                                "td[colspan]"
+                            );
+
+                        if (celdaVacia) {
+                            return;
+                        }
+
+                        const contenidoFila =
+                            fila.textContent
+                                .trim()
+                                .toLowerCase();
+
+                        const coincide =
+                            filtro === "" ||
+                            contenidoFila.includes(
+                                filtro
+                            );
+
+                        fila.style.display =
+                            coincide
+                                ? ""
+                                : "none";
                     }
-
-                    const contenidoFila =
-                        fila.textContent
-                            .trim()
-                            .toLowerCase();
-
-                    const coincide =
-                        filtro === "" ||
-                        contenidoFila.includes(filtro);
-
-                    fila.style.display =
-                        coincide
-                            ? ""
-                            : "none";
-                });
+                );
             }
         );
     }

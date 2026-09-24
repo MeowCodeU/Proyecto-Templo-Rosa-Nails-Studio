@@ -47,8 +47,14 @@
 
   --estado-cancelada-bg: #e4b3c1;
   --estado-cancelada-text: #9b5d73;
-}
 
+    /* Estados administrativos de los registros */
+  --registro-activo-bg: var(--estado-realizada-bg);
+  --registro-activo-text: var(--estado-realizada-text);
+
+  --registro-inactivo-bg: var(--estado-cancelada-bg);
+  --registro-inactivo-text: var(--estado-cancelada-text);
+}
 
 /* ===================================================== */
 /* BASE GENERAL */
@@ -1264,6 +1270,12 @@ body{
     vertical-align: middle;
 }
 
+/* Separa visualmente la columna Acciones del bloque Persona de contacto */
+.proveedores-module .proveedores-actions-header,
+.proveedores-module #tablaProveedores tbody td.columna-acciones{
+    border-left: 2px solid rgba(190, 148, 55, 0.25);
+}
+
 /* Segunda fila con los nombres de las columnas */
 .proveedores-module .proveedores-columns-row th {
     vertical-align: middle;
@@ -1290,6 +1302,17 @@ body{
   align-items: center;
   justify-content: center;
   gap: 7px;
+}
+
+/* Columna de acciones reutilizable en las tablas */
+.templo-table th.columna-acciones,
+.templo-table td.columna-acciones{
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+.templo-table td.columna-acciones .btn-group-actions{
+  justify-content: center;
 }
 
 
@@ -1372,22 +1395,22 @@ body{
 
 /* ===================================================== */
 /* VER DETALLES */
-/* Turquesa pastel de los estados finalizados */
+/* Botón Ver detalles: color avellana */
 /* ===================================================== */
 
 .btn-detail{
-  background: var(--estado-realizada-bg);
-  color: #ffffff;
-  border: 1px solid rgba(63,111,105,0.14);
+  background: #7f5c28;
+  color: white;
 }
 
 .btn-detail:hover{
-  background: #b9dcd6;
-  color: #ffffff;
+  background: #6c4c1f;
+  color: white;
 }
 
 /* Iconos personalizados para ver detalles */
 
+.detalle-accion-icono,
 .cliente-detalle-icono,
 .agendamiento-detalle-icono{
   width: 20px;
@@ -1402,6 +1425,7 @@ body{
   line-height: 1;
 }
 
+.detalle-accion-icono svg,
 .cliente-detalle-icono svg,
 .agendamiento-detalle-icono svg{
   width: 20px;
@@ -1541,16 +1565,268 @@ body{
 
 
 /* ===================================================== */
-/* DETALLES DEL CLIENTE */
+/* FICHAS DE DETALLE - CLIENTES / USUARIOS / PROVEEDORES */
 /* ===================================================== */
 
-.detalle-cliente .templo-input{
-  min-height: 46px;
+.detalle-ficha-modal{
+  overflow: hidden;
+}
+
+.detalle-ficha-modal .modal-header{
+  min-height: 62px;
+}
+
+.detalle-ficha-modal .modal-title{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin: 0;
+
+  color: var(--brown-main) !important;
+  font-size: 1.28rem;
+  font-weight: 900;
+}
+
+.detalle-ficha-title-icon{
+  width: 25px;
+  height: 25px;
+
+  display: inline-grid;
+  place-items: center;
+
+  flex: 0 0 25px;
+
+  color: var(--gold-main) !important;
+}
+
+.detalle-ficha-title-icon svg{
+  width: 25px;
+  height: 25px;
+
+  display: block;
+  overflow: visible;
+}
+
+
+/* Cuerpo del modal */
+.detalle-ficha-modal-body{
+  padding: 16px 18px !important;
+
+  overflow-y: auto;
+}
+
+
+/* ===================================================== */
+/* FICHA PRINCIPAL */
+/* ===================================================== */
+
+.detalle-ficha-panel{
+  padding: 12px;
+
+  border: 1px solid rgba(184,147,68,0.82);
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,246,248,0.88),
+      rgba(255,250,248,0.96)
+    );
+}
+
+
+/* Encabezado de la ficha */
+.detalle-ficha-intro{
+  min-height: 66px;
 
   display: flex;
   align-items: center;
+  gap: 13px;
+
+  margin-bottom: 10px;
+  padding: 10px 14px;
+
+  border: 1px solid rgba(184,147,68,0.82);
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,244,247,0.90),
+      rgba(255,250,248,0.94)
+    );
 }
 
+.detalle-ficha-intro-icon{
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 46px;
+
+  border-radius: 50%;
+
+  background: rgba(249,216,221,0.84);
+  color: var(--gold-main) !important;
+}
+
+.detalle-ficha-intro-icon i{
+  color: var(--gold-main) !important;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.detalle-ficha-intro-svg{
+  width: 28px;
+  height: 28px;
+
+  display: block;
+  color: var(--gold-main) !important;
+}
+
+.detalle-ficha-intro-content{
+  min-width: 0;
+}
+
+.detalle-ficha-intro-title{
+  color: var(--brown-main) !important;
+
+  font-size: 1.08rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+
+/* ===================================================== */
+/* CUADRÍCULA DE DATOS */
+/* ===================================================== */
+
+.detalle-ficha-grid{
+  margin-top: 0;
+}
+
+.detalle-ficha-card{
+  min-height: 66px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 9px 12px;
+
+  border: 1px solid rgba(184,147,68,0.78);
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,243,247,0.76),
+      rgba(255,250,248,0.90)
+    );
+
+  box-shadow: 0 3px 8px rgba(74,60,49,0.035);
+}
+
+.detalle-ficha-card-wide{
+  min-height: 66px;
+}
+
+.detalle-ficha-card-emphasis{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,243,247,0.82),
+      rgba(255,250,248,0.92)
+    );
+}
+
+
+/* Iconos redondos */
+.detalle-ficha-card-icon{
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 42px;
+
+  border-radius: 50%;
+
+  background: rgba(249,216,221,0.88);
+}
+
+.detalle-ficha-card-icon i{
+  color: var(--brown-main) !important;
+
+  font-size: 1.12rem;
+  line-height: 1;
+}
+
+.detalle-ficha-card-icon svg{
+  width: 20px;
+  height: 20px;
+
+  display: block;
+
+  color: var(--brown-main) !important;
+}
+
+.detalle-ficha-card-content{
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.detalle-ficha-label{
+  display: block;
+
+  margin-bottom: 2px;
+
+  color: var(--brown-main) !important;
+
+  font-size: 0.92rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.detalle-ficha-value{
+  margin: 0;
+
+  color: var(--brown-main) !important;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+
+  overflow-wrap: anywhere;
+}
+
+.detalle-ficha-value-highlight{
+  font-weight: 800;
+}
+
+
+/* Estado */
+.detalle-ficha-status{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 2px;
+  padding: 5px 12px;
+
+  border-radius: 999px;
+
+  background: #d8eee9 !important;
+  color: #4f7c73 !important;
+
+  font-size: 0.77rem;
+  font-weight: 900;
+  letter-spacing: 0.25px;
+}
 
 /* Nombre mostrado en confirmaciones */
 
@@ -1860,6 +2136,416 @@ body{
 /* ===================================================== */
 /* MÓDULO AGENDAMIENTO */
 /* ===================================================== */
+
+/* ===================================================== */
+/* SELECTOR DE SERVICIOS DE AGENDAMIENTO */
+/* ===================================================== */
+
+.agendamiento-servicios-selector{
+  position: relative;
+
+  width: 100%;
+}
+
+
+/* Botón que abre y cierra el selector */
+
+.agendamiento-servicios-toggle{
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  background: rgba(255,255,255,0.88);
+}
+
+.agendamiento-servicios-toggle span{
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--brown-main);
+}
+
+.agendamiento-servicios-toggle i{
+  flex: 0 0 auto;
+
+  font-size: 0.88rem;
+
+  color: var(--brown-main);
+
+  transition:
+    transform 0.22s ease;
+}
+
+.agendamiento-servicios-selector.is-open
+.agendamiento-servicios-toggle{
+  border-color: var(--rose-hover);
+
+  box-shadow:
+    0 0 0 0.2rem
+    rgba(216,167,177,0.18);
+}
+
+.agendamiento-servicios-selector.is-open
+.agendamiento-servicios-toggle i{
+  transform: rotate(180deg);
+}
+
+
+/* Panel desplegable */
+
+.agendamiento-servicios-panel{
+  position: absolute;
+
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+
+  z-index: 1080;
+
+  padding: 10px;
+
+  border:
+    1.5px solid
+    rgba(216,167,177,0.55);
+
+  border-radius: 16px;
+
+  background:
+    rgba(255,251,249,0.99);
+
+  box-shadow:
+    0 18px 36px rgba(74,60,49,0.16),
+    0 8px 22px rgba(216,167,177,0.22);
+}
+
+.agendamiento-servicios-panel[hidden]{
+  display: none !important;
+}
+
+
+/* Buscador dentro del desplegable */
+
+.agendamiento-servicios-buscador{
+  position: relative;
+
+  margin-bottom: 8px;
+}
+
+.agendamiento-servicios-buscador i{
+  position: absolute;
+
+  top: 50%;
+  left: 14px;
+
+  z-index: 2;
+
+  color: rgba(122,101,91,0.62);
+
+  transform: translateY(-50%);
+
+  pointer-events: none;
+}
+
+.agendamiento-servicios-buscador
+.form-control{
+  width: 100%;
+
+  padding-left: 40px;
+
+  background: rgba(255,255,255,0.96);
+}
+
+
+/* Lista completa de servicios */
+
+.agendamiento-servicios-lista{
+  display: grid;
+
+  gap: 4px;
+
+  max-height: 225px;
+
+  padding-right: 4px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    var(--rose-pagination)
+    rgba(253,245,242,0.72);
+}
+
+.agendamiento-servicios-lista::-webkit-scrollbar{
+  width: 6px;
+}
+
+.agendamiento-servicios-lista::-webkit-scrollbar-track{
+  background: rgba(253,245,242,0.72);
+
+  border-radius: 999px;
+}
+
+.agendamiento-servicios-lista::-webkit-scrollbar-thumb{
+  background: var(--rose-pagination);
+
+  border-radius: 999px;
+}
+
+
+/* Cada opción del desplegable */
+
+.agendamiento-servicio-opcion{
+  display: grid;
+
+  grid-template-columns:
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+
+  margin: 0;
+  padding: 8px 10px;
+
+  border:
+    1px solid
+    transparent;
+
+  border-radius: 11px;
+
+  color: var(--brown-main);
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.agendamiento-servicio-opcion:hover{
+  border-color:
+    rgba(216,167,177,0.38);
+
+  background:
+    rgba(249,232,238,0.58);
+}
+
+.agendamiento-servicio-opcion:has(
+  .agendamiento-servicio-check:checked
+){
+  border-color:
+    rgba(216,167,177,0.52);
+
+  background:
+    rgba(232,206,216,0.52);
+}
+
+.agendamiento-servicio-check{
+  width: 17px;
+  height: 17px;
+
+  margin: 0;
+
+  cursor: pointer;
+
+  border-color:
+    rgba(184,147,68,0.52);
+}
+
+.agendamiento-servicio-check:checked{
+  border-color: var(--gold-main);
+
+  background-color: var(--gold-main);
+}
+
+.agendamiento-servicio-check:focus{
+  border-color: var(--gold-main);
+
+  box-shadow:
+    0 0 0 0.18rem
+    rgba(184,147,68,0.16);
+}
+
+
+/* Nombre y duración dentro de la lista */
+
+.agendamiento-servicio-contenido{
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+}
+
+.agendamiento-servicio-nombre{
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-weight: 700;
+}
+
+.agendamiento-servicio-duracion{
+  flex: 0 0 auto;
+
+  color: rgba(122,101,91,0.72);
+
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.agendamiento-servicio-precio{
+  flex: 0 0 auto;
+
+  color: var(--gold-main);
+
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+
+/* Mensaje sin resultados */
+
+.agendamiento-servicios-sin-resultados{
+  margin: 8px 0 3px;
+
+  color: rgba(122,101,91,0.72);
+
+  font-size: 0.83rem;
+  text-align: center;
+}
+
+
+/* ===================================================== */
+/* RESUMEN DE LOS SERVICIOS SELECCIONADOS */
+/* ===================================================== */
+
+.agendamiento-servicios-resumen{
+  display: grid;
+
+  gap: 5px;
+
+  margin-top: 8px;
+}
+
+.agendamiento-servicios-resumen-vacio{
+  display: block;
+
+  color: rgba(122,101,91,0.76);
+
+  font-size: 0.88rem;
+}
+
+
+/*
+ * Cada fila muestra:
+ *
+ * Nombre | minutos | precio
+ */
+
+.agendamiento-servicio-resumen-item{
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    auto;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 0;
+
+  padding: 6px 10px;
+
+  border:
+    1px solid
+    rgba(216,167,177,0.32);
+
+  border-radius: 10px;
+
+  background:
+    rgba(249,232,238,0.38);
+
+  font-size: 0.83rem;
+}
+
+.agendamiento-servicio-resumen-nombre{
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--brown-main);
+
+  font-weight: 700;
+}
+
+.agendamiento-servicio-resumen-duracion{
+  color: rgba(122,101,91,0.76);
+
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.agendamiento-servicio-resumen-precio{
+  min-width: 58px;
+
+  color: var(--gold-main);
+
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+
+/* Selector deshabilitado para bloqueo de horario */
+
+.agendamiento-servicios-selector.is-disabled{
+  opacity: 0.62;
+}
+
+.agendamiento-servicios-selector.is-disabled
+.agendamiento-servicios-toggle{
+  cursor: not-allowed;
+}
+
+
+/* Validación */
+
+.agendamiento-servicios-selector.is-invalid
+.agendamiento-servicios-toggle,
+
+.agendamiento-servicios-toggle.is-invalid{
+  border-color: #dc3545 !important;
+
+  box-shadow:
+    0 0 0 0.2rem
+    rgba(220,53,69,0.12) !important;
+}
+
 
 .agendamiento-module{
   flex: 1 1 auto;
@@ -2520,11 +3206,22 @@ body{
   animation: estadoPulse 2s ease-in-out infinite;
 }
 
-/* Activa */
-.badge.bg-success,
+/* Activa: agendamiento que está en proceso */
 .badge.estado-activa{
   background: var(--estado-activa-bg) !important;
   color: var(--estado-activa-text) !important;
+}
+
+/* Estado administrativo ACTIVO */
+.badge.estado-registro-activo{
+  background: var(--registro-activo-bg) !important;
+  color: var(--registro-activo-text) !important;
+}
+
+/* Estado administrativo INACTIVO */
+.badge.estado-registro-inactivo{
+  background: var(--registro-inactivo-bg) !important;
+  color: var(--registro-inactivo-text) !important;
 }
 
 /* Realizada */
@@ -4522,6 +5219,118 @@ body{
 /* MÓDULO SEGURIDAD */
 /* ===================================================== */
 
+/* Pestañas internas: Gestión de Usuarios | Roles */
+.seguridad-module .config-tabs{
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: flex-end;
+
+  gap: 6px;
+  flex-wrap: wrap;
+
+  border-bottom: 1px solid rgba(216,167,177,0.36);
+}
+
+.seguridad-module .config-tabs .nav-link{
+  min-height: 43px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 15px;
+
+  border: 1px solid transparent !important;
+  border-radius: 14px 14px 0 0;
+
+  background: transparent !important;
+  color: var(--brown-main) !important;
+
+  font-weight: 800;
+  line-height: 1;
+
+  box-shadow: none !important;
+}
+
+.seguridad-module .config-tabs .nav-link i{
+  width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 22px;
+
+  color: var(--gold-main) !important;
+
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.seguridad-module .config-tabs .nav-link:hover{
+  border-color: rgba(216,167,177,0.35) !important;
+
+  background: rgba(249,232,238,0.55) !important;
+  color: var(--brown-main) !important;
+}
+
+.seguridad-module .config-tabs .nav-link.active,
+.seguridad-module .config-tabs .nav-item.show .nav-link{
+  border-color: rgba(216,167,177,0.50) !important;
+
+  background: var(--rose-table) !important;
+  color: var(--brown-main) !important;
+
+  box-shadow: none !important;
+}
+
+.seguridad-module .config-tabs .nav-link:hover i,
+.seguridad-module .config-tabs .nav-link.active i{
+  color: var(--gold-main) !important;
+}
+
+/* Icono SVG personalizado de Gestión de Usuarios */
+.seguridad-module .config-tabs .gestion-usuarios-tab-icon{
+  width: 26px;
+  height: 26px;
+
+  display: inline-grid;
+  place-items: center;
+
+  flex: 0 0 26px;
+
+  margin: 0 5px 0 0;
+}
+
+.seguridad-module .config-tabs .gestion-usuarios-tab-icon svg{
+  width: 26px;
+  height: 26px;
+
+  display: block;
+  overflow: visible;
+}
+
+.seguridad-module .config-tabs .gestion-usuarios-tab-icon .quick-svg-fill{
+  fill: var(--gold-main) !important;
+}
+
+.seguridad-module .config-tabs .nav-link:hover .gestion-usuarios-tab-icon .quick-svg-fill,
+.seguridad-module .config-tabs .nav-link.active .gestion-usuarios-tab-icon .quick-svg-fill{
+  fill: var(--gold-main) !important;
+}
+
+.seguridad-module .templo-table-wrapper{
+  min-height: 100%;
+}
+
+.seguridad-module .templo-table thead th:last-child,
+.seguridad-module .templo-table tbody td:last-child{
+  text-align: center;
+}
+
 .seguridad-title-icon{
   width: 34px;
   height: 34px;
@@ -4537,6 +5346,11 @@ body{
   width: 34px;
   height: 34px;
   display: block;
+}
+
+/* Clave protegida en detalle de usuario */
+[id^="modalDetalleUsuario"] .detalle-ficha-value.required-mark{
+  color: #c40056 !important;
 }
 
 /* ===================================================== */
@@ -4785,6 +5599,50 @@ body{
     margin-top: 8px;
     margin-left: 0;
   }
+
+
+  /* =================================================== */
+  /* FICHAS DE DETALLE */
+  /* =================================================== */
+
+  .detalle-ficha-modal-body{
+    padding: 14px !important;
+  }
+
+  .detalle-ficha-panel{
+    padding: 10px;
+  }
+
+  .detalle-ficha-intro{
+    min-height: 0;
+
+    padding: 11px 12px;
+  }
+
+  .detalle-ficha-intro-icon{
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+  }
+
+  .detalle-ficha-intro-svg{
+    width: 26px;
+    height: 26px;
+  }
+
+  .detalle-ficha-card{
+    min-height: 62px;
+
+    padding: 9px 11px;
+  }
+
+  .detalle-ficha-card-icon{
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+  }
 }
 
 
@@ -4807,6 +5665,7 @@ body{
     height: 90px;
   }
 }
+
 
 
 /* ===================================================== */
@@ -5308,6 +6167,549 @@ and (pointer: fine){
     box-shadow:
       0 20px 38px rgba(74,60,49,0.14),
       0 10px 26px rgba(216,167,177,0.28);
+  }
+}
+
+/* ===================================================== */
+/* CLIENTES Y SEGURIDAD */
+/* ===================================================== */
+
+@media (max-width: 900px){
+
+  /*
+   * Clientes y Seguridad conservan el título
+   * y el botón principal en la misma fila.
+   */
+  .clientes-module .module-header{
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .clientes-module .module-header h2{
+    min-width: 0;
+    margin: 0;
+  }
+
+  /*
+   * Anula el ancho completo colocado
+   * por el responsive general.
+   */
+  .clientes-module
+  .module-header
+  > .btn-templo-primary{
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+
+@media (max-width: 768px){
+
+  .clientes-module .module-header{
+    --clientes-action-size: 40px;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .clientes-module .module-header h2{
+    min-width: 0;
+
+    margin: 0;
+
+    font-size: 1.30rem;
+    line-height: 1.15;
+  }
+
+  .clientes-module .module-header h2 i{
+    margin-right: 0;
+  }
+
+  /*
+   * Nuevo Cliente y Registrar Usuario
+   * se convierten en botones circulares.
+   */
+  .clientes-module
+  .module-header
+  > .btn-templo-primary{
+    position: relative;
+
+    width: var(--clientes-action-size) !important;
+    height: var(--clientes-action-size) !important;
+
+    min-width: var(--clientes-action-size) !important;
+    min-height: var(--clientes-action-size) !important;
+
+    max-width: var(--clientes-action-size) !important;
+    max-height: var(--clientes-action-size) !important;
+
+    flex:
+      0
+      0
+      var(--clientes-action-size);
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: hidden;
+
+    border:
+      1px solid
+      rgba(184,147,68,0.48);
+
+    border-radius: 50% !important;
+
+    background:
+      rgba(253,245,242,0.96);
+
+    color: var(--gold-main);
+
+    font-size: 0 !important;
+    line-height: 0 !important;
+
+    box-shadow:
+      0 6px 14px rgba(74,60,49,0.08),
+      0 3px 10px rgba(216,167,177,0.16);
+
+    transform: none;
+  }
+
+  /*
+   * Centrado exacto del icono.
+   */
+  .clientes-module
+  .module-header
+  > .btn-templo-primary i{
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    display: block !important;
+
+    width: auto;
+    height: auto;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    color: var(--gold-main) !important;
+
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
+
+    transform:
+      translate(-50%, -50%) !important;
+  }
+
+  .clientes-module
+  .module-header
+  > .btn-templo-primary
+  i::before{
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    color: var(--gold-main) !important;
+
+    line-height: 1 !important;
+
+    transform: none !important;
+  }
+}
+
+
+/*
+ * Hover únicamente en dispositivos
+ * que realmente utilizan cursor.
+ */
+@media
+(max-width: 768px)
+and (hover: hover)
+and (pointer: fine){
+
+  .clientes-module
+  .module-header
+  > .btn-templo-primary:hover{
+    transform: translateY(-1px);
+
+    border-color: var(--gold-main);
+
+    background:
+      rgba(249,232,238,0.86);
+
+    color: var(--gold-main);
+  }
+
+  .clientes-module
+  .module-header
+  > .btn-templo-primary:hover i,
+
+  .clientes-module
+  .module-header
+  > .btn-templo-primary:hover i::before{
+    color: var(--gold-main) !important;
+  }
+}
+
+
+@media (max-width: 575.98px){
+
+  .clientes-module{
+    padding: 22px 18px 24px;
+  }
+
+  .clientes-module .module-header{
+    --clientes-action-size: 38px;
+
+    gap: 8px;
+  }
+
+  .clientes-module .module-header h2{
+    font-size: 1.18rem;
+  }
+}
+
+
+@media (max-width: 360px){
+
+  .clientes-module{
+    padding: 20px 14px 22px;
+  }
+
+  .clientes-module .module-header{
+    --clientes-action-size: 36px;
+  }
+
+  .clientes-module .module-header h2{
+    font-size: 1.05rem;
+  }
+
+  .seguridad-module .seguridad-title-icon,
+  .seguridad-module .seguridad-title-icon svg{
+    width: 30px;
+    height: 30px;
+  }
+
+  .seguridad-module .seguridad-title-icon{
+    flex-basis: 30px;
+  }
+}
+
+/* ===================================================== */
+/* INSUMOS */
+/* ===================================================== */
+
+@media (max-width: 900px){
+
+  /*
+   *conservamos el título y los botones en una misma fila.
+   */
+  .insumos-module .module-header{
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .insumos-module .module-header h2{
+    min-width: 0;
+  }
+
+  /*
+   * Mantiene juntos los botones PDF y Nuevo Insumo.
+   */
+  .insumos-module .module-header > div{
+    flex: 0 0 auto;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  /*
+   * Anula únicamente en Insumos el width: 100%
+   * aplicado por el responsive general.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-primary{
+    width: auto;
+  }
+}
+
+
+@media (max-width: 768px){
+
+  .insumos-module .module-header{
+    --insumos-action-size: 40px;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .insumos-module .module-header h2{
+    min-width: 0;
+
+    margin: 0;
+
+    font-size: 1.30rem;
+    line-height: 1.15;
+  }
+
+  .insumos-module .module-header h2 i{
+    margin-right: 0;
+  }
+
+  /*
+   * Contenedor de PDF y Nuevo Insumo.
+   */
+  .insumos-module
+  .module-header
+  > div{
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    align-self: center;
+
+    gap: 8px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /*
+   * En teléfono y tableta pequeña ambos botones
+   * se muestran como círculos exactos.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-secondary,
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary{
+    position: relative;
+
+    width: var(--insumos-action-size) !important;
+    height: var(--insumos-action-size) !important;
+
+    min-width: var(--insumos-action-size) !important;
+    min-height: var(--insumos-action-size) !important;
+
+    max-width: var(--insumos-action-size) !important;
+    max-height: var(--insumos-action-size) !important;
+
+    flex:
+      0
+      0
+      var(--insumos-action-size);
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border-radius: 50% !important;
+
+    font-size: 0 !important;
+    line-height: 0 !important;
+
+    vertical-align: middle;
+
+    transform: none;
+
+    box-shadow:
+      0 6px 14px rgba(74,60,49,0.08),
+      0 3px 10px rgba(216,167,177,0.16);
+  }
+
+  /*
+   * Botón PDF.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-secondary{
+    border: 1px solid rgba(216,167,177,0.58);
+
+    background: rgba(249,232,238,0.78);
+    color: var(--brown-main);
+  }
+
+  /*
+   * Botón Nuevo Insumo.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-primary{
+    border: 1px solid rgba(184,147,68,0.48);
+
+    background: rgba(253,245,242,0.96);
+    color: var(--gold-main);
+  }
+
+  /*
+   * Centrado real de los iconos.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-secondary i,
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary i{
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    display: block !important;
+
+    width: auto;
+    height: auto;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-style: normal;
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
+
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /*
+   * Corrige la línea base propia de Bootstrap Icons.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-secondary i::before,
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary i::before{
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    line-height: 1 !important;
+
+    transform: none !important;
+  }
+
+  /*
+   * Colores de los iconos.
+   */
+  .insumos-module
+  .module-header
+  .btn-templo-secondary i,
+
+  .insumos-module
+  .module-header
+  .btn-templo-secondary i::before{
+    color: var(--brown-main) !important;
+  }
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary i,
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary i::before{
+    color: var(--gold-main) !important;
+  }
+}
+
+
+/*
+ * Hover solo en dispositivos que realmente
+ * utilizan cursor, no en pantallas táctiles.
+ */
+@media
+(max-width: 768px)
+and (hover: hover)
+and (pointer: fine){
+
+  .insumos-module
+  .module-header
+  .btn-templo-secondary:hover{
+    transform: translateY(-1px);
+
+    border-color: var(--rose-pagination);
+
+    background: rgba(232,206,216,0.74);
+    color: var(--brown-main);
+  }
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary:hover{
+    transform: translateY(-1px);
+
+    border-color: var(--gold-main);
+
+    background: rgba(249,232,238,0.86);
+    color: var(--gold-main);
+  }
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary:hover i,
+
+  .insumos-module
+  .module-header
+  .btn-templo-primary:hover i::before{
+    color: var(--gold-main) !important;
+  }
+}
+
+
+@media (max-width: 575.98px){
+
+  .insumos-module{
+    padding: 22px 18px 24px;
+  }
+
+  .insumos-module .module-header{
+    --insumos-action-size: 38px;
+
+    gap: 8px;
+  }
+
+  .insumos-module .module-header h2{
+    font-size: 1.18rem;
+  }
+}
+
+
+@media (max-width: 360px){
+
+  .insumos-module{
+    padding: 20px 14px 22px;
+  }
+
+  .insumos-module .module-header{
+    --insumos-action-size: 36px;
+  }
+
+  .insumos-module .module-header h2{
+    font-size: 1.08rem;
   }
 }
 
@@ -6162,22 +7564,201 @@ and (pointer: fine){
   }
 }
 
+/* Selector de servicios y botones de modales en teléfono */
+@media (max-width: 560px){
 
-@media (max-width: 360px){
+  /* ===================================================== */
+  /* SELECTOR DE SERVICIOS */
+  /* ===================================================== */
 
-  .agendamiento-module{
-    padding: 20px 14px 22px;
+  .agendamiento-servicios-panel{
+    padding: 8px;
   }
 
-  .agendamiento-module .module-header{
-    --agendamiento-action-size: 36px;
+  .agendamiento-servicios-lista{
+    max-height: 205px;
   }
 
-  .agendamiento-module .module-header h2{
-    font-size: 1.08rem;
+  .agendamiento-servicio-opcion{
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .agendamiento-servicio-duracion{
+    font-size: 0.77rem;
+  }
+
+  .agendamiento-servicio-precio{
+    font-size: 0.79rem;
+  }
+
+  .agendamiento-servicio-resumen-item{
+    gap: 7px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+
+  .agendamiento-servicio-resumen-precio{
+    min-width: 50px;
+  }
+
+
+  /* ===================================================== */
+  /* BOTONES DE LOS MODALES DE AGENDAMIENTO */
+  /* ===================================================== */
+
+  /*
+   * Anula el responsive general que coloca
+   * los botones uno debajo del otro.
+   */
+  #modalNuevoAgendamiento .modal-footer,
+  #modalEditarAgendamiento .modal-footer{
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 10px;
+  }
+
+
+  /*
+   * Guardar y Cancelar se convierten
+   * en botones pequeños y circulares.
+   */
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-primary,
+
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-secondary,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-primary,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-secondary{
+    position: relative;
+
+    width: 40px !important;
+    height: 40px !important;
+
+    min-width: 40px !important;
+    min-height: 40px !important;
+
+    max-width: 40px !important;
+    max-height: 40px !important;
+
+    flex: 0 0 40px;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: hidden;
+
+    border-radius: 50% !important;
+
+    font-size: 0 !important;
+    line-height: 0 !important;
+
+    transform: none;
+  }
+
+
+  /*
+   * Centrado exacto de los iconos.
+   */
+  #modalNuevoAgendamiento
+  .modal-footer
+  button i,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  button i{
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    display: block !important;
+
+    width: auto;
+    height: auto;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
+
+    transform: translate(-50%, -50%) !important;
+  }
+
+
+  #modalNuevoAgendamiento
+  .modal-footer
+  button i::before,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  button i::before{
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    line-height: 1 !important;
+
+    transform: none !important;
+  }
+
+
+  /* Icono del botón Guardar */
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-primary i,
+
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-primary i::before,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-primary i,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-primary i::before{
+    color: white !important;
+  }
+
+
+  /* Icono del botón Cancelar */
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-secondary i,
+
+  #modalNuevoAgendamiento
+  .modal-footer
+  .btn-templo-secondary i::before,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-secondary i,
+
+  #modalEditarAgendamiento
+  .modal-footer
+  .btn-templo-secondary i::before{
+    color: var(--brown-main) !important;
   }
 }
-
 
 /* ===================================================== */
 /* ACCESIBILIDAD - MOVIMIENTO REDUCIDO */
@@ -6209,5 +7790,153 @@ and (pointer: fine){
   .inicio-resumen-card,
   .inicio-panel{
     transition: none;
+  }
+}
+
+
+/* ===================================================== */
+/* AGENDAMIENTO - BLOQUEO DE HORARIO */
+/* ===================================================== */
+
+/* Botón independiente de Bloquear Horario */
+.btn-templo-bloqueo,
+.btn-templo-desbloquear{
+  border: none;
+  border-radius: 999px;
+  padding: 11px 20px;
+  font-weight: 700;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: .2s ease;
+  cursor: pointer;
+}
+
+.btn-templo-bloqueo{
+  background: var(--rose-pagination);
+  color: white;
+  border: 1px solid rgba(216,167,177,0.65);
+  box-shadow: 0 8px 18px rgba(216,167,177,0.22);
+  transition:
+    transform .2s ease,
+    background .25s ease,
+    box-shadow .25s ease;
+}
+
+.btn-templo-bloqueo:hover,
+.btn-templo-bloqueo:focus,
+.btn-templo-bloqueo:active{
+  transform: translateY(-2px);
+
+  background: linear-gradient(
+    135deg,
+    var(--rose-hover),
+    var(--gold-main)
+  );
+
+  color: white;
+
+  box-shadow:
+    0 10px 22px rgba(184,147,68,0.20),
+    0 6px 16px rgba(216,167,177,0.24);
+}
+
+.templo-lock-heart{
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.btn-templo-desbloquear{
+  background: var(--estado-realizada-bg);
+  color: var(--estado-realizada-text);
+  border: 1px solid rgba(79,127,120,0.24);
+}
+
+.btn-templo-desbloquear:hover{
+  transform: translateY(-2px);
+  background: #bddbd6;
+  color: #416c66;
+}
+
+/* Estado definitivo EN ATENCIÓN: conserva la paleta usada antes para ACTIVA */
+.badge.estado-en-atencion{
+  background: var(--estado-activa-bg) !important;
+  color: var(--estado-activa-text) !important;
+}
+
+/* Estado propio de la entidad Bloqueo de Horario */
+.badge.estado-bloqueado{
+  background: #c40056 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(196, 0, 86, 0.35);
+  box-shadow: 0 5px 12px rgba(196, 0, 86, 0.20);
+  letter-spacing: .02em;
+}
+
+.bloqueo-estado-wrap{
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+}
+
+/* Modal de bloqueo: misma identidad de Templo Rosa, con acento visual propio */
+.bloqueo-horario-modal .modal-header{
+  background: linear-gradient(
+    135deg,
+    rgba(232,206,216,0.98),
+    rgba(249,216,221,0.94)
+  );
+}
+
+.bloqueo-horario-modal .modal-title i{
+  color: #9b5d73;
+}
+
+.detalle-bloqueo-horario p{
+  padding: 9px 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(216,167,177,0.20);
+}
+
+.detalle-bloqueo-horario p:last-child{
+  border-bottom: none;
+}
+
+/* Bloqueos dentro de FullCalendar */
+.fc-event.evento-bloqueo-horario{
+  background: linear-gradient(135deg, #9b5d73, #c98f9c) !important;
+  border-color: #7a5362 !important;
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(122,83,98,0.20);
+}
+
+.fc-event.evento-bloqueo-horario .fc-event-main,
+.fc-event.evento-bloqueo-horario .fc-event-title,
+.fc-event.evento-bloqueo-horario .fc-event-time{
+  color: white !important;
+  font-weight: 700;
+}
+
+.fc-event.evento-bloqueo-horario .fc-event-title::before{
+  content: "🔒 ";
+}
+
+.fc-event.evento-bloqueo-horario:hover{
+  filter: brightness(.97);
+}
+
+@media (max-width: 767.98px){
+  .agendamiento-module .module-header .btn-templo-bloqueo{
+    width: 100%;
+  }
+
+  .bloqueo-horario-modal .modal-footer .btn-templo-primary,
+  .bloqueo-horario-modal .modal-footer .btn-templo-secondary,
+  .bloqueo-horario-modal .modal-footer .btn-templo-desbloquear{
+    width: 100%;
   }
 }
