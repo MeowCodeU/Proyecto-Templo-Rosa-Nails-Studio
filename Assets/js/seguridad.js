@@ -196,6 +196,77 @@ prepararConfirmacionClave(
 );
 
 
+/* ===================================================== */
+/* MOSTRAR U OCULTAR CONTRASEÑAS */
+/* ===================================================== */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const boton =
+            event.target.closest(
+                ".btnAlternarClave"
+            );
+
+
+        if (!boton) {
+            return;
+        }
+
+
+        const campo =
+            document.getElementById(
+                boton.dataset.passwordTarget
+            );
+
+
+        if (!campo) {
+            return;
+        }
+
+
+        const claveVisible =
+            campo.type === "text";
+
+
+        campo.type =
+            claveVisible
+                ? "password"
+                : "text";
+
+
+        const icono =
+            boton.querySelector("i");
+
+
+        if (icono) {
+            icono.className =
+                claveVisible
+                    ? "bi bi-eye-slash"
+                    : "bi bi-eye";
+        }
+
+
+        const accion =
+            claveVisible
+                ? "Mostrar"
+                : "Ocultar";
+
+
+        boton.setAttribute(
+            "aria-label",
+            accion + " contraseña"
+        );
+
+        boton.setAttribute(
+            "title",
+            accion + " contraseña"
+        );
+
+    }
+);
+
 
 /* ===================================================== */
 /* BUSCAR PERSONA POR CÉDULA */
@@ -539,6 +610,10 @@ document.addEventListener(
                 "editarUsuarioCiudad"
             );
 
+        const nickname =
+            document.getElementById(
+                "editarUsuarioNickname"
+            );
 
         const rol =
             document.getElementById(
@@ -591,6 +666,10 @@ document.addEventListener(
                 boton.dataset.ciudad || "";
         }
 
+        if (nickname) {
+            nickname.value =
+                boton.dataset.nickname || "";
+        }
 
         if (rol) {
             rol.value =
@@ -1018,6 +1097,41 @@ if (modalRestablecerClave) {
             if (usuario) {
                 usuario.value = "";
             }
+
+            modalRestablecerClave
+                .querySelectorAll(
+                    ".btnAlternarClave"
+                )
+                .forEach(function (boton) {
+
+                    const campo =
+                        document.getElementById(
+                            boton.dataset.passwordTarget
+                        );
+
+                    const icono =
+                        boton.querySelector("i");
+
+                    if (campo) {
+                        campo.type = "password";
+                    }
+
+                    if (icono) {
+                        icono.className =
+                            "bi bi-eye-slash";
+                    }
+
+                    boton.setAttribute(
+                        "aria-label",
+                        "Mostrar contraseña"
+                    );
+
+                    boton.setAttribute(
+                        "title",
+                        "Mostrar contraseña"
+                    );
+
+                });
 
         }
     );

@@ -622,6 +622,15 @@ require_once __DIR__ . '/Layout/Header.php';
                             >
                         </div>
 
+                        <div class="col-12">
+                            <div
+                                id="mensajeDisponibilidadNuevoAgendamiento"
+                                class="alert d-none mb-0"
+                                role="status"
+                                aria-live="polite"
+                            ></div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -812,6 +821,15 @@ require_once __DIR__ . '/Layout/Header.php';
                             ></textarea>
                         </div>
 
+                        <div class="col-12">
+                            <div
+                                id="mensajeDisponibilidadNuevoBloqueo"
+                                class="alert d-none mb-0"
+                                role="status"
+                                aria-live="polite"
+                            ></div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -995,6 +1013,15 @@ require_once __DIR__ . '/Layout/Header.php';
                             ></textarea>
                         </div>
 
+                        <div class="col-12">
+                            <div
+                                id="mensajeDisponibilidadEditarBloqueo"
+                                class="alert d-none mb-0"
+                                role="status"
+                                aria-live="polite"
+                            ></div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -1133,6 +1160,114 @@ require_once __DIR__ . '/Layout/Header.php';
         </div>
     </div>
 </div>
+
+
+<!-- Modal Confirmar Desbloqueo de Horario -->
+<div
+    class="modal fade"
+    id="modalConfirmarDesbloqueoHorario"
+    tabindex="-1"
+    aria-labelledby="modalConfirmarDesbloqueoHorarioLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+
+        <div class="modal-content templo-modal bloqueo-horario-modal">
+
+            <div class="modal-header">
+
+                <h5
+                    class="modal-title"
+                    id="modalConfirmarDesbloqueoHorarioLabel"
+                >
+                    Confirmar Desbloqueo
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Cerrar"
+                ></button>
+
+            </div>
+
+
+            <div class="modal-body text-center py-4">
+
+                <div
+                    class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                    style="
+                        width: 72px;
+                        height: 72px;
+                        color: #a65f6d;
+                        background: rgba(198, 122, 139, 0.14);
+                        border: 2px solid rgba(198, 122, 139, 0.28);
+                        font-size: 2rem;
+                    "
+                >
+                    <i
+                        class="bi bi-unlock-fill"
+                        aria-hidden="true"
+                    ></i>
+                </div>
+
+
+                <p
+                    class="mb-2"
+                    style="
+                        color: #7a655b;
+                        font-size: 1rem;
+                        font-weight: 700;
+                    "
+                >
+                    ¿Desea desbloquear este horario?
+                </p>
+
+
+                <p
+                    class="mb-0"
+                    style="
+                        color: rgba(122, 101, 91, 0.82);
+                        font-size: 0.86rem;
+                        font-weight: 600;
+                        line-height: 1.5;
+                    "
+                >
+                    El período volverá a estar disponible para registrar citas.
+                </p>
+
+            </div>
+
+
+            <div class="modal-footer justify-content-center">
+
+                <button
+                    type="button"
+                    class="btn-templo-desbloquear"
+                    id="btnConfirmarDesbloqueoHorario"
+                >
+                    <i class="bi bi-unlock-fill"></i>
+                    Sí, desbloquear
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn-templo-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    <i class="bi bi-x-circle"></i>
+                    Cancelar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
 
 <!-- Modal Editar Agendamiento -->
 <div
@@ -1609,6 +1744,15 @@ require_once __DIR__ . '/Layout/Header.php';
                             >
                         </div>
 
+                        <div class="col-12">
+                            <div
+                                id="mensajeDisponibilidadEditarAgendamiento"
+                                class="alert d-none mb-0"
+                                role="status"
+                                aria-live="polite"
+                            ></div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -1785,6 +1929,197 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
+<?php
+
+/*
+ * Mensajes devueltos por el controlador después
+ * de registrar o modificar citas y bloqueos.
+ */
+$codigoMensajeAgendamiento = trim(
+    (string) (
+        $_GET['mensaje']
+        ?? ''
+    )
+);
+
+
+$mensajesAgendamiento = [
+
+    'horario_bloqueado' => [
+        'titulo' => 'Horario no disponible',
+        'texto' =>
+            'No es posible guardar el agendamiento porque la especialista posee un bloqueo dentro del horario seleccionado.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
+
+    'bloqueo_conflicto_cita' => [
+        'titulo' => 'No se puede bloquear el horario',
+        'texto' =>
+            'La especialista posee una cita asignada dentro del período seleccionado. El bloqueo no fue registrado.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
+
+    'bloqueo_conflicto_bloqueo' => [
+        'titulo' => 'Horario ya bloqueado',
+        'texto' =>
+            'La especialista ya posee otro bloqueo que coincide con el período seleccionado.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
+
+    'bloqueo_datos_invalidos' => [
+        'titulo' => 'Datos del bloqueo incompletos',
+        'texto' =>
+            'Verifique la especialista, la fecha y las horas indicadas. La hora final debe ser posterior a la hora inicial.',
+        'icono' => 'bi-exclamation-circle-fill'
+    ],
+
+    'bloqueo_registrado' => [
+        'titulo' => 'Horario bloqueado',
+        'texto' =>
+            'El bloqueo de horario fue registrado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ],
+
+    'bloqueo_modificado' => [
+        'titulo' => 'Bloqueo actualizado',
+        'texto' =>
+            'El bloqueo de horario fue modificado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ],
+
+    'bloqueo_no_registrado' => [
+        'titulo' => 'No fue posible registrar el bloqueo',
+        'texto' =>
+            'Ocurrió un inconveniente al guardar el bloqueo de horario. Verifique los datos e intente nuevamente.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
+
+    'bloqueo_no_modificado' => [
+        'titulo' => 'No fue posible modificar el bloqueo',
+        'texto' =>
+            'Ocurrió un inconveniente al actualizar el bloqueo de horario. Verifique los datos e intente nuevamente.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
+
+    'horario_desbloqueado' => [
+        'titulo' => 'Horario desbloqueado',
+        'texto' =>
+            'El horario fue desbloqueado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ]
+];
+
+
+$mensajeAgendamiento =
+    $mensajesAgendamiento[
+        $codigoMensajeAgendamiento
+    ] ?? null;
+
+?>
+
+
+<?php if ($mensajeAgendamiento !== null): ?>
+
+    <!-- Modal de respuesta del módulo de agendamiento -->
+    <div
+        class="modal fade"
+        id="modalMensajeAgendamiento"
+        tabindex="-1"
+        aria-labelledby="modalMensajeAgendamientoLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content templo-modal">
+
+                <div class="modal-header">
+
+                    <h5
+                        class="modal-title"
+                        id="modalMensajeAgendamientoLabel"
+                    >
+                        <?= htmlspecialchars(
+                            $mensajeAgendamiento['titulo'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ); ?>
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"
+                    ></button>
+
+                </div>
+
+
+                <div class="modal-body text-center py-4">
+
+                    <div
+                        class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                        style="
+                            width: 76px;
+                            height: 76px;
+                            color: #a65f6d;
+                            background: rgba(198, 122, 139, 0.14);
+                            border: 2px solid rgba(198, 122, 139, 0.28);
+                            font-size: 2.15rem;
+                        "
+                    >
+                        <i
+                            class="bi <?= htmlspecialchars(
+                                $mensajeAgendamiento['icono'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ); ?>"
+                            aria-hidden="true"
+                        ></i>
+                    </div>
+
+
+                    <p
+                        class="mb-0"
+                        style="
+                            color: #7a655b;
+                            font-size: 0.96rem;
+                            font-weight: 600;
+                            line-height: 1.65;
+                        "
+                    >
+                        <?= htmlspecialchars(
+                            $mensajeAgendamiento['texto'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ); ?>
+                    </p>
+
+                </div>
+
+
+                <div class="modal-footer justify-content-center">
+
+                    <button
+                        type="button"
+                        class="btn-templo-primary"
+                        data-bs-dismiss="modal"
+                    >
+                        <i class="bi bi-check-circle"></i>
+                        Entendido
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+<?php endif; ?>
+
+
 <!-- Formulario oculto para cancelar un agendamiento -->
 <form
     id="formCancelarAgendamiento"
@@ -1832,8 +2167,8 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 $scriptsVista = [
-    'Assets/js/agendamiento.js?v=5',
-    'Assets/js/agendamiento-calendario.js?v=5'
+    'Assets/js/agendamiento.js?v=6',
+    'Assets/js/agendamiento-calendario.js?v=6'
 ];
 
 require_once __DIR__ . '/Layout/Footer.php';

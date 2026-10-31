@@ -15,6 +15,7 @@ class SeguridadM extends Database implements CrudInterface
     private $idUsuario;
     private $idPersona;
     private $idRol;
+    private $nickname;
     private $clave;
 
     /* Atributos de la tabla personas */
@@ -31,6 +32,7 @@ class SeguridadM extends Database implements CrudInterface
     public function set_idUsuario($idUsuario) {$this->idUsuario = $idUsuario;}
     public function set_idPersona($idPersona) {$this->idPersona = $idPersona;}
     public function set_idRol($idRol) {$this->idRol = $idRol;}
+    public function set_nickname($nickname) {$this->nickname = $nickname;}
     public function set_clave($clave) {$this->clave = $clave;}
     public function set_cedula($cedula) {$this->cedula = $cedula;}
     public function set_nombre($nombre) {$this->nombre = $nombre;}
@@ -55,6 +57,7 @@ class SeguridadM extends Database implements CrudInterface
                     u.id_usuario,
                     u.id_persona,
                     u.id_rol,
+                    u.nickname,
                     u.estado_usuario,
 
                     p.cedula,
@@ -278,11 +281,13 @@ class SeguridadM extends Database implements CrudInterface
             $sqlUsuario = "INSERT INTO usuarios (
                                 id_persona,
                                 id_rol,
+                                nickname,
                                 clave,
                                 estado_usuario
                            ) VALUES (
                                 :id_persona,
                                 :id_rol,
+                                :nickname,
                                 :clave,
                                 'ACTIVO'
                            )";
@@ -293,6 +298,7 @@ class SeguridadM extends Database implements CrudInterface
 
             $stmtUsuario->bindParam(':id_persona', $idPersona);
             $stmtUsuario->bindParam(':id_rol', $this->idRol);
+            $stmtUsuario->bindParam(':nickname', $this->nickname);
             $stmtUsuario->bindParam(':clave', $claveCifrada);
 
             $stmtUsuario->execute();
@@ -355,7 +361,8 @@ class SeguridadM extends Database implements CrudInterface
             $sqlUsuario = "UPDATE usuarios
 
                            SET
-                                id_rol = :id_rol
+                                id_rol = :id_rol,
+                                nickname = :nickname
 
                            WHERE id_usuario = :id_usuario";
 
@@ -364,6 +371,7 @@ class SeguridadM extends Database implements CrudInterface
             );
 
             $stmtUsuario->bindParam(':id_rol', $this->idRol);
+            $stmtUsuario->bindParam(':nickname', $this->nickname);
             $stmtUsuario->bindParam(':id_usuario', $this->idUsuario);
 
             $stmtUsuario->execute();
@@ -415,6 +423,48 @@ class SeguridadM extends Database implements CrudInterface
 
 
     /*
+     * Restablecer contraseña:
+     * cifra la contraseña temporal suministrada
+     * y actualiza únicamente la cuenta seleccionada.
+     */
+    public function restablecerClave()
+    {
+        if (
+            empty($this->idUsuario) ||
+            empty($this->clave)
+        ) {
+            return false;
+        }
+
+
+        $claveCifrada = password_hash(
+            $this->clave,
+            PASSWORD_DEFAULT
+        );
+
+
+        $sql = "UPDATE usuarios
+
+                SET
+                    clave = :clave
+
+                WHERE id_usuario = :id_usuario
+                  AND estado_usuario = 'ACTIVO'";
+
+
+        $stmt = $this->conexionMD->prepare($sql);
+
+        $stmt->bindParam(':clave', $claveCifrada);
+        $stmt->bindParam(':id_usuario', $this->idUsuario);
+
+        $stmt->execute();
+
+
+        return $stmt->rowCount() > 0;
+    }
+
+
+    /*
      * Eliminar lógico:
      * no borra al usuario de la base de datos.
      * Solamente cambia su estado a INACTIVO.
@@ -436,4 +486,3 @@ class SeguridadM extends Database implements CrudInterface
         return $stmt->execute();
     }
 }
-

@@ -77,12 +77,14 @@ $fotoUsuarioHeader = trim(
 );
 
 if ($fotoUsuarioHeader === '') {
-    $fotoUsuarioHeader = 'Assets/img/LogoTR.png';
+    $fotoUsuarioHeader =
+        'Assets/img/LogoTR.png';
 }
 
 
 /* Escape de salida */
 $escaparHeader = static function ($valor): string {
+
     return htmlspecialchars(
         (string) $valor,
         ENT_QUOTES,
@@ -98,93 +100,116 @@ $escaparHeader = static function ($valor): string {
 
     <div class="user-session dropdown">
 
-    <button
-        class="user-session-btn"
-        type="button"
-        data-bs-toggle="dropdown"
-        aria-expanded="false"
-    >
-
-        <img
-            src="<?= $escaparHeader($fotoUsuarioHeader); ?>"
-            alt="Foto de perfil"
-            class="user-session-photo"
+        <button
+            class="user-session-btn"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
         >
 
-
-        <div class="user-session-info">
-
-            <span class="user-session-name">
-                <?= $escaparHeader($nombreUsuarioHeader); ?>
-            </span>
-
-            <small class="user-session-role">
-                <?= $escaparHeader(
-                    strtoupper($rolUsuarioHeader)
-                ); ?>
-            </small>
-
-        </div>
-
-
-        <i class="bi bi-chevron-down user-session-arrow"></i>
-
-    </button>
-
-
-    <ul class="dropdown-menu dropdown-menu-end user-session-menu">
-
-        <li>
-
-            <a
-                class="dropdown-item"
-                href="#"
-                data-bs-toggle="modal"
-                data-bs-target="#modalPerfil"
+            <img
+                src="<?= $escaparHeader(
+                    $fotoUsuarioHeader
+                ); ?>"
+                alt="Foto de perfil"
+                class="user-session-photo"
             >
 
-                <i class="bi bi-person-circle me-2"></i>
 
-                Editar Perfil
+            <div class="user-session-info">
 
-            </a>
+                <span class="user-session-name">
 
-        </li>
+                    <?= $escaparHeader(
+                        $nombreUsuarioHeader
+                    ); ?>
+
+                </span>
+
+                <small class="user-session-role">
+
+                    <?= $escaparHeader(
+                        strtoupper(
+                            $rolUsuarioHeader
+                        )
+                    ); ?>
+
+                </small>
+
+            </div>
 
 
-        <li>
-            <hr class="dropdown-divider">
-        </li>
+            <i
+                class="bi bi-chevron-down user-session-arrow"
+            ></i>
+
+        </button>
 
 
-        <li>
+        <ul
+            class="dropdown-menu dropdown-menu-end user-session-menu"
+        >
 
-            <a
-                class="dropdown-item"
-                href="#"
-                data-bs-toggle="modal"
-                data-bs-target="#modalCambiarClave"
-            >
+            <li>
 
-                <i class="bi bi-key me-2"></i>
+                <a
+                    class="dropdown-item"
+                    href="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalPerfil"
+                >
 
-                Cambiar Contraseña
+                    <i
+                        class="bi bi-person-circle me-2"
+                    ></i>
 
-            </a>
+                    Editar Perfil
 
-        </li>
-    </ul>
+                </a>
 
-</div>
+            </li>
+
+
+            <li>
+
+                <hr class="dropdown-divider">
+
+            </li>
+
+
+            <li>
+
+                <a
+                    class="dropdown-item"
+                    href="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalCambiarClave"
+                >
+
+                    <i
+                        class="bi bi-key me-2"
+                    ></i>
+
+                    Cambiar Contraseña
+
+                </a>
+
+            </li>
+
+        </ul>
+
+    </div>
 
 
     <a
-        href="Index.php?url=login"
+        href="Index.php?url=logout"
         class="logout-header-btn"
         title="Cerrar sesión"
         aria-label="Cerrar sesión"
     >
+
         <i class="bi bi-box-arrow-right"></i>
+
     </a>
 
 </div>

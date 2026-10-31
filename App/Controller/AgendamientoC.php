@@ -1,5 +1,6 @@
 <?php
 
+use App\Controller\Components\Session;
 use App\Model\AgendamientoM;
 use App\Model\BloqueoHorarioM;
 use App\Model\ClientesM;
@@ -20,16 +21,24 @@ $modeloTipoAgendamiento = new TipoAgendamientoM();
 
 
 /*
- * Consultar los usuarios activos.
+ * Consultar el usuario autenticado y los usuarios activos.
  *
  * De esta lista se obtiene:
- * - La administradora que registra temporalmente.
+ * - El usuario autenticado que registra la operación.
  * - Las especialistas en manicura que pueden ser asignadas.
  */
+$usuarioSesion = Session::obtenerUsuario();
+
+$idUsuarioRegistra = isset(
+    $usuarioSesion['id_usuario']
+)
+    ? (int) $usuarioSesion['id_usuario']
+    : null;
+
+
 $usuariosActivos = $modeloSeguridad->consultar();
 
 $usuarios = [];
-$idUsuarioRegistra = null;
 
 
 foreach ($usuariosActivos as $usuario) {
@@ -37,23 +46,6 @@ foreach ($usuariosActivos as $usuario) {
     $nombreRol = strtoupper(
         trim($usuario['nombre_rol'] ?? '')
     );
-
-
-    /* Administradora temporal que registra */
-    if (
-        $idUsuarioRegistra === null &&
-        in_array(
-            $nombreRol,
-            [
-                'ADMINISTRADORA DEL NEGOCIO',
-                'ADMINISTRADOR DEL SISTEMA'
-            ],
-            true
-        )
-    ) {
-        $idUsuarioRegistra =
-            (int) $usuario['id_usuario'];
-    }
 
 
     /* Especialistas disponibles */
@@ -71,6 +63,266 @@ if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['accion'])
 ) {
+
+    /* ================================================= */
+    /* VALIDAR DISPONIBILIDAD PARA BLOQUEO (AJAX) */
+    /* ================================================= */
+
+    if (
+        $_POST['accion'] ===
+        'validar_bloqueo_horario'
+    ) {
+        header(
+            'Content-Type: application/json; charset=utf-8'
+        );
+
+        $idUsuarioEspecialista =
+            (int) (
+                $_POST['id_usuario_especialista']
+                ?? 0
+            );
+
+        $idBloqueo =
+            (int) (
+                $_POST['id_bloqueo']
+                ?? 0
+            );
+
+        $fechaBloqueo = trim(
+            $_POST['fecha']
+            ?? ''
+        );
+
+        $horaInicio = trim(
+            $_POST['hora_inicio']
+            ?? ''
+        );
+
+        $horaFin = trim(
+            $_POST['hora_fin']
+            ?? ''
+        );
+
+
+        if (
+            $idUsuarioEspecialista <= 0 ||
+            $fechaBloqueo === '' ||
+            $horaInicio === '' ||
+            $horaFin === '' ||
+            $horaInicio >= $horaFin
+        ) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'datos_invalidos',
+                    'mensaje' =>
+                        'Complete correctamente la especialista, la fecha y el horario.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        $modeloBloqueoHorario
+            ->set_idUsuarioEspecialista(
+                $idUsuarioEspecialista
+            );
+
+        $modeloBloqueoHorario->set_fecha(
+            $fechaBloqueo
+        );
+
+        $modeloBloqueoHorario->set_horaInicio(
+            $horaInicio
+        );
+
+        $modeloBloqueoHorario->set_horaFin(
+            $horaFin
+        );
+
+
+        if (
+            $modeloBloqueoHorario
+                ->existeConflictoConBloqueo(
+                    $idBloqueo > 0
+                        ? $idBloqueo
+                        : null
+                )
+        ) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'bloqueo',
+                    'mensaje' =>
+                        'La especialista ya posee otro bloqueo dentro del horario seleccionado.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        if (
+            $modeloBloqueoHorario
+                ->existeConflictoConAgendamiento()
+        ) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'cita',
+                    'mensaje' =>
+                        'No es posible bloquear este período porque la especialista posee una cita dentro del horario seleccionado.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        echo json_encode(
+            [
+                'disponible' => true,
+                'tipo' => 'disponible',
+                'mensaje' =>
+                    'El horario se encuentra disponible para realizar el bloqueo.'
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
+
+        exit;
+    }
+
+
+    /* ================================================= */
+    /* VALIDAR CITA CONTRA BLOQUEOS (AJAX) */
+    /* ================================================= */
+
+    if (
+        $_POST['accion'] ===
+        'validar_disponibilidad_agendamiento'
+    ) {
+        header(
+            'Content-Type: application/json; charset=utf-8'
+        );
+
+        $idUsuarioAsignado =
+            (int) (
+                $_POST['id_usuario_asignado']
+                ?? 0
+            );
+
+        $fechaAgendamiento = trim(
+            $_POST['fecha']
+            ?? ''
+        );
+
+        $horaAgendamiento = trim(
+            $_POST['hora']
+            ?? ''
+        );
+
+        $duracionAgendamiento =
+            (int) (
+                $_POST['duracion_minutos']
+                ?? 0
+            );
+
+
+        if (
+            $idUsuarioAsignado <= 0 ||
+            $fechaAgendamiento === '' ||
+            $horaAgendamiento === '' ||
+            $duracionAgendamiento <= 0
+        ) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'datos_incompletos',
+                    'mensaje' =>
+                        'Seleccione la especialista, la fecha, la hora y al menos un servicio.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        try {
+            $fechaFinAgendamiento = new DateTime(
+                $fechaAgendamiento
+                . ' '
+                . $horaAgendamiento
+            );
+
+            $fechaFinAgendamiento->modify(
+                '+'
+                . $duracionAgendamiento
+                . ' minutes'
+            );
+
+            $horaFinAgendamiento =
+                $fechaFinAgendamiento->format(
+                    'H:i:s'
+                );
+
+        } catch (\Exception $e) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'datos_invalidos',
+                    'mensaje' =>
+                        'No fue posible interpretar el horario seleccionado.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        $existeBloqueo =
+            $modeloBloqueoHorario
+                ->existeBloqueoParaAgendamiento(
+                    $idUsuarioAsignado,
+                    $fechaAgendamiento,
+                    $horaAgendamiento,
+                    $horaFinAgendamiento
+                );
+
+
+        if ($existeBloqueo) {
+            echo json_encode(
+                [
+                    'disponible' => false,
+                    'tipo' => 'bloqueo',
+                    'mensaje' =>
+                        'La especialista no se encuentra disponible porque existe un bloqueo dentro del horario seleccionado.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+
+        echo json_encode(
+            [
+                'disponible' => true,
+                'tipo' => 'disponible',
+                'mensaje' =>
+                    'La especialista se encuentra disponible en el horario seleccionado.'
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
+
+        exit;
+    }
+
 
     /* ================================================= */
     /* REGISTRAR AGENDAMIENTO */
@@ -138,11 +390,13 @@ if (
                 )
         ) {
             header(
-                'Location: Index.php?url=agendamiento&mensaje=horario_bloqueado'
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=horario_bloqueado'
             );
 
             exit;
         }
+
 
         $modeloAgendamiento->set_idCliente(
             $idCliente !== ''
@@ -211,10 +465,7 @@ if (
         );
 
 
-        /*
-         * Mientras no existan sesiones,
-         * debe existir una administradora activa.
-         */
+        /* Registrar con el usuario autenticado */
         if ($idUsuarioRegistra !== null) {
             $modeloAgendamiento->registrar();
         }
@@ -294,11 +545,13 @@ if (
                 )
         ) {
             header(
-                'Location: Index.php?url=agendamiento&mensaje=horario_bloqueado'
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=horario_bloqueado'
             );
 
             exit;
         }
+
 
         $modeloAgendamiento->set_idAgendamiento(
             (int) (
@@ -412,12 +665,36 @@ if (
 
     if ($_POST['accion'] === 'registrar_bloqueo') {
 
+        $idUsuarioEspecialista =
+            (int) (
+                $_POST['id_usuario_especialista']
+                ?? 0
+            );
+
+        $fechaBloqueo = trim(
+            $_POST['fecha']
+            ?? ''
+        );
+
+        $horaInicio = trim(
+            $_POST['hora_inicio']
+            ?? ''
+        );
+
+        $horaFin = trim(
+            $_POST['hora_fin']
+            ?? ''
+        );
+
+        $motivoBloqueo = trim(
+            $_POST['motivo']
+            ?? ''
+        );
+
+
         $modeloBloqueoHorario
             ->set_idUsuarioEspecialista(
-                (int) (
-                    $_POST['id_usuario_especialista']
-                    ?? 0
-                )
+                $idUsuarioEspecialista
             );
 
         $modeloBloqueoHorario
@@ -426,45 +703,69 @@ if (
             );
 
         $modeloBloqueoHorario->set_fecha(
-            trim($_POST['fecha'] ?? '')
+            $fechaBloqueo
         );
 
         $modeloBloqueoHorario->set_horaInicio(
-            trim($_POST['hora_inicio'] ?? '')
+            $horaInicio
         );
 
         $modeloBloqueoHorario->set_horaFin(
-            trim($_POST['hora_fin'] ?? '')
+            $horaFin
         );
 
         $modeloBloqueoHorario->set_motivo(
-            trim($_POST['motivo'] ?? '')
-        );
-
-
-        $horaInicio = trim(
-            $_POST['hora_inicio'] ?? ''
-        );
-
-        $horaFin = trim(
-            $_POST['hora_fin'] ?? ''
+            $motivoBloqueo
         );
 
 
         if (
-            $idUsuarioRegistra !== null &&
-            $horaInicio !== '' &&
-            $horaFin !== '' &&
-            $horaInicio < $horaFin &&
-            !$modeloBloqueoHorario
-                ->existeConflictoConBloqueo() &&
-            !$modeloBloqueoHorario
+            $idUsuarioRegistra === null ||
+            $idUsuarioEspecialista <= 0 ||
+            $fechaBloqueo === '' ||
+            $horaInicio === '' ||
+            $horaFin === '' ||
+            $horaInicio >= $horaFin
+        ) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_datos_invalidos'
+            );
+
+            exit;
+        }
+
+
+        if (
+            $modeloBloqueoHorario
+                ->existeConflictoConBloqueo()
+        ) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_conflicto_bloqueo'
+            );
+
+            exit;
+        }
+
+
+        if (
+            $modeloBloqueoHorario
                 ->existeConflictoConAgendamiento()
         ) {
-            $modeloBloqueoHorario->registrar();
-
             header(
-                'Location: Index.php?url=agendamiento&mensaje=bloqueo_registrado'
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_conflicto_cita'
+            );
+
+            exit;
+        }
+
+
+        if ($modeloBloqueoHorario->registrar()) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_registrado'
             );
 
             exit;
@@ -472,7 +773,8 @@ if (
 
 
         header(
-            'Location: Index.php?url=agendamiento&mensaje=bloqueo_no_registrado'
+            'Location: Index.php?url=agendamiento'
+            . '&mensaje=bloqueo_no_registrado'
         );
 
         exit;
@@ -486,7 +788,37 @@ if (
     if ($_POST['accion'] === 'modificar_bloqueo') {
 
         $idBloqueo =
-            (int) ($_POST['id_bloqueo'] ?? 0);
+            (int) (
+                $_POST['id_bloqueo']
+                ?? 0
+            );
+
+        $idUsuarioEspecialista =
+            (int) (
+                $_POST['id_usuario_especialista']
+                ?? 0
+            );
+
+        $fechaBloqueo = trim(
+            $_POST['fecha']
+            ?? ''
+        );
+
+        $horaInicio = trim(
+            $_POST['hora_inicio']
+            ?? ''
+        );
+
+        $horaFin = trim(
+            $_POST['hora_fin']
+            ?? ''
+        );
+
+        $motivoBloqueo = trim(
+            $_POST['motivo']
+            ?? ''
+        );
+
 
         $modeloBloqueoHorario->set_idBloqueo(
             $idBloqueo
@@ -494,54 +826,75 @@ if (
 
         $modeloBloqueoHorario
             ->set_idUsuarioEspecialista(
-                (int) (
-                    $_POST['id_usuario_especialista']
-                    ?? 0
-                )
+                $idUsuarioEspecialista
             );
 
         $modeloBloqueoHorario->set_fecha(
-            trim($_POST['fecha'] ?? '')
+            $fechaBloqueo
         );
 
         $modeloBloqueoHorario->set_horaInicio(
-            trim($_POST['hora_inicio'] ?? '')
+            $horaInicio
         );
 
         $modeloBloqueoHorario->set_horaFin(
-            trim($_POST['hora_fin'] ?? '')
+            $horaFin
         );
 
         $modeloBloqueoHorario->set_motivo(
-            trim($_POST['motivo'] ?? '')
-        );
-
-
-        $horaInicio = trim(
-            $_POST['hora_inicio'] ?? ''
-        );
-
-        $horaFin = trim(
-            $_POST['hora_fin'] ?? ''
+            $motivoBloqueo
         );
 
 
         if (
-            $idBloqueo > 0 &&
-            $horaInicio !== '' &&
-            $horaFin !== '' &&
-            $horaInicio < $horaFin &&
-            !$modeloBloqueoHorario
+            $idBloqueo <= 0 ||
+            $idUsuarioEspecialista <= 0 ||
+            $fechaBloqueo === '' ||
+            $horaInicio === '' ||
+            $horaFin === '' ||
+            $horaInicio >= $horaFin
+        ) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_datos_invalidos'
+            );
+
+            exit;
+        }
+
+
+        if (
+            $modeloBloqueoHorario
                 ->existeConflictoConBloqueo(
                     $idBloqueo
-                ) &&
-            !$modeloBloqueoHorario
+                )
+        ) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_conflicto_bloqueo'
+            );
+
+            exit;
+        }
+
+
+        if (
+            $modeloBloqueoHorario
                 ->existeConflictoConAgendamiento()
         ) {
-            $modeloBloqueoHorario->modificar();
-
             header(
-                'Location: Index.php?url=agendamiento&mensaje=bloqueo_modificado'
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_conflicto_cita'
+            );
+
+            exit;
+        }
+
+
+        if ($modeloBloqueoHorario->modificar()) {
+            header(
+                'Location: Index.php?url=agendamiento'
+                . '&mensaje=bloqueo_modificado'
             );
 
             exit;
@@ -549,7 +902,8 @@ if (
 
 
         header(
-            'Location: Index.php?url=agendamiento&mensaje=bloqueo_no_modificado'
+            'Location: Index.php?url=agendamiento'
+            . '&mensaje=bloqueo_no_modificado'
         );
 
         exit;
@@ -575,12 +929,12 @@ if (
 
 
         header(
-            'Location: Index.php?url=agendamiento&mensaje=horario_desbloqueado'
+            'Location: Index.php?url=agendamiento'
+            . '&mensaje=horario_desbloqueado'
         );
 
         exit;
     }
-
 }
 
 

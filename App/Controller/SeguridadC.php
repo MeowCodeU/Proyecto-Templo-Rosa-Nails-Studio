@@ -88,17 +88,29 @@ if (
 
     if ($_POST['accion'] === 'registrar_usuario') {
 
-        $clave = $_POST['clave'] ?? '';
+        $clave =
+            (string) (
+                $_POST['clave']
+                ?? ''
+            );
 
         $confirmarClave =
-            $_POST['confirmar_clave'] ?? '';
+            (string) (
+                $_POST['confirmar_clave']
+                ?? ''
+            );
 
 
         /*
-         * Registrar solamente cuando
-         * las dos contraseñas coincidan.
+         * Registrar solamente cuando las
+         * contraseñas coincidan y tengan
+         * un mínimo de ocho caracteres.
          */
-        if ($clave === $confirmarClave) {
+        if (
+            $clave !== '' &&
+            strlen($clave) >= 8 &&
+            $clave === $confirmarClave
+        ) {
 
             $modeloSeguridad->set_cedula(
                 trim($_POST['cedula'] ?? '')
@@ -131,6 +143,10 @@ if (
 
             $modeloSeguridad->set_idRol(
                 $_POST['id_rol'] ?? ''
+            );
+
+            $modeloSeguridad->set_nickname(
+                trim($_POST['nickname'] ?? '')
             );
 
             $modeloSeguridad->set_clave(
@@ -218,12 +234,108 @@ if (
             $_POST['id_rol'] ?? ''
         );
 
+        $modeloSeguridad->set_nickname(
+            trim($_POST['nickname'] ?? '')
+        );
+
 
         $modeloSeguridad->modificar();
 
 
         header(
             'Location: Index.php?url=seguridad'
+        );
+
+        exit;
+    }
+
+
+    /* ================================================= */
+    /* RESTABLECER CONTRASEÑA DE USUARIO */
+    /* ================================================= */
+
+    if ($_POST['accion'] === 'restablecer_clave') {
+
+        $idUsuario = (int) (
+            $_POST['id_usuario'] ?? 0
+        );
+
+        $nuevaClave =
+            (string) (
+                $_POST['nueva_clave']
+                ?? ''
+            );
+
+        $confirmarClave =
+            (string) (
+                $_POST['confirmar_clave']
+                ?? ''
+            );
+
+        $tokenFormulario = (string) (
+            $_POST['token_csrf'] ?? ''
+        );
+
+        $tokenSesion = (string) (
+            $_SESSION['token_restablecer_clave'] ?? ''
+        );
+
+
+        $resultado = 'error';
+
+
+        if (
+            $tokenFormulario === '' ||
+            $tokenSesion === '' ||
+            !hash_equals(
+                $tokenSesion,
+                $tokenFormulario
+            )
+        ) {
+
+            $resultado = 'token_invalido';
+
+        } elseif (
+            $idUsuario <= 0 ||
+            $nuevaClave === '' ||
+            $confirmarClave === ''
+        ) {
+
+            $resultado = 'datos_incompletos';
+
+        } elseif (strlen($nuevaClave) < 8) {
+
+            $resultado = 'clave_corta';
+
+        } elseif ($nuevaClave !== $confirmarClave) {
+
+            $resultado = 'no_coinciden';
+
+        } else {
+
+            $modeloSeguridad->set_idUsuario(
+                $idUsuario
+            );
+
+            $modeloSeguridad->set_clave(
+                $nuevaClave
+            );
+
+
+            if ($modeloSeguridad->restablecerClave()) {
+                $resultado = 'exito';
+            }
+        }
+
+
+        unset(
+            $_SESSION['token_restablecer_clave']
+        );
+
+
+        header(
+            'Location: Index.php?url=seguridad&restablecer=' .
+            $resultado
         );
 
         exit;

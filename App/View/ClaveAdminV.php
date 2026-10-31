@@ -2,6 +2,16 @@
 
 $tituloPagina = 'Clave Universal | Templo Rosa';
 
+$escaparClaveAdmin = static function ($valor): string {
+
+    return htmlspecialchars(
+        (string) $valor,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+
+};
+
 ?>
 
 <!DOCTYPE html>
@@ -17,11 +27,7 @@ $tituloPagina = 'Clave Universal | Templo Rosa';
     >
 
     <title>
-        <?= htmlspecialchars(
-            $tituloPagina,
-            ENT_QUOTES,
-            'UTF-8'
-        ); ?>
+        <?= $escaparClaveAdmin($tituloPagina); ?>
     </title>
 
     <link
@@ -39,7 +45,7 @@ $tituloPagina = 'Clave Universal | Templo Rosa';
     <!-- CSS de las vistas externas -->
     <link
         rel="stylesheet"
-        href="Assets/css/login.css"
+        href="Assets/css/login.css?v=<?= filemtime(__DIR__ . '/../../Assets/css/login.css'); ?>"
     >
 
 </head>
@@ -205,16 +211,40 @@ $tituloPagina = 'Clave Universal | Templo Rosa';
                         <h1 class="login-title">
                             Clave Universal
                         </h1>
-                        
-                       <p class="clave-universal-info">
-                        <i
-                        class="bi bi-info-circle"
-                        aria-hidden="true"
-                        ></i>
-                        <span>
-                            Ingrese la clave universal para acceder al registro de usuarios.
-                        </span>
-                    </p>
+
+
+                        <?php if ($mensajeClaveAdmin !== ''): ?>
+
+                            <p
+                                role="alert"
+                                style="
+                                    margin: 0 0 14px;
+                                    color: #8a2635;
+                                    font-size: 0.9rem;
+                                    text-align: center;
+                                "
+                            >
+                                <?= $escaparClaveAdmin(
+                                    $mensajeClaveAdmin
+                                ); ?>
+                            </p>
+
+                        <?php endif; ?>
+
+
+                        <p class="clave-universal-info">
+
+                            <i
+                                class="bi bi-info-circle"
+                                aria-hidden="true"
+                            ></i>
+
+                            <span>
+                                Ingrese la clave universal para acceder al registro de usuarios.
+                            </span>
+
+                        </p>
+
 
                         <form
                             class="login-form"
@@ -280,6 +310,8 @@ $tituloPagina = 'Clave Universal | Templo Rosa';
         </section>
 
     </main>
+
+    <script src="Assets/js/login.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/login.js'); ?>"></script>
 
 </body>
 

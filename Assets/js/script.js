@@ -130,3 +130,106 @@ if (inputFotoPerfil && previewFoto) {
         }
     });
 }
+
+
+/* ===================================================== */
+/* MOSTRAR U OCULTAR CONTRASEÑAS DEL PERFIL */
+/* ===================================================== */
+
+const botonesClavePerfil =
+    document.querySelectorAll(
+        ".btnAlternarClavePerfil"
+    );
+
+botonesClavePerfil.forEach(function (boton) {
+    boton.addEventListener("click", function () {
+        const idCampo =
+            boton.getAttribute(
+                "data-password-target"
+            );
+
+        const campo =
+            document.getElementById(idCampo);
+
+        if (!campo) {
+            return;
+        }
+
+        const mostrarClave =
+            campo.type === "password";
+
+        campo.type =
+            mostrarClave
+                ? "text"
+                : "password";
+
+        const textoAccion =
+            mostrarClave
+                ? "Ocultar contraseña"
+                : "Mostrar contraseña";
+
+        boton.setAttribute(
+            "aria-label",
+            textoAccion
+        );
+
+        boton.setAttribute(
+            "title",
+            textoAccion
+        );
+    });
+});
+
+
+/* ===================================================== */
+/* LIMPIAR EL MODAL DE CAMBIO DE CONTRASEÑA */
+/* ===================================================== */
+
+const modalCambiarClave =
+    document.getElementById(
+        "modalCambiarClave"
+    );
+
+if (modalCambiarClave) {
+    modalCambiarClave.addEventListener(
+        "hidden.bs.modal",
+        function () {
+            const formulario =
+                document.getElementById(
+                    "formCambiarClave"
+                );
+
+            if (formulario) {
+                formulario.reset();
+            }
+
+            botonesClavePerfil.forEach(
+                function (boton) {
+                    const idCampo =
+                        boton.getAttribute(
+                            "data-password-target"
+                        );
+
+                    const campo =
+                        document.getElementById(
+                            idCampo
+                        );
+
+                    if (campo) {
+                        campo.type = "password";
+                    }
+
+                    boton.setAttribute(
+                        "aria-label",
+                        "Mostrar contraseña"
+                    );
+
+                    boton.setAttribute(
+                        "title",
+                        "Mostrar contraseña"
+                    );
+                }
+            );
+        }
+    );
+}

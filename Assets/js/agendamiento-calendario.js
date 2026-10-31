@@ -65,6 +65,16 @@ document.addEventListener("DOMContentLoaded", function () {
         "desbloquearIdBloqueo"
     );
 
+    const modalConfirmarDesbloqueoEl =
+        document.getElementById(
+            "modalConfirmarDesbloqueoHorario"
+        );
+
+    const btnConfirmarDesbloqueo =
+        document.getElementById(
+            "btnConfirmarDesbloqueoHorario"
+        );
+
     const formMover = document.getElementById(
         "formMoverAgendamiento"
     );
@@ -1267,22 +1277,91 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                const confirmar = window.confirm(
-                    "¿Desea desbloquear este horario?"
-                );
-
-                if (!confirmar) {
-                    return;
-                }
-
                 desbloquearId.value =
                     eventoSeleccionado
                         .extendedProps
                         .id_bloqueo;
 
-                formDesbloquear.submit();
+
+                if (
+                    !modalConfirmarDesbloqueoEl
+                ) {
+                    return;
+                }
+
+
+                const mostrarConfirmacion =
+                    function () {
+                        bootstrap.Modal
+                            .getOrCreateInstance(
+                                modalConfirmarDesbloqueoEl
+                            )
+                            .show();
+                    };
+
+
+                const instanciaDetalleBloqueo =
+                    modalDetalleBloqueoEl
+                        ? bootstrap.Modal
+                            .getInstance(
+                                modalDetalleBloqueoEl
+                            )
+                        : null;
+
+
+                if (
+                    modalDetalleBloqueoEl &&
+                    modalDetalleBloqueoEl
+                        .classList
+                        .contains("show") &&
+                    instanciaDetalleBloqueo
+                ) {
+                    modalDetalleBloqueoEl
+                        .addEventListener(
+                            "hidden.bs.modal",
+                            mostrarConfirmacion,
+                            {
+                                once: true
+                            }
+                        );
+
+
+                    instanciaDetalleBloqueo.hide();
+
+
+                    return;
+                }
+
+
+                mostrarConfirmacion();
             }
         );
+    }
+
+
+    if (
+        btnConfirmarDesbloqueo &&
+        formDesbloquear &&
+        desbloquearId
+    ) {
+        btnConfirmarDesbloqueo
+            .addEventListener(
+                "click",
+                function () {
+                    if (
+                        desbloquearId.value === ""
+                    ) {
+                        return;
+                    }
+
+
+                    btnConfirmarDesbloqueo.disabled =
+                        true;
+
+
+                    formDesbloquear.submit();
+                }
+            );
     }
 
 
