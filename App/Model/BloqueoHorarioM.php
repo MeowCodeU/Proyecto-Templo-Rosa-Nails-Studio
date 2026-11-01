@@ -21,8 +21,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
     private $motivo;
 
 
-    /* Setters */
-
+    /*Setters*/
     public function set_idBloqueo($idBloqueo) {$this->idBloqueo = $idBloqueo;}
     public function set_idUsuarioEspecialista($idUsuarioEspecialista) {$this->idUsuarioEspecialista = $idUsuarioEspecialista;}
     public function set_idUsuarioRegistra($idUsuarioRegistra) {$this->idUsuarioRegistra = $idUsuarioRegistra;}
@@ -32,19 +31,14 @@ class BloqueoHorarioM extends Database implements CrudInterface
     public function set_motivo($motivo) {$this->motivo = $motivo;}
 
 
-    /* Constructor */
-
+    /*Constructor*/
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /*
-     * Consultar:
-     * obtiene los bloqueos de horario bloqueados con sus relaciones.
-     */
-
+    /*Consultar:obtiene los bloqueos de horario bloqueados con sus relaciones.*/
     public function consultar()
     {
         $sql = "SELECT
@@ -106,7 +100,6 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* Registrar un bloqueo de horario */
-
     public function registrar()
     {
         $sql = "INSERT INTO bloqueos_horarios (
@@ -149,7 +142,6 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* Modificar un bloqueo de horario */
-
     public function modificar()
     {
         $sql = "UPDATE bloqueos_horarios
@@ -179,11 +171,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Eliminar:
-     * realiza un desbloqueo lógico para conservar el historial.
-     */
-
+    /*Eliminar: realiza un desbloqueo lógico para conservar el historial.*/
     public function eliminar()
     {
         $sql = "UPDATE bloqueos_horarios
@@ -202,7 +190,6 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* Verifica si el nuevo bloqueo se cruza con otro horario bloqueado */
-
     public function existeConflictoConBloqueo($idExcluir = null)
     {
         $sql = "SELECT COUNT(*)
@@ -243,7 +230,6 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* Verifica si el bloqueo se cruza con una cita existente */
-
     public function existeConflictoConAgendamiento()
     {
         $sql = "SELECT COUNT(*)
@@ -280,7 +266,6 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* Verifica si una cita cae dentro de un horario bloqueado */
-
     public function existeBloqueoParaAgendamiento(
         $idUsuarioEspecialista,
         $fecha,

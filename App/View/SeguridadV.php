@@ -32,10 +32,7 @@ $escaparSeguridad = static function ($valor): string {
 };
 
 
-/*
- * Crear el token de seguridad utilizado por
- * el formulario de restablecimiento de contraseña.
- */
+/*Crear el token de seguridad utilizado por el formulario de restablecimiento de contraseña.*/
 if (empty($_SESSION['token_restablecer_clave'])) {
 
     $_SESSION['token_restablecer_clave'] =

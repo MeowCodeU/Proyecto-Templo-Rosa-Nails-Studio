@@ -29,7 +29,6 @@ class AgendamientoM extends Database implements CrudInterface
 
 
     /* Setters */
-
     public function set_idAgendamiento($idAgendamiento) {$this->idAgendamiento = $idAgendamiento;}
     public function set_idCliente($idCliente) {$this->idCliente = $idCliente;}
     public function set_idUsuarioRegistra($idUsuarioRegistra) {$this->idUsuarioRegistra = $idUsuarioRegistra;}
@@ -66,18 +65,13 @@ class AgendamientoM extends Database implements CrudInterface
 
 
     /* Constructor */
-
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /*
-     * Consultar:
-     * obtiene los agendamientos con sus relaciones.
-     */
-
+    /*Consultar:obtiene los agendamientos con sus relaciones.*/
     public function consultar()
     {
         $sql = "SELECT
@@ -201,11 +195,7 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Registrar:
-     * guarda el agendamiento y sus servicios.
-     */
-
+    /*Registrar: guarda el agendamiento y sus servicios.*/
     public function registrar()
     {
         try {
@@ -270,11 +260,7 @@ class AgendamientoM extends Database implements CrudInterface
             $idAgendamiento = $this->conexionMD->lastInsertId();
 
 
-            /*
-             * Guardar cada servicio seleccionado
-             * en detalles_agendamientos.
-             */
-
+            /*Guardar cada servicio seleccionado en detalles_agendamientos.*/
             $this->registrarServicios($idAgendamiento);
 
             $this->conexionMD->commit();
@@ -292,12 +278,7 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Modificar:
-     * actualiza el agendamiento y reemplaza
-     * los servicios seleccionados.
-     */
-
+    /*Modificar: actualiza el agendamiento y reemplaza los servicios seleccionados.*/
     public function modificar()
     {
         try {
@@ -369,10 +350,7 @@ class AgendamientoM extends Database implements CrudInterface
             $stmtAgendamiento->execute();
 
 
-            /*
-             * Eliminar los servicios anteriores.
-             */
-
+            /*Eliminar los servicios anteriores.*/
             $sqlEliminarDetalles =
                 "DELETE FROM
                     detalles_agendamientos
@@ -390,11 +368,7 @@ class AgendamientoM extends Database implements CrudInterface
             $stmtEliminarDetalles->execute();
 
 
-            /*
-             * Guardar la nueva selección
-             * de servicios.
-             */
-
+            /* Guardar la nueva selección de servicios.*/
             $this->registrarServicios($this->idAgendamiento);
 
             $this->conexionMD->commit();
@@ -412,12 +386,7 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Eliminar lógico:
-     * no borra el agendamiento.
-     * Cambia su estado a CANCELADA.
-     */
-
+    /*Eliminar lógico: no borra el agendamiento. Cambia su estado a CANCELADA.*/
     public function eliminar()
     {
         $sql =
@@ -445,12 +414,7 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Método interno:
-     * registra los servicios relacionados
-     * con el agendamiento.
-     */
-
+    /*Método interno: registra los servicios relacionados con el agendamiento.*/
     private function registrarServicios($idAgendamiento)
     {
         if (empty($this->servicios)) {

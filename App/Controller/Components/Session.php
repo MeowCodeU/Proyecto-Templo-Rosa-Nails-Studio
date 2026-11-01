@@ -110,10 +110,7 @@ final class Session
         $_SESSION['usuario'] = $usuario;
 
 
-        /*
-         * Guarda el momento de la última
-         * actividad realizada.
-         */
+        /*Guarda el momento de la última actividad realizada.*/
         $_SESSION['ultima_actividad'] =
             time();
     }

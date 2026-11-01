@@ -1931,10 +1931,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 
-/*
- * Mensajes devueltos por el controlador después
- * de registrar o modificar citas y bloqueos.
- */
+/*Mensajes devueltos por el controlador después de registrar o modificar citas y bloqueos.*/
 $codigoMensajeAgendamiento = trim(
     (string) (
         $_GET['mensaje']

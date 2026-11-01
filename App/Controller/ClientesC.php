@@ -2,13 +2,13 @@
 
 use App\Model\ClientesM;
 
-/* Objeto del modelo Clientes */
+/*Objeto del modelo Clientes*/
 $modeloClientes = new ClientesM();
 
-/* Procesar acciones enviadas por formulario */
+/*Procesar acciones enviadas por formulario*/
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
-    /* Registrar cliente */
+    /*Registrar cliente*/
     if ($_POST['accion'] === 'registrar') {
 
         $modeloClientes->set_Cedula($_POST['cedula'] ?? '');
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         exit;
     }
 
-    /* Modificar cliente */
+    /*Modificar cliente*/
     if ($_POST['accion'] === 'modificar') {
 
         $modeloClientes->set_Cedula($_POST['cedula'] ?? '');
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         exit;
     }
 
-    /* Desactivar cliente */
+    /*Desactivar cliente*/
     if ($_POST['accion'] === 'desactivar' || $_POST['accion'] === 'eliminar') {
 
         $modeloClientes->set_Cedula($_POST['cedula'] ?? '');
@@ -56,8 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     }
 }
 
-/* Consultar clientes activos */
+/*Consultar clientes activos*/
 $listaClientes = $modeloClientes->consultar();
 
-/* Cargar vista */
+/*Cargar vista*/
 require_once __DIR__ . '/../View/ClientesV.php';

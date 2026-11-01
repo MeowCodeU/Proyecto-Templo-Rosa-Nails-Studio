@@ -101,11 +101,7 @@ if (
             );
 
 
-        /*
-         * Registrar solamente cuando las
-         * contraseñas coincidan y tengan
-         * un mínimo de ocho caracteres.
-         */
+        /*Registrar solamente cuando las contraseñas coincidan y tengan un mínimo de ocho caracteres.*/
         if (
             $clave !== '' &&
             strlen($clave) >= 8 &&

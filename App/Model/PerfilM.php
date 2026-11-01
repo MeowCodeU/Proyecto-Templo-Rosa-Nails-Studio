@@ -8,18 +8,11 @@ use PDO;
 
 class PerfilM extends Database
 {
-    /*
-     * Conexión utilizada para ejecutar
-     * las operaciones relacionadas con
-     * el perfil del usuario autenticado.
-     */
+    /*Conexión utilizada para ejecutar las operaciones relacionadas con el perfil del usuario autenticado.*/
     private PDO $conexionMD;
 
 
-    /*
-     * Obtiene la conexión configurada
-     * para la base de datos del sistema.
-     */
+    /*Obtiene la conexión configurada para la base de datos del sistema.*/
     public function __construct()
     {
         $this->conexionMD =
@@ -27,14 +20,8 @@ class PerfilM extends Database
     }
 
 
-    /*
-     * Recupera únicamente la clave cifrada
-     * correspondiente al usuario autenticado.
-     *
-     * Esta información se utiliza para
-     * comprobar la contraseña actual mediante
-     * password_verify().
-     */
+    /*Recupera únicamente la clave cifrada correspondiente al usuario autenticado.
+    Esta información se utiliza para comprobar la contraseña actual mediante password_verify().*/
     public function obtenerClaveActual(
         int $idUsuario
     ): ?string {
@@ -78,14 +65,8 @@ class PerfilM extends Database
     }
 
 
-    /*
-     * Cifra y actualiza la nueva contraseña.
-     *
-     * El identificador se obtiene de la sesión
-     * y no desde el formulario, evitando que
-     * un usuario intente modificar la clave
-     * correspondiente a otra cuenta.
-     */
+    /*Cifra y actualiza la nueva contraseña. El identificador se obtiene de la sesión y no desde el formulario,
+    evitando queun usuario intente modificar la clave correspondiente a otra cuenta.*/
     public function cambiarClave(
         int $idUsuario,
         string $nuevaClave

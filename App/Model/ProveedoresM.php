@@ -87,10 +87,7 @@ class ProveedoresM extends Database implements CrudInterface
         try {
             $this->conexionMD->beginTransaction();
 
-            /*
-             * Buscar si la persona de contacto ya existe.
-             * Si existe, se reutiliza su id_persona.
-             */
+            /*Buscar si la persona de contacto ya existe. Si existe, se reutiliza su id_persona.*/
             $sqlBuscarPersona = "SELECT
                                     id_persona
 
@@ -117,16 +114,10 @@ class ProveedoresM extends Database implements CrudInterface
 
             if ($persona) {
 
-                /*
-                 * Si la persona ya existe,
-                 * se reutiliza su identificador.
-                 */
+                /*Si la persona ya existe, se reutiliza su identificador.*/
                 $idPersonaContacto = $persona['id_persona'];
 
-                /*
-                 * También se actualizan sus datos
-                 * personales y de contacto.
-                 */
+                /*También se actualizan sus datos personales y de contacto.*/
                 $sqlActualizarPersona = "UPDATE personas
 
                                          SET
@@ -155,10 +146,7 @@ class ProveedoresM extends Database implements CrudInterface
 
             } else {
 
-                /*
-                 * Si la persona no existe,
-                 * se registra primero.
-                 */
+                /*Si la persona no existe, se registra primero.*/
                 $sqlPersona = "INSERT INTO personas (
                                     cedula,
                                     nombre,
@@ -195,10 +183,7 @@ class ProveedoresM extends Database implements CrudInterface
                     $this->conexionMD->lastInsertId();
             }
 
-            /*
-             * Registrar el proveedor relacionado
-             * con la persona de contacto.
-             */
+            /*Registrar el proveedor relacionado con la persona de contacto.*/
             $sqlProveedor = "INSERT INTO proveedores (
                                 id_persona_contacto,
                                 rif,
@@ -312,11 +297,7 @@ class ProveedoresM extends Database implements CrudInterface
         }
     }
 
-    /*
-     * Eliminar lógico:
-     * no borra al proveedor de la base de datos.
-     * Solamente cambia su estado a INACTIVO.
-     */
+    /*Eliminar lógico: no borra al proveedor de la base de datos. Solamente cambia su estado a INACTIVO.*/
     public function eliminar()
     {
         $sql = "UPDATE proveedores

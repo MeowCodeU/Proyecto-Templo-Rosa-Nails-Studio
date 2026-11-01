@@ -20,13 +20,10 @@ $modeloEstadoAgendamiento = new EstadoAgendamientoM();
 $modeloTipoAgendamiento = new TipoAgendamientoM();
 
 
-/*
- * Consultar el usuario autenticado y los usuarios activos.
- *
- * De esta lista se obtiene:
- * - El usuario autenticado que registra la operación.
- * - Las especialistas en manicura que pueden ser asignadas.
- */
+/*Consultar el usuario autenticado y los usuarios activos.
+De esta lista se obtiene:
+  - El usuario autenticado que registra la operación.
+ - Las especialistas en manicura que pueden ser asignadas.*/
 $usuarioSesion = Session::obtenerUsuario();
 
 $idUsuarioRegistra = isset(

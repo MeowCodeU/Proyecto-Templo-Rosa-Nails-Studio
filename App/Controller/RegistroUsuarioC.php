@@ -18,10 +18,7 @@ $datosRegistro = [
 ];
 
 
-/*
- * Comprobar que la clave universal
- * haya sido validada previamente.
- */
+/* Comprobar que la clave universal haya sido validada previamente.*/
 $autorizadoHasta = (int) (
     $_SESSION['registro_usuario_autorizado_hasta']
     ?? 0
@@ -226,10 +223,7 @@ try {
 
                 if ($registrado) {
 
-                    /*
-                     * La autorización se utiliza
-                     * para registrar una sola cuenta.
-                     */
+                    /*La autorización se utiliza para registrar una sola cuenta.*/
                     unset(
                         $_SESSION[
                             'registro_usuario_autorizado_hasta'

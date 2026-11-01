@@ -134,14 +134,7 @@ class SeguridadM extends Database implements CrudInterface
             $this->conexionMD->beginTransaction();
 
 
-            /*
-             * Buscar si la persona ya existe.
-             *
-             * Si ya está registrada como cliente
-             * o contacto de proveedor,
-             * se reutiliza su id_persona.
-             */
-
+    /*Buscar si la persona ya existe. Si ya está registrada como clienteo contacto de proveedor,se reutiliza su id_persona.*/
             $sqlBuscarPersona = "SELECT
                                     p.id_persona,
                                     u.id_usuario
@@ -170,11 +163,7 @@ class SeguridadM extends Database implements CrudInterface
 
             if ($persona) {
 
-                /*
-                 * Si la persona ya posee una cuenta
-                 * de usuario, no se registra otra.
-                 */
-
+    /*Si la persona ya posee una cuenta de usuario, no se registra otra.*/
                 if (!empty($persona['id_usuario'])) {
 
                     $this->conexionMD->rollBack();
@@ -182,20 +171,11 @@ class SeguridadM extends Database implements CrudInterface
                     return false;
                 }
 
-
-                /*
-                 * Si la persona ya existe,
-                 * se reutiliza su identificador.
-                 */
-
+    /*Si la persona ya existe, se reutiliza su identificador.*/
                 $idPersona = $persona['id_persona'];
 
 
-                /*
-                 * También se actualizan sus datos
-                 * personales y de contacto.
-                 */
-
+    /*También se actualizan sus datos personales y de contacto.*/
                 $sqlActualizarPersona = "UPDATE personas
 
                                          SET
@@ -224,11 +204,7 @@ class SeguridadM extends Database implements CrudInterface
 
             } else {
 
-                /*
-                 * Si la persona no existe,
-                 * se registra primero.
-                 */
-
+    /*Si la persona no existe, se registra primero.*/
                 $sqlPersona = "INSERT INTO personas (
                                     cedula,
                                     nombre,
@@ -265,11 +241,7 @@ class SeguridadM extends Database implements CrudInterface
             }
 
 
-            /*
-             * La contraseña se cifra antes
-             * de guardarla en la base de datos.
-             */
-
+    /*La contraseña se cifra antes de guardarla en la base de datos.*/
             $claveCifrada = password_hash(
                 $this->clave,
                 PASSWORD_DEFAULT
@@ -277,7 +249,6 @@ class SeguridadM extends Database implements CrudInterface
 
 
             /* Registrar el usuario */
-
             $sqlUsuario = "INSERT INTO usuarios (
                                 id_persona,
                                 id_rol,
@@ -357,7 +328,6 @@ class SeguridadM extends Database implements CrudInterface
 
 
             /* Modificar los datos propios del usuario */
-
             $sqlUsuario = "UPDATE usuarios
 
                            SET
@@ -375,13 +345,8 @@ class SeguridadM extends Database implements CrudInterface
             $stmtUsuario->bindParam(':id_usuario', $this->idUsuario);
 
             $stmtUsuario->execute();
-
-
-            /*
-             * Si se proporciona una nueva contraseña,
-             * se cifra y se actualiza.
-             */
-
+                    
+    /*Si se proporciona una nueva contraseña, se cifra y se actualiza.*/
             if (!empty($this->clave)) {
 
                 $claveCifrada = password_hash(
@@ -422,11 +387,7 @@ class SeguridadM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Restablecer contraseña:
-     * cifra la contraseña temporal suministrada
-     * y actualiza únicamente la cuenta seleccionada.
-     */
+    /*Restablecer contraseña: cifra la contraseña temporal suministrada y actualiza únicamente la cuenta seleccionada.*/
     public function restablecerClave()
     {
         if (
@@ -464,12 +425,7 @@ class SeguridadM extends Database implements CrudInterface
     }
 
 
-    /*
-     * Eliminar lógico:
-     * no borra al usuario de la base de datos.
-     * Solamente cambia su estado a INACTIVO.
-     */
-
+    /*Eliminar lógico: no borra al usuario de la base de datos. Solamente cambia su estado a INACTIVO.*/
     public function eliminar()
     {
         $sql = "UPDATE usuarios

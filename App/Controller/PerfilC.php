@@ -4,10 +4,7 @@ use App\Controller\Components\Session;
 use App\Model\PerfilM;
 
 
-/*
- * Redirige al inicio mostrando el resultado
- * correspondiente al cambio de contraseña.
- */
+/*Redirige al inicio mostrando el resultado correspondiente al cambio de contraseña.*/
 $redirigirCambioClave =
     static function (
         string $resultado
@@ -21,11 +18,7 @@ $redirigirCambioClave =
         exit;
     };
 
-
-/*
- * La operación solamente puede ejecutarse
- * cuando existe un usuario autenticado.
- */
+/*La operación solamente puede ejecutarse cuando existe un usuario autenticado.*/
 if (!Session::estaAutenticada()) {
 
     header(
@@ -35,11 +28,7 @@ if (!Session::estaAutenticada()) {
     exit;
 }
 
-
-/*
- * Aceptar únicamente solicitudes enviadas
- * mediante el formulario de cambio de clave.
- */
+/*Aceptar únicamente solicitudes enviadas mediante el formulario de cambio de clave.*/
 if (
     $_SERVER['REQUEST_METHOD'] !== 'POST' ||
     ($_POST['accion'] ?? '') !== 'cambiar_clave'
@@ -49,15 +38,8 @@ if (
     );
 }
 
-
-/*
- * Obtener el usuario directamente desde
- * la sesión activa.
- *
- * El identificador no se recibe mediante
- * el formulario para impedir que se intente
- * modificar la cuenta de otro usuario.
- */
+/*Obtener el usuario directamente desde la sesión activa.
+El identificador no se recibe mediante el formulario para impedir que se intente modificar la cuenta de otro usuario.*/
 $usuarioActual =
     Session::obtenerUsuario();
 
@@ -75,11 +57,7 @@ if ($idUsuario <= 0) {
     );
 }
 
-
-/*
- * Comprobar el token de seguridad generado
- * para el formulario.
- */
+/*Comprobar el token de seguridad generado para el formulario.*/
 $tokenFormulario =
     (string) (
         $_POST['token_csrf']
@@ -107,13 +85,7 @@ if (
     );
 }
 
-
-/*
- * Recibir las contraseñas.
- *
- * No se aplica trim(), debido a que los
- * espacios pueden formar parte de la clave.
- */
+/*Recibir las contraseñas. No se aplica trim(), debido a que los espacios pueden formar parte de la clave.*/
 $claveActual =
     (string) (
         $_POST['clave_actual']
@@ -134,11 +106,7 @@ $confirmarClave =
         ?? ''
     );
 
-
-/*
- * Comprobar que todos los campos
- * hayan sido completados.
- */
+/*Comprobar que todos los campos hayan sido completados.*/
 if (
     $claveActual === '' ||
     $nuevaClave === '' ||
@@ -149,11 +117,7 @@ if (
     );
 }
 
-
-/*
- * Exigir una contraseña nueva
- * de ocho caracteres como mínimo.
- */
+/*Exigir una contraseña nueva de ocho caracteres como mínimo.*/
 if (strlen($nuevaClave) < 8) {
     $redirigirCambioClave(
         'clave_corta'
@@ -161,10 +125,7 @@ if (strlen($nuevaClave) < 8) {
 }
 
 
-/*
- * Comprobar que la nueva contraseña
- * y su confirmación coincidan.
- */
+/*Comprobar que la nueva contraseña  y su confirmación coincidan.*/
 if ($nuevaClave !== $confirmarClave) {
     $redirigirCambioClave(
         'no_coinciden'
@@ -177,11 +138,7 @@ try {
     $modeloPerfil =
         new PerfilM();
 
-
-    /*
-     * Recuperar la clave cifrada almacenada
-     * para la cuenta autenticada.
-     */
+    /*Recuperar la clave cifrada almacenada para la cuenta autenticada.*/
     $claveCifradaActual =
         $modeloPerfil->obtenerClaveActual(
             $idUsuario
@@ -194,11 +151,7 @@ try {
         );
     }
 
-
-    /*
-     * Verificar que la contraseña actual
-     * suministrada sea correcta.
-     */
+    /*Verificar que la contraseña actual suministrada sea correcta.*/
     if (
         !password_verify(
             $claveActual,
@@ -210,11 +163,7 @@ try {
         );
     }
 
-
-    /*
-     * Evitar guardar nuevamente
-     * la misma contraseña.
-     */
+    /*Evitar guardar nuevamente la misma contraseña.*/
     if (
         password_verify(
             $nuevaClave,
@@ -226,11 +175,7 @@ try {
         );
     }
 
-
-    /*
-     * Cifrar y actualizar la nueva clave
-     * mediante el modelo.
-     */
+    /*Cifrar y actualizar la nueva clave mediante el modelo.*/
     $claveActualizada =
         $modeloPerfil->cambiarClave(
             $idUsuario,
@@ -244,24 +189,16 @@ try {
         );
     }
 
-
-    /*
-     * El token utilizado deja de ser válido
-     * después de completar la operación.
-     */
+    /*El token utilizado deja de ser válido después de completar la operación.*/
     unset(
         $_SESSION['token_cambiar_clave']
     );
 
-
-    /*
-     * Regenerar el identificador de sesión
-     * después de modificar una credencial.
-     */
+    /*Regenerar el identificador de sesión después de modificar una credencial.*/
     session_regenerate_id(
         true
     );
-
+    
 
     $redirigirCambioClave(
         'actualizada'
