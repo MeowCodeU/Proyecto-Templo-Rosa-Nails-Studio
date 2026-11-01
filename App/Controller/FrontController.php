@@ -15,10 +15,8 @@ class FrontController
         'registroUsuario'
     ];
 
-
     /*Módulo solicitado mediante la URL.*/
     private string $url;
-
 
     /*Obtiene la ruta solicitada, comprueba la sesión y carga el controlador.*/
     public function __construct()
@@ -43,7 +41,6 @@ class FrontController
                     : 'login';
         }
 
-
         /*Solamente se permiten letras y números en el nombre de la ruta.*/
         if (
             !preg_match(
@@ -55,7 +52,6 @@ class FrontController
 
             return;
         }
-
 
         /*Procesar el cierre de sesión.*/
         if ($this->url === 'logout') {
@@ -69,15 +65,12 @@ class FrontController
             exit;
         }
 
-
         /*Comprobar si el usuario puede continuar hacia la ruta solicitada.*/
         $this->protegerRuta();
-
 
         /*Cargar el controlador solicitado.*/
         $this->cargarControlador();
     }
-
 
     /*Impide acceder a los módulos internos cuando no existe una sesión vigente.*/
     private function protegerRuta(): void
@@ -93,11 +86,9 @@ class FrontController
             return;
         }
 
-
         /*Permite continuar cuando existe una sesión activa y vigente.*/
         $teniaSesion =
             Session::estaAutenticada();
-
 
         if (
             $teniaSesion &&
@@ -105,7 +96,6 @@ class FrontController
         ) {
             return;
         }
-
 
         /* Si la solicitud fue realizada mediante AJAX, se devuelve JSON.*/
         if ($this->esPeticionAjax()) {
@@ -128,11 +118,9 @@ class FrontController
             exit;
         }
 
-
         /*Una navegación normal vuelve al formulario de inicio de sesión.*/
         $destino =
             'Index.php?url=login';
-
 
         /*Permite informar que la sesión terminó por inactividad.*/
         if ($teniaSesion) {
@@ -140,14 +128,12 @@ class FrontController
                 '&sesion=expirada';
         }
 
-
         header(
             'Location: ' . $destino
         );
 
         exit;
     }
-
 
     /*Determina si la solicitud procede de una operación asíncrona.*/
     private function esPeticionAjax(): bool
@@ -165,18 +151,15 @@ class FrontController
                 ]
             ) === 'xmlhttprequest';
 
-
         /*Actualmente esta acción se realiza mediante fetch() en seguridad.js.*/
         $buscarPersona =
             ($_POST['accion'] ?? '')
             === 'buscar_persona';
 
-
         return
             $encabezadoAjax ||
             $buscarPersona;
     }
-
 
     /*Localiza y carga el controlador correspondiente a la ruta.*/
     private function cargarControlador(): void
@@ -186,7 +169,6 @@ class FrontController
             ucfirst($this->url) .
             'C.php';
 
-
         if (file_exists($controlador)) {
 
             require_once $controlador;
@@ -194,10 +176,8 @@ class FrontController
             return;
         }
 
-
         $this->mostrarError404();
     }
-
 
     /*Devuelve una respuesta cuando el controlador solicitado no existe.*/
     private function mostrarError404(): void
