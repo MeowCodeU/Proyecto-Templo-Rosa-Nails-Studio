@@ -8,13 +8,11 @@ final class Session
     1800 segundos equivalen a 30 minutos.*/
     private const TIEMPO_MAXIMO_INACTIVIDAD = 1800;
 
-
     /*Impide crear objetos de esta clase.
     Sus métodos se utilizarán de forma estática.*/
     private function __construct()
     {
     }
-
 
     /*Inicia o recupera la sesión del sistema.*/
     public static function iniciar(): void
@@ -27,13 +25,11 @@ final class Session
             return;
         }
 
-
         /*Comprueba si la aplicación está funcionando mediante HTTPS.
         En localhost normalmente será false.*/
         $conexionSegura =
             !empty($_SERVER['HTTPS']) &&
             $_SERVER['HTTPS'] !== 'off';
-
 
         /*Configuraciones de seguridad se utilizan únicamente cookies 
          para transportar el identificador.*/
@@ -52,12 +48,10 @@ final class Session
             (string) self::TIEMPO_MAXIMO_INACTIVIDAD
         );
 
-
         /*Nombre identificador de la cookie utilizada exclusivamente por Templo Rosa.*/
         session_name(
             'TEMPLO_ROSA_SESSID'
         );
-
 
         /*Configuración de la cookie de sesión.*/
         session_set_cookie_params(
@@ -81,11 +75,9 @@ final class Session
             ]
         );
 
-
         /*Crea una sesión nueva o recuperala sesión identificada por la cookie.*/
         session_start();
     }
-
 
     /*Comprueba si existe un usuario correctamente autenticado.*/
     public static function estaAutenticada(): bool
@@ -95,7 +87,6 @@ final class Session
             $_SESSION['usuario']['id_rol']
         );
     }
-
 
     /*Registra al usuario autenticado dentro de la sesión. */
     public static function registrarUsuario(
@@ -115,7 +106,6 @@ final class Session
             time();
     }
 
-
     /*Comprueba que la sesión no haya expirado por inactividad.*/
     public static function validarVigencia(): bool
     {
@@ -123,12 +113,10 @@ final class Session
             return false;
         }
 
-
         $ultimaActividad = (int) (
             $_SESSION['ultima_actividad']
             ?? time()
         );
-
 
         /*Si transcurrieron más de 30 minutos sin actividad, se cierra la sesión.*/
         if (
@@ -140,15 +128,12 @@ final class Session
             return false;
         }
 
-
         /* Actualiza el momento de actividad en cada solicitud válida.*/
         $_SESSION['ultima_actividad'] =
             time();
 
-
         return true;
     }
-
 
     /*Devuelve los datos del usuario autenticado.*/
     public static function obtenerUsuario(): ?array
@@ -160,20 +145,17 @@ final class Session
         return $_SESSION['usuario'];
     }
 
-
     /*Finaliza completamente la sesión.*/
     public static function cerrar(): void
     {
         /*Elimina las variables almacenadas.*/
         $_SESSION = [];
 
-
         /*Elimina la cookie identificadora del navegador.*/
         if (ini_get('session.use_cookies')) {
 
             $parametros =
                 session_get_cookie_params();
-
 
             setcookie(
                 session_name(),
@@ -201,7 +183,6 @@ final class Session
             );
         }
 
-
         /*Destruye los datos de la sesión almacenados en el servidor.*/
         if (
             session_status()
@@ -211,3 +192,4 @@ final class Session
         }
     }
 }
+

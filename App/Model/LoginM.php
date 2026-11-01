@@ -67,3 +67,4 @@ class LoginM extends Database
         return $usuario ?: null;
     }
 }
+
