@@ -6,14 +6,20 @@ require_once __DIR__ . '/Layout/Header.php';
 
 ?>
 
+<!-- ===================================================== -->
+<!-- GESTIÓN DE INSUMOS -->
+<!-- ===================================================== -->
+
 <section class="module-card clientes-module insumos-module">
 
+    <!-- Encabezado y acciones del módulo -->
     <div class="module-header">
         <h2>
             <i class="bi bi-box2-heart"></i>
             Gestión de Insumos
         </h2>
 
+        <!-- Acciones disponibles -->
         <div class="d-flex gap-2 flex-wrap">
 
             <button
@@ -37,15 +43,14 @@ require_once __DIR__ . '/Layout/Header.php';
         </div>
     </div>
 
-
+    <!-- Tabla de insumos -->
     <div class="table-zone">
         <div class="templo-table-wrapper">
             <div class="table-responsive">
 
-                <table
-                    id="tablaInsumos"
-                    class="table table-hover templo-table w-100"
-                >
+                <table id="tablaInsumos" class="table table-hover templo-table w-100">
+
+                    <!-- Encabezados de la tabla -->
                     <thead>
                         <tr>
                             <th>Insumo</th>
@@ -58,118 +63,43 @@ require_once __DIR__ . '/Layout/Header.php';
                         </tr>
                     </thead>
 
+                    <!-- Filas recibidas desde el controlador -->
                     <tbody>
 
                         <?php foreach (($listaInsumos ?? []) as $insumo) { ?>
 
+                            <!-- Preparar los datos y textos de cada insumo -->
                             <?php
 
-                            $fechaVencimiento = trim(
-                                (string) ($insumo['fecha_vencimiento'] ?? '')
-                            );
+                            $fechaVencimiento = trim((string) ($insumo['fecha_vencimiento'] ?? ''));
+                            $fechaVencimientoTexto = $fechaVencimiento !== '' ? $fechaVencimiento : 'No aplica';
 
-                            $fechaVencimientoTexto = $fechaVencimiento !== ''
-                                ? $fechaVencimiento
-                                : 'No aplica';
+                            $descripcionInsumo = trim((string) ($insumo['descripcion'] ?? ''));
+                            $descripcionInsumoTexto = $descripcionInsumo !== '' ? $descripcionInsumo : 'Sin descripción';
 
-                            $descripcionInsumo = trim(
-                                (string) ($insumo['descripcion'] ?? '')
-                            );
+                            $tipoControlInsumo = strtoupper(trim((string) ($insumo['tipo_control'] ?? 'UNITARIO')));
+                            $tipoControlInsumoTexto = $tipoControlInsumo === 'POR_ENVASE' ? 'Por envase' : 'Consumo unitario';
 
-                            $descripcionInsumoTexto = $descripcionInsumo !== ''
-                                ? $descripcionInsumo
-                                : 'Sin descripción';
-
-                            $tipoControlInsumo = strtoupper(
-                                trim(
-                                    (string) (
-                                        $insumo['tipo_control']
-                                        ?? 'UNITARIO'
-                                    )
-                                )
-                            );
-
-                            $tipoControlInsumoTexto =
-                                $tipoControlInsumo === 'POR_ENVASE'
-                                    ? 'Por envase'
-                                    : 'Consumo unitario';
-
-                            $estadoInsumo = strtoupper(
-                                trim(
-                                    (string) (
-                                        $insumo['estado_insumo']
-                                        ?? ''
-                                    )
-                                )
-                            );
-
-                            $claseEstadoInsumo =
-                                $estadoInsumo === 'INACTIVO'
-                                    ? 'estado-registro-inactivo'
-                                    : 'estado-registro-activo';
+                            $estadoInsumo = strtoupper(trim((string) ($insumo['estado_insumo'] ?? '')));
+                            $claseEstadoInsumo = $estadoInsumo === 'INACTIVO' ? 'estado-registro-inactivo' : 'estado-registro-activo';
 
                             ?>
 
                             <tr>
+                                <td><?php echo htmlspecialchars($insumo['nombre_insumo'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($insumo['presentacion'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($tipoControlInsumoTexto, ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($insumo['stock_actual'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($fechaVencimientoTexto, ENT_QUOTES, 'UTF-8'); ?></td>
 
                                 <td>
-                                    <?php echo htmlspecialchars(
-                                        $insumo['nombre_insumo'] ?? '',
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </td>
-
-                                <td>
-                                    <?php echo htmlspecialchars(
-                                        $insumo['presentacion'] ?? '',
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </td>
-
-                                <td>
-                                    <?php echo htmlspecialchars(
-                                        $tipoControlInsumoTexto,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </td>
-
-                                <td>
-                                    <?php echo htmlspecialchars(
-                                        (string) (
-                                            $insumo['stock_actual']
-                                            ?? 0
-                                        ),
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </td>
-
-                                <td>
-                                    <?php echo htmlspecialchars(
-                                        $fechaVencimientoTexto,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </td>
-
-                                <td>
-                                    <span
-                                        class="badge <?php
-                                            echo $claseEstadoInsumo;
-                                        ?>"
-                                    >
-                                        <?php echo htmlspecialchars(
-                                            $estadoInsumo,
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ); ?>
+                                    <span class="badge <?php echo $claseEstadoInsumo; ?>">
+                                        <?php echo htmlspecialchars($estadoInsumo, ENT_QUOTES, 'UTF-8'); ?>
                                     </span>
                                 </td>
 
                                 <td>
+                                    <!-- Acciones de la fila -->
                                     <div class="btn-group-actions">
 
                                         <!-- Botón Ver detalles -->
@@ -178,92 +108,27 @@ require_once __DIR__ . '/Layout/Header.php';
                                             class="btn-action btn-detail btnDetalleInsumo"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalDetalleInsumo"
-
-                                            data-nombre-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    $insumo['nombre_insumo']
-                                                    ?? '',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-presentacion="<?php
-                                                echo htmlspecialchars(
-                                                    $insumo['presentacion']
-                                                    ?? '',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-tipo-control="<?php
-                                                echo htmlspecialchars(
-                                                    $tipoControlInsumo,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-descripcion="<?php
-                                                echo htmlspecialchars(
-                                                    $descripcionInsumoTexto,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-stock-actual="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['stock_actual']
-                                                        ?? 0
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-stock-minimo="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['stock_minimo']
-                                                        ?? 0
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-fecha-vencimiento-texto="<?php
-                                                echo htmlspecialchars(
-                                                    $fechaVencimientoTexto,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-estado-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    $estadoInsumo,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
+                                            data-nombre-insumo="<?php echo htmlspecialchars($insumo['nombre_insumo'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-presentacion="<?php echo htmlspecialchars($insumo['presentacion'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-tipo-control="<?php echo htmlspecialchars($tipoControlInsumo, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-descripcion="<?php echo htmlspecialchars($descripcionInsumoTexto, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-stock-actual="<?php echo htmlspecialchars((string) ($insumo['stock_actual'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-stock-minimo="<?php echo htmlspecialchars((string) ($insumo['stock_minimo'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-fecha-vencimiento-texto="<?php echo htmlspecialchars($fechaVencimientoTexto, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-estado-insumo="<?php echo htmlspecialchars($estadoInsumo, ENT_QUOTES, 'UTF-8'); ?>"
                                             title="Ver detalles del insumo"
                                             aria-label="Ver detalles del insumo"
                                         >
-                                            <span
-                                                class="cliente-detalle-icono"
-                                                aria-hidden="true"
-                                            >
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                >
+                                            <span class="cliente-detalle-icono" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none">
+
+                                                    <!-- Contorno del ojo -->
                                                     <path
-                                                        d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                                        d="M2 12
+                                                           C2 12 5.5 5 12 5
+                                                           C18.5 5 22 12 22 12
+                                                           C22 12 18.5 19 12 19
+                                                           C5.5 19 2 12 2 12Z"
                                                         stroke="currentColor"
                                                         stroke-width="2"
                                                         stroke-linecap="round"
@@ -271,14 +136,21 @@ require_once __DIR__ . '/Layout/Header.php';
                                                         fill="none"
                                                     />
 
+                                                    <!-- Corazón central -->
                                                     <path
-                                                        d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                                        d="M12 16
+                                                           C10 14.8 8.5 13.5 8.5 11.8
+                                                           C8.5 10.5 9.5 9.5 10.8 9.5
+                                                           C11.5 9.5 12 9.9 12 10.4
+                                                           C12 9.9 12.5 9.5 13.2 9.5
+                                                           C14.5 9.5 15.5 10.5 15.5 11.8
+                                                           C15.5 13.5 14 14.8 12 16Z"
                                                         fill="currentColor"
                                                     />
+
                                                 </svg>
                                             </span>
                                         </button>
-
 
                                         <!-- Botón Editar -->
                                         <button
@@ -286,99 +158,20 @@ require_once __DIR__ . '/Layout/Header.php';
                                             class="btn-action btn-edit btnEditarInsumo"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalEditarInsumo"
-
-                                            data-id-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['id_insumo']
-                                                        ?? ''
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-nombre-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    $insumo['nombre_insumo']
-                                                    ?? '',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-descripcion="<?php
-                                                echo htmlspecialchars(
-                                                    $descripcionInsumo,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-presentacion="<?php
-                                                echo htmlspecialchars(
-                                                    $insumo['presentacion']
-                                                    ?? '',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-tipo-control="<?php
-                                                echo htmlspecialchars(
-                                                    $tipoControlInsumo,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-stock-actual="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['stock_actual']
-                                                        ?? 0
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-stock-minimo="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['stock_minimo']
-                                                        ?? 0
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-fecha-vencimiento="<?php
-                                                echo htmlspecialchars(
-                                                    $fechaVencimiento,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-estado-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    $estadoInsumo,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
+                                            data-id-insumo="<?php echo htmlspecialchars((string) ($insumo['id_insumo'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-nombre-insumo="<?php echo htmlspecialchars($insumo['nombre_insumo'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-descripcion="<?php echo htmlspecialchars($descripcionInsumo, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-presentacion="<?php echo htmlspecialchars($insumo['presentacion'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-tipo-control="<?php echo htmlspecialchars($tipoControlInsumo, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-stock-actual="<?php echo htmlspecialchars((string) ($insumo['stock_actual'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-stock-minimo="<?php echo htmlspecialchars((string) ($insumo['stock_minimo'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-fecha-vencimiento="<?php echo htmlspecialchars($fechaVencimiento, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-estado-insumo="<?php echo htmlspecialchars($estadoInsumo, ENT_QUOTES, 'UTF-8'); ?>"
                                             title="Editar insumo"
                                             aria-label="Editar insumo"
                                         >
-                                            <i
-                                                class="bi bi-pencil-fill"
-                                                aria-hidden="true"
-                                            ></i>
+                                            <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                                         </button>
-
 
                                         <!-- Botón Desactivar -->
                                         <button
@@ -386,39 +179,16 @@ require_once __DIR__ . '/Layout/Header.php';
                                             class="btn-action btn-delete btnDesactivarInsumo"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalDesactivarInsumo"
-
-                                            data-id-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    (string) (
-                                                        $insumo['id_insumo']
-                                                        ?? ''
-                                                    ),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
-                                            data-nombre-insumo="<?php
-                                                echo htmlspecialchars(
-                                                    $insumo['nombre_insumo']
-                                                    ?? '',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-
+                                            data-id-insumo="<?php echo htmlspecialchars((string) ($insumo['id_insumo'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-nombre-insumo="<?php echo htmlspecialchars($insumo['nombre_insumo'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             title="Desactivar insumo"
                                             aria-label="Desactivar insumo"
                                         >
-                                            <i
-                                                class="bi bi-trash-fill"
-                                                aria-hidden="true"
-                                            ></i>
+                                            <i class="bi bi-trash-fill" aria-hidden="true"></i>
                                         </button>
 
                                     </div>
                                 </td>
-
                             </tr>
 
                         <?php } ?>
@@ -447,22 +217,20 @@ require_once __DIR__ . '/Layout/Header.php';
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
 
-                <h5
-                    class="modal-title"
-                    id="modalDetalleInsumoLabel"
-                >
-                    <span
-                        class="cliente-detalle-icono"
-                        aria-hidden="true"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                        >
+                <h5 class="modal-title" id="modalDetalleInsumoLabel">
+                    <span class="cliente-detalle-icono" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+
+                            <!-- Contorno del ojo -->
                             <path
-                                d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                d="M2 12
+                                   C2 12 5.5 5 12 5
+                                   C18.5 5 22 12 22 12
+                                   C22 12 18.5 19 12 19
+                                   C5.5 19 2 12 2 12Z"
                                 stroke="currentColor"
                                 stroke-width="2"
                                 stroke-linecap="round"
@@ -470,10 +238,18 @@ require_once __DIR__ . '/Layout/Header.php';
                                 fill="none"
                             />
 
+                            <!-- Corazón central -->
                             <path
-                                d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                d="M12 16
+                                   C10 14.8 8.5 13.5 8.5 11.8
+                                   C8.5 10.5 9.5 9.5 10.8 9.5
+                                   C11.5 9.5 12 9.9 12 10.4
+                                   C12 9.9 12.5 9.5 13.2 9.5
+                                   C14.5 9.5 15.5 10.5 15.5 11.8
+                                   C15.5 13.5 14 14.8 12 16Z"
                                 fill="currentColor"
                             />
+
                         </svg>
                     </span>
 
@@ -489,127 +265,62 @@ require_once __DIR__ . '/Layout/Header.php';
 
             </div>
 
-
+            <!-- Información del insumo -->
             <div class="modal-body">
-
                 <div class="row g-4">
 
+                    <!-- Nombre del insumo -->
                     <div class="col-md-6">
-
-                        <p class="fw-semibold mb-1">
-                            Nombre del insumo
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleNombreInsumo"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Nombre del insumo</p>
+                        <p class="mb-0" id="detalleNombreInsumo"></p>
                     </div>
 
-
+                    <!-- Presentación -->
                     <div class="col-md-6">
-
-                        <p class="fw-semibold mb-1">
-                            Presentación
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detallePresentacionInsumo"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Presentación</p>
+                        <p class="mb-0" id="detallePresentacionInsumo"></p>
                     </div>
 
-
+                    <!-- Descripción -->
                     <div class="col-md-12">
-
-                        <p class="fw-semibold mb-1">
-                            Descripción
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleDescripcionInsumo"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Descripción</p>
+                        <p class="mb-0" id="detalleDescripcionInsumo"></p>
                     </div>
 
-
+                    <!-- Stock actual -->
                     <div class="col-md-4">
-
-                        <p class="fw-semibold mb-1">
-                            Stock actual
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleStockActual"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Stock actual</p>
+                        <p class="mb-0" id="detalleStockActual"></p>
                     </div>
 
-
+                    <!-- Stock mínimo -->
                     <div class="col-md-4">
-
-                        <p class="fw-semibold mb-1">
-                            Stock mínimo
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleStockMinimo"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Stock mínimo</p>
+                        <p class="mb-0" id="detalleStockMinimo"></p>
                     </div>
 
-
+                    <!-- Fecha de vencimiento -->
                     <div class="col-md-4">
-
-                        <p class="fw-semibold mb-1">
-                            Fecha de vencimiento
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleFechaVencimiento"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Fecha de vencimiento</p>
+                        <p class="mb-0" id="detalleFechaVencimiento"></p>
                     </div>
 
-
+                    <!-- Tipo de control -->
                     <div class="col-md-6">
-
-                        <p class="fw-semibold mb-1">
-                            Tipo de control
-                        </p>
-
-                        <p
-                            class="mb-0"
-                            id="detalleTipoControl"
-                        ></p>
-
+                        <p class="fw-semibold mb-1">Tipo de control</p>
+                        <p class="mb-0" id="detalleTipoControl"></p>
                     </div>
 
-
+                    <!-- Estado -->
                     <div class="col-md-6">
-
-                        <p class="fw-semibold mb-2">
-                            Estado
-                        </p>
-
-                        <span
-                            class="badge estado-registro-activo"
-                            id="detalleEstadoInsumo"
-                        ></span>
-
+                        <p class="fw-semibold mb-2">Estado</p>
+                        <span class="badge estado-registro-activo" id="detalleEstadoInsumo"></span>
                     </div>
 
                 </div>
-
             </div>
 
-
+            <!-- Botones del modal -->
             <div class="modal-footer">
 
                 <button
@@ -644,18 +355,17 @@ require_once __DIR__ . '/Layout/Header.php';
 
             <form action="Index.php?url=insumos" method="POST">
 
+                <!-- Datos de la operación -->
                 <input
                     type="hidden"
                     name="accion"
                     value="registrar"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
-                    <h5
-                        class="modal-title"
-                        id="modalNuevoInsumoLabel"
-                    >
+                    <h5 class="modal-title" id="modalNuevoInsumoLabel">
                         <i class="bi bi-plus-circle"></i>
                         Registrar Nuevo Insumo
                     </h5>
@@ -669,22 +379,15 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
-
+                <!-- Campos del formulario -->
                 <div class="modal-body">
-
                     <div class="row g-3">
 
+                        <!-- Nombre del insumo -->
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Nombre del insumo
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -695,15 +398,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 maxlength="100"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Presentación -->
                         <div class="col-md-6">
-
-                            <label class="form-label">
-                                Presentación
-                            </label>
+                            <label class="form-label">Presentación</label>
 
                             <input
                                 type="text"
@@ -712,15 +411,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 placeholder="Ingrese la presentación"
                                 maxlength="80"
                             >
-
                         </div>
 
-
+                        <!-- Descripción -->
                         <div class="col-md-12">
-
-                            <label class="form-label">
-                                Descripción
-                            </label>
+                            <label class="form-label">Descripción</label>
 
                             <textarea
                                 name="descripcion"
@@ -729,21 +424,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                 maxlength="255"
                                 placeholder="Ingrese la descripción del insumo"
                             ></textarea>
-
                         </div>
 
-
+                        <!-- Stock actual -->
                         <div class="col-md-4">
-
                             <label class="form-label">
                                 Stock actual
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -754,21 +441,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                 placeholder="0"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Stock mínimo -->
                         <div class="col-md-4">
-
                             <label class="form-label">
                                 Stock mínimo
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -779,36 +458,24 @@ require_once __DIR__ . '/Layout/Header.php';
                                 placeholder="0"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Fecha de vencimiento -->
                         <div class="col-md-4">
-
-                            <label class="form-label">
-                                Fecha de vencimiento
-                            </label>
+                            <label class="form-label">Fecha de vencimiento</label>
 
                             <input
                                 type="date"
                                 name="fecha_vencimiento"
                                 class="form-control templo-input"
                             >
-
                         </div>
 
-
+                        <!-- Tipo de control -->
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Tipo de control
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <select
@@ -816,23 +483,14 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-select templo-input"
                                 required
                             >
-                                <option value="UNITARIO">
-                                    Consumo unitario
-                                </option>
-
-                                <option value="POR_ENVASE">
-                                    Por envase
-                                </option>
+                                <option value="UNITARIO">Consumo unitario</option>
+                                <option value="POR_ENVASE">Por envase</option>
                             </select>
-
                         </div>
 
-
+                        <!-- Estado -->
                         <div class="col-md-6">
-
-                            <label class="form-label">
-                                Estado
-                            </label>
+                            <label class="form-label">Estado</label>
 
                             <input
                                 type="text"
@@ -841,13 +499,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 value="ACTIVO"
                                 readonly
                             >
-
                         </div>
 
                     </div>
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -892,6 +549,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             <form action="Index.php?url=insumos" method="POST">
 
+                <!-- Datos de la operación -->
                 <input
                     type="hidden"
                     name="accion"
@@ -904,12 +562,10 @@ require_once __DIR__ . '/Layout/Header.php';
                     id="editarIdInsumo"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
-                    <h5
-                        class="modal-title"
-                        id="modalEditarInsumoLabel"
-                    >
+                    <h5 class="modal-title" id="modalEditarInsumoLabel">
                         <i class="bi bi-pencil-square"></i>
                         Editar Insumo
                     </h5>
@@ -923,22 +579,15 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
-
+                <!-- Campos del formulario -->
                 <div class="modal-body">
-
                     <div class="row g-3">
 
+                        <!-- Nombre del insumo -->
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Nombre del insumo
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -949,15 +598,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 maxlength="100"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Presentación -->
                         <div class="col-md-6">
-
-                            <label class="form-label">
-                                Presentación
-                            </label>
+                            <label class="form-label">Presentación</label>
 
                             <input
                                 type="text"
@@ -966,15 +611,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-control templo-input"
                                 maxlength="80"
                             >
-
                         </div>
 
-
+                        <!-- Descripción -->
                         <div class="col-md-12">
-
-                            <label class="form-label">
-                                Descripción
-                            </label>
+                            <label class="form-label">Descripción</label>
 
                             <textarea
                                 name="descripcion"
@@ -983,21 +624,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                 rows="3"
                                 maxlength="255"
                             ></textarea>
-
                         </div>
 
-
+                        <!-- Stock actual -->
                         <div class="col-md-4">
-
                             <label class="form-label">
                                 Stock actual
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -1008,21 +641,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                 min="0"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Stock mínimo -->
                         <div class="col-md-4">
-
                             <label class="form-label">
                                 Stock mínimo
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <input
@@ -1033,15 +658,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 min="0"
                                 required
                             >
-
                         </div>
 
-
+                        <!-- Fecha de vencimiento -->
                         <div class="col-md-4">
-
-                            <label class="form-label">
-                                Fecha de vencimiento
-                            </label>
+                            <label class="form-label">Fecha de vencimiento</label>
 
                             <input
                                 type="date"
@@ -1049,21 +670,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                 id="editarFechaVencimiento"
                                 class="form-control templo-input"
                             >
-
                         </div>
 
-
+                        <!-- Tipo de control -->
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Tipo de control
-
-                                <span
-                                    class="required-mark"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>
+                                <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <select
@@ -1072,23 +685,14 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-select templo-input"
                                 required
                             >
-                                <option value="UNITARIO">
-                                    Consumo unitario
-                                </option>
-
-                                <option value="POR_ENVASE">
-                                    Por envase
-                                </option>
+                                <option value="UNITARIO">Consumo unitario</option>
+                                <option value="POR_ENVASE">Por envase</option>
                             </select>
-
                         </div>
 
-
+                        <!-- Estado -->
                         <div class="col-md-6">
-
-                            <label class="form-label">
-                                Estado
-                            </label>
+                            <label class="form-label">Estado</label>
 
                             <input
                                 type="text"
@@ -1097,13 +701,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 class="form-control templo-input"
                                 readonly
                             >
-
                         </div>
 
                     </div>
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -1148,6 +751,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             <form action="Index.php?url=insumos" method="POST">
 
+                <!-- Datos de la operación -->
                 <input
                     type="hidden"
                     name="accion"
@@ -1160,12 +764,10 @@ require_once __DIR__ . '/Layout/Header.php';
                     id="desactivarIdInsumo"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
-                    <h5
-                        class="modal-title"
-                        id="modalDesactivarInsumoLabel"
-                    >
+                    <h5 class="modal-title" id="modalDesactivarInsumoLabel">
                         <i class="bi bi-exclamation-triangle"></i>
                         Desactivar Insumo
                     </h5>
@@ -1179,17 +781,14 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
-
+                <!-- Confirmación de la desactivación -->
                 <div class="modal-body text-center">
 
                     <p class="status-question">
                         ¿Deseas desactivar este insumo?
                     </p>
 
-                    <p
-                        class="status-client-name"
-                        id="desactivarNombreInsumo"
-                    ></p>
+                    <p class="status-client-name" id="desactivarNombreInsumo"></p>
 
                     <p class="status-warning">
                         El insumo permanecerá guardado en la base de datos.
@@ -1197,7 +796,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -1226,6 +825,7 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
+<!-- Script del módulo y pie de página -->
 <?php
 
 $scriptVista = 'Assets/js/insumos.js';

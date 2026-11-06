@@ -6,8 +6,13 @@ require_once __DIR__ . '/Layout/Header.php';
 
 ?>
 
+<!-- ===================================================== -->
+<!-- GESTIÓN DE CLIENTES -->
+<!-- ===================================================== -->
+
 <section class="module-card clientes-module">
 
+    <!-- Encabezado y acceso al registro -->
     <div class="module-header">
         <h2>
             <i class="bi bi-person-hearts"></i>
@@ -20,6 +25,7 @@ require_once __DIR__ . '/Layout/Header.php';
         </button>
     </div>
 
+    <!-- Listado de clientes y acciones disponibles -->
     <div class="table-zone">
         <div class="templo-table-wrapper">
             <div class="table-responsive">
@@ -72,15 +78,26 @@ require_once __DIR__ . '/Layout/Header.php';
                                             <span class="detalle-accion-icono" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24" fill="none">
                                                     <path
-                                                        d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                                        d="M2 12
+                                                           C2 12 5.5 5 12 5
+                                                           C18.5 5 22 12 22 12
+                                                           C22 12 18.5 19 12 19
+                                                           C5.5 19 2 12 2 12Z"
                                                         stroke="currentColor"
                                                         stroke-width="2"
                                                         stroke-linecap="round"
                                                         stroke-linejoin="round"
                                                         fill="none"
                                                     />
+
                                                     <path
-                                                        d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                                        d="M12 16
+                                                           C10 14.8 8.5 13.5 8.5 11.8
+                                                           C8.5 10.5 9.5 9.5 10.8 9.5
+                                                           C11.5 9.5 12 9.9 12 10.4
+                                                           C12 9.9 12.5 9.5 13.2 9.5
+                                                           C14.5 9.5 15.5 10.5 15.5 11.8
+                                                           C15.5 13.5 14 14.8 12 16Z"
                                                         fill="currentColor"
                                                     />
                                                 </svg>
@@ -126,7 +143,15 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                                     <!-- Corazón -->
                                                     <path
-                                                        d="M7.35 7.45C6.18 6.72 5.35 5.98 5.35 5.03C5.35 4.28 5.92 3.72 6.65 3.72C7.08 3.72 7.43 3.93 7.68 4.27C7.93 3.93 8.28 3.72 8.71 3.72C9.44 3.72 10.01 4.28 10.01 5.03C10.01 5.98 9.18 6.72 8.01 7.45L7.68 7.66L7.35 7.45Z"
+                                                        d="M7.35 7.45
+                                                           C6.18 6.72 5.35 5.98 5.35 5.03
+                                                           C5.35 4.28 5.92 3.72 6.65 3.72
+                                                           C7.08 3.72 7.43 3.93 7.68 4.27
+                                                           C7.93 3.93 8.28 3.72 8.71 3.72
+                                                           C9.44 3.72 10.01 4.28 10.01 5.03
+                                                           C10.01 5.98 9.18 6.72 8.01 7.45
+                                                           L7.68 7.66
+                                                           L7.35 7.45Z"
                                                         fill="currentColor"
                                                     />
 
@@ -149,7 +174,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                                     <!-- Flecha circular -->
                                                     <path
-                                                        d="M19.9 14.7C19.15 13.2 17.45 12.35 15.78 12.72C14.83 12.93 14.02 13.45 13.43 14.15"
+                                                        d="M19.9 14.7
+                                                           C19.15 13.2 17.45 12.35 15.78 12.72
+                                                           C14.83 12.93 14.02 13.45 13.43 14.15"
                                                         stroke="currentColor"
                                                         stroke-width="1.65"
                                                         stroke-linecap="round"
@@ -230,7 +257,10 @@ require_once __DIR__ . '/Layout/Header.php';
 </section>
 
 
-<!-- Modal Nuevo Cliente -->
+<!-- ===================================================== -->
+<!-- MODAL DE REGISTRO DE CLIENTE -->
+<!-- ===================================================== -->
+
 <div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-labelledby="modalNuevoClienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal">
@@ -238,6 +268,7 @@ require_once __DIR__ . '/Layout/Header.php';
             <form action="Index.php?url=clientes" method="POST">
                 <input type="hidden" name="accion" value="registrar">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalNuevoClienteLabel">
                         <i class="bi bi-person-plus-fill"></i>
@@ -246,6 +277,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
+                <!-- Datos del cliente -->
                 <div class="modal-body">
                     <div class="row g-3">
 
@@ -286,9 +318,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         <div class="col-md-12">
                             <label class="form-label">Alergias u observaciones</label>
-                            <textarea 
-                                name="alergias" 
-                                class="form-control templo-input" 
+                            <textarea
+                                name="alergias"
+                                class="form-control templo-input"
                                 rows="3"
                                 placeholder="Ej: alergia al acrílico, sensibilidad a productos, no presenta alergias..."
                             ></textarea>
@@ -297,6 +329,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     </div>
                 </div>
 
+                <!-- Botones del formulario -->
                 <div class="modal-footer">
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
@@ -315,7 +348,10 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
-<!-- Modal Editar Cliente -->
+<!-- ===================================================== -->
+<!-- MODAL DE EDICIÓN DE CLIENTE -->
+<!-- ===================================================== -->
+
 <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-labelledby="modalEditarClienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal">
@@ -323,6 +359,7 @@ require_once __DIR__ . '/Layout/Header.php';
             <form action="Index.php?url=clientes" method="POST">
                 <input type="hidden" name="accion" value="modificar">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalEditarClienteLabel">
                         <i class="bi bi-pencil-square"></i>
@@ -331,6 +368,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
+                <!-- Datos del cliente -->
                 <div class="modal-body">
                     <div class="row g-3">
 
@@ -371,10 +409,10 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         <div class="col-md-12">
                             <label class="form-label">Alergias u observaciones</label>
-                            <textarea 
-                                name="alergias" 
-                                id="editarAlergias" 
-                                class="form-control templo-input" 
+                            <textarea
+                                name="alergias"
+                                id="editarAlergias"
+                                class="form-control templo-input"
                                 rows="3"
                                 placeholder="Ej: alergia al acrílico, sensibilidad a productos, no presenta alergias..."
                             ></textarea>
@@ -383,6 +421,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     </div>
                 </div>
 
+                <!-- Botones del formulario -->
                 <div class="modal-footer">
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
@@ -401,7 +440,10 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
-<!-- Modal Detalle Cliente -->
+<!-- ===================================================== -->
+<!-- MODAL DE DETALLES DEL CLIENTE -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalDetalleCliente"
@@ -412,6 +454,7 @@ require_once __DIR__ . '/Layout/Header.php';
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal detalle-ficha-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
 
                 <h5
@@ -427,7 +470,11 @@ require_once __DIR__ . '/Layout/Header.php';
                             fill="none"
                         >
                             <path
-                                d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                d="M2 12
+                                   C2 12 5.5 5 12 5
+                                   C18.5 5 22 12 22 12
+                                   C22 12 18.5 19 12 19
+                                   C5.5 19 2 12 2 12Z"
                                 stroke="currentColor"
                                 stroke-width="2"
                                 stroke-linecap="round"
@@ -436,7 +483,13 @@ require_once __DIR__ . '/Layout/Header.php';
                             />
 
                             <path
-                                d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                d="M12 16
+                                   C10 14.8 8.5 13.5 8.5 11.8
+                                   C8.5 10.5 9.5 9.5 10.8 9.5
+                                   C11.5 9.5 12 9.9 12 10.4
+                                   C12 9.9 12.5 9.5 13.2 9.5
+                                   C14.5 9.5 15.5 10.5 15.5 11.8
+                                   C15.5 13.5 14 14.8 12 16Z"
                                 fill="currentColor"
                             />
                         </svg>
@@ -455,6 +508,7 @@ require_once __DIR__ . '/Layout/Header.php';
             </div>
 
 
+            <!-- Ficha de detalle -->
             <div class="modal-body detalle-ficha-modal-body">
 
                 <div class="detalle-ficha-panel">
@@ -694,6 +748,7 @@ require_once __DIR__ . '/Layout/Header.php';
             </div>
 
 
+            <!-- Botón de cierre -->
             <div class="modal-footer">
 
                 <button
@@ -711,7 +766,11 @@ require_once __DIR__ . '/Layout/Header.php';
     </div>
 </div>
 
-<!-- Modal Historial de Servicios del Cliente -->
+
+<!-- ===================================================== -->
+<!-- MODAL DEL HISTORIAL DE SERVICIOS -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalHistorialServiciosCliente"
@@ -722,88 +781,99 @@ require_once __DIR__ . '/Layout/Header.php';
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content templo-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
                 <h5 class="modal-title" id="modalHistorialServiciosClienteLabel">
                     <span class="cliente-historial-icono" aria-hidden="true">
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <!-- Documento -->
-                                                    <path
-                                                        d="M4.25 2.75H12.5L16.25 6.5V12.1M4.25 2.75V20.75H11.4"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <!-- Documento -->
+                            <path
+                                d="M4.25 2.75H12.5L16.25 6.5V12.1M4.25 2.75V20.75H11.4"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
 
-                                                    <!-- Esquina doblada -->
-                                                    <path
-                                                        d="M12.5 2.75V5.55C12.5 6.08 12.92 6.5 13.45 6.5H16.25"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                            <!-- Esquina doblada -->
+                            <path
+                                d="M12.5 2.75V5.55C12.5 6.08 12.92 6.5 13.45 6.5H16.25"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
 
-                                                    <!-- Corazón -->
-                                                    <path
-                                                        d="M7.35 7.45C6.18 6.72 5.35 5.98 5.35 5.03C5.35 4.28 5.92 3.72 6.65 3.72C7.08 3.72 7.43 3.93 7.68 4.27C7.93 3.93 8.28 3.72 8.71 3.72C9.44 3.72 10.01 4.28 10.01 5.03C10.01 5.98 9.18 6.72 8.01 7.45L7.68 7.66L7.35 7.45Z"
-                                                        fill="currentColor"
-                                                    />
+                            <!-- Corazón -->
+                            <path
+                                d="M7.35 7.45
+                                   C6.18 6.72 5.35 5.98 5.35 5.03
+                                   C5.35 4.28 5.92 3.72 6.65 3.72
+                                   C7.08 3.72 7.43 3.93 7.68 4.27
+                                   C7.93 3.93 8.28 3.72 8.71 3.72
+                                   C9.44 3.72 10.01 4.28 10.01 5.03
+                                   C10.01 5.98 9.18 6.72 8.01 7.45
+                                   L7.68 7.66
+                                   L7.35 7.45Z"
+                                fill="currentColor"
+                            />
 
-                                                    <!-- Líneas del documento -->
-                                                    <path
-                                                        d="M6.15 9.45H11.9M6.15 12.25H11.1M6.15 15.05H9.85"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.55"
-                                                        stroke-linecap="round"
-                                                    />
+                            <!-- Líneas del documento -->
+                            <path
+                                d="M6.15 9.45H11.9M6.15 12.25H11.1M6.15 15.05H9.85"
+                                stroke="currentColor"
+                                stroke-width="1.55"
+                                stroke-linecap="round"
+                            />
 
-                                                    <!-- Reloj -->
-                                                    <circle
-                                                        cx="16.65"
-                                                        cy="16.65"
-                                                        r="5.3"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                    />
+                            <!-- Reloj -->
+                            <circle
+                                cx="16.65"
+                                cy="16.65"
+                                r="5.3"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                            />
 
-                                                    <!-- Flecha circular -->
-                                                    <path
-                                                        d="M19.9 14.7C19.15 13.2 17.45 12.35 15.78 12.72C14.83 12.93 14.02 13.45 13.43 14.15"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                            <!-- Flecha circular -->
+                            <path
+                                d="M19.9 14.7
+                                   C19.15 13.2 17.45 12.35 15.78 12.72
+                                   C14.83 12.93 14.02 13.45 13.43 14.15"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
 
-                                                    <!-- Punta de la flecha -->
-                                                    <path
-                                                        d="M13.15 12.55L13.25 14.42L15.05 14.02"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                            <!-- Punta de la flecha -->
+                            <path
+                                d="M13.15 12.55L13.25 14.42L15.05 14.02"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
 
-                                                    <!-- Cola punteada de la flecha -->
-                                                    <circle cx="13.05" cy="18.55" r="0.46" fill="currentColor" />
-                                                    <circle cx="13.72" cy="19.42" r="0.40" fill="currentColor" />
-                                                    <circle cx="14.62" cy="20.02" r="0.34" fill="currentColor" />
+                            <!-- Cola punteada de la flecha -->
+                            <circle cx="13.05" cy="18.55" r="0.46" fill="currentColor" />
+                            <circle cx="13.72" cy="19.42" r="0.40" fill="currentColor" />
+                            <circle cx="14.62" cy="20.02" r="0.34" fill="currentColor" />
 
-                                                    <!-- Manecillas -->
-                                                    <path
-                                                        d="M16.65 14.25V16.82L18.35 17.92"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
-                                                </svg>
-                                            </span>
+                            <!-- Manecillas -->
+                            <path
+                                d="M16.65 14.25V16.82L18.35 17.92"
+                                stroke="currentColor"
+                                stroke-width="1.65"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </span>
 
                     Historial de Servicios
                 </h5>
@@ -816,6 +886,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 ></button>
             </div>
 
+            <!-- Resumen del cliente e historial de servicios -->
             <div class="modal-body">
                 <div class="historial-cliente-resumen">
                     <span>Cliente:</span>
@@ -843,85 +914,95 @@ require_once __DIR__ . '/Layout/Header.php';
                             <tr class="historial-servicios-vacio">
                                 <td colspan="5">
                                     <span class="cliente-historial-icono" aria-hidden="true">
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <!-- Documento -->
-                                                    <path
-                                                        d="M4.25 2.75H12.5L16.25 6.5V12.1M4.25 2.75V20.75H11.4"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <!-- Documento -->
+                                            <path
+                                                d="M4.25 2.75H12.5L16.25 6.5V12.1M4.25 2.75V20.75H11.4"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
 
-                                                    <!-- Esquina doblada -->
-                                                    <path
-                                                        d="M12.5 2.75V5.55C12.5 6.08 12.92 6.5 13.45 6.5H16.25"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                                            <!-- Esquina doblada -->
+                                            <path
+                                                d="M12.5 2.75V5.55C12.5 6.08 12.92 6.5 13.45 6.5H16.25"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
 
-                                                    <!-- Corazón -->
-                                                    <path
-                                                        d="M7.35 7.45C6.18 6.72 5.35 5.98 5.35 5.03C5.35 4.28 5.92 3.72 6.65 3.72C7.08 3.72 7.43 3.93 7.68 4.27C7.93 3.93 8.28 3.72 8.71 3.72C9.44 3.72 10.01 4.28 10.01 5.03C10.01 5.98 9.18 6.72 8.01 7.45L7.68 7.66L7.35 7.45Z"
-                                                        fill="currentColor"
-                                                    />
+                                            <!-- Corazón -->
+                                            <path
+                                                d="M7.35 7.45
+                                                   C6.18 6.72 5.35 5.98 5.35 5.03
+                                                   C5.35 4.28 5.92 3.72 6.65 3.72
+                                                   C7.08 3.72 7.43 3.93 7.68 4.27
+                                                   C7.93 3.93 8.28 3.72 8.71 3.72
+                                                   C9.44 3.72 10.01 4.28 10.01 5.03
+                                                   C10.01 5.98 9.18 6.72 8.01 7.45
+                                                   L7.68 7.66
+                                                   L7.35 7.45Z"
+                                                fill="currentColor"
+                                            />
 
-                                                    <!-- Líneas del documento -->
-                                                    <path
-                                                        d="M6.15 9.45H11.9M6.15 12.25H11.1M6.15 15.05H9.85"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.55"
-                                                        stroke-linecap="round"
-                                                    />
+                                            <!-- Líneas del documento -->
+                                            <path
+                                                d="M6.15 9.45H11.9M6.15 12.25H11.1M6.15 15.05H9.85"
+                                                stroke="currentColor"
+                                                stroke-width="1.55"
+                                                stroke-linecap="round"
+                                            />
 
-                                                    <!-- Reloj -->
-                                                    <circle
-                                                        cx="16.65"
-                                                        cy="16.65"
-                                                        r="5.3"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                    />
+                                            <!-- Reloj -->
+                                            <circle
+                                                cx="16.65"
+                                                cy="16.65"
+                                                r="5.3"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                            />
 
-                                                    <!-- Flecha circular -->
-                                                    <path
-                                                        d="M19.9 14.7C19.15 13.2 17.45 12.35 15.78 12.72C14.83 12.93 14.02 13.45 13.43 14.15"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                                            <!-- Flecha circular -->
+                                            <path
+                                                d="M19.9 14.7
+                                                   C19.15 13.2 17.45 12.35 15.78 12.72
+                                                   C14.83 12.93 14.02 13.45 13.43 14.15"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
 
-                                                    <!-- Punta de la flecha -->
-                                                    <path
-                                                        d="M13.15 12.55L13.25 14.42L15.05 14.02"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                                            <!-- Punta de la flecha -->
+                                            <path
+                                                d="M13.15 12.55L13.25 14.42L15.05 14.02"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
 
-                                                    <!-- Cola punteada de la flecha -->
-                                                    <circle cx="13.05" cy="18.55" r="0.46" fill="currentColor" />
-                                                    <circle cx="13.72" cy="19.42" r="0.40" fill="currentColor" />
-                                                    <circle cx="14.62" cy="20.02" r="0.34" fill="currentColor" />
+                                            <!-- Cola punteada de la flecha -->
+                                            <circle cx="13.05" cy="18.55" r="0.46" fill="currentColor" />
+                                            <circle cx="13.72" cy="19.42" r="0.40" fill="currentColor" />
+                                            <circle cx="14.62" cy="20.02" r="0.34" fill="currentColor" />
 
-                                                    <!-- Manecillas -->
-                                                    <path
-                                                        d="M16.65 14.25V16.82L18.35 17.92"
-                                                        stroke="currentColor"
-                                                        stroke-width="1.65"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
-                                                </svg>
-                                            </span>
+                                            <!-- Manecillas -->
+                                            <path
+                                                d="M16.65 14.25V16.82L18.35 17.92"
+                                                stroke="currentColor"
+                                                stroke-width="1.65"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
+                                        </svg>
+                                    </span>
 
                                     <span>
                                         No hay servicios registrados para esta clienta.
@@ -933,6 +1014,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 </div>
             </div>
 
+            <!-- Botón de cierre -->
             <div class="modal-footer">
                 <button
                     type="button"
@@ -948,7 +1030,11 @@ require_once __DIR__ . '/Layout/Header.php';
     </div>
 </div>
 
-<!-- Modal Desactivar Cliente -->
+
+<!-- ===================================================== -->
+<!-- MODAL DE DESACTIVACIÓN DE CLIENTE -->
+<!-- ===================================================== -->
+
 <div class="modal fade" id="modalDesactivarCliente" tabindex="-1" aria-labelledby="modalDesactivarClienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content templo-modal status-modal">
@@ -957,6 +1043,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <input type="hidden" name="accion" value="desactivar">
                 <input type="hidden" name="cedula" id="desactivarCedula" value="">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalDesactivarClienteLabel">
                         <i class="bi bi-person-dash"></i>
@@ -965,12 +1052,14 @@ require_once __DIR__ . '/Layout/Header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
+                <!-- Confirmación de la desactivación -->
                 <div class="modal-body text-center">
                     <p class="status-question">¿Deseas desactivar este cliente?</p>
                     <p class="status-client-name" id="desactivarNombreCliente"></p>
                     <p class="status-warning">El cliente no se borrará. Solo dejará de aparecer en la lista principal.</p>
                 </div>
 
+                <!-- Botones del formulario -->
                 <div class="modal-footer">
                     <button type="submit" class="btn-templo-danger">
                         <i class="bi bi-person-dash"></i>
@@ -988,7 +1077,15 @@ require_once __DIR__ . '/Layout/Header.php';
     </div>
 </div>
 
-<?php 
-$scriptVista = 'Assets/js/clientes.js'; 
-require_once __DIR__ . '/Layout/Footer.php'; 
+
+<!-- ===================================================== -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
+
+<?php
+
+$scriptVista = 'Assets/js/clientes.js';
+
+require_once __DIR__ . '/Layout/Footer.php';
+
 ?>

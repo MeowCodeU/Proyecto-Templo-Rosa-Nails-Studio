@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE INSUMOS */
+/* ===================================================== */
+
 class InsumosM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla insumos */
@@ -23,63 +32,38 @@ class InsumosM extends Database implements CrudInterface
     private $estadoInsumo;
 
 
-    /* Setters: asignan valores a los atributos privados */
-    public function set_idInsumo($idInsumo)
-    {
-        $this->idInsumo = $idInsumo;
-    }
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
 
-    public function set_nombreInsumo($nombreInsumo)
-    {
-        $this->nombreInsumo = $nombreInsumo;
-    }
-
-    public function set_descripcion($descripcion)
-    {
-        $this->descripcion = $descripcion;
-    }
-
-    public function set_presentacion($presentacion)
-    {
-        $this->presentacion = $presentacion;
-    }
-
-    public function set_tipoControl($tipoControl)
-    {
-        $this->tipoControl = $tipoControl;
-    }
-
-    public function set_stockActual($stockActual)
-    {
-        $this->stockActual = $stockActual;
-    }
-
-    public function set_stockMinimo($stockMinimo)
-    {
-        $this->stockMinimo = $stockMinimo;
-    }
-
-    public function set_fechaVencimiento($fechaVencimiento)
-    {
-        $this->fechaVencimiento = $fechaVencimiento;
-    }
-
-    public function set_estadoInsumo($estadoInsumo)
-    {
-        $this->estadoInsumo = $estadoInsumo;
-    }
+    public function set_idInsumo($idInsumo) {$this->idInsumo = $idInsumo;}
+    public function set_nombreInsumo($nombreInsumo) {$this->nombreInsumo = $nombreInsumo;}
+    public function set_descripcion($descripcion) {$this->descripcion = $descripcion;}
+    public function set_presentacion($presentacion) {$this->presentacion = $presentacion;}
+    public function set_tipoControl($tipoControl) {$this->tipoControl = $tipoControl;}
+    public function set_stockActual($stockActual) {$this->stockActual = $stockActual;}
+    public function set_stockMinimo($stockMinimo) {$this->stockMinimo = $stockMinimo;}
+    public function set_fechaVencimiento($fechaVencimiento) {$this->fechaVencimiento = $fechaVencimiento;}
+    public function set_estadoInsumo($estadoInsumo) {$this->estadoInsumo = $estadoInsumo;}
 
 
-    /* Constructor: obtiene la conexión heredada de Database */
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /* Consultar: obtiene los insumos activos */
+    /* ================================================= */
+    /* CONSULTAR INSUMOS */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los insumos activos ordenados por su nombre */
         $sql = "SELECT
                     id_insumo,
                     nombre_insumo,
@@ -101,9 +85,13 @@ class InsumosM extends Database implements CrudInterface
     }
 
 
-    /* Registrar: inserta un nuevo insumo */
+    /* ================================================= */
+    /* REGISTRAR INSUMO */
+    /* ================================================= */
+
     public function registrar()
     {
+        /* Registrar el insumo activo y convertir una fecha vacía en NULL */
         $sql = "INSERT INTO insumos (
                     nombre_insumo,
                     descripcion,
@@ -138,9 +126,13 @@ class InsumosM extends Database implements CrudInterface
     }
 
 
-    /* Buscar: obtiene un insumo por su identificador */
+    /* ================================================= */
+    /* BUSCAR INSUMO */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un insumo mediante su identificador */
         $sql = "SELECT
                     id_insumo,
                     nombre_insumo,
@@ -163,9 +155,13 @@ class InsumosM extends Database implements CrudInterface
     }
 
 
-    /* Modificar: actualiza los datos de un insumo */
+    /* ================================================= */
+    /* MODIFICAR INSUMO */
+    /* ================================================= */
+
     public function modificar()
     {
+        /* Actualizar los datos y las existencias del insumo */
         $sql = "UPDATE insumos SET
                     nombre_insumo = :nombre_insumo,
                     descripcion = :descripcion,
@@ -191,9 +187,13 @@ class InsumosM extends Database implements CrudInterface
     }
 
 
-    /* Eliminar: cambia el estado del insumo a INACTIVO */
+    /* ================================================= */
+    /* DESACTIVAR INSUMO */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Cambiar el estado del insumo para conservar su registro */
         $sql = "UPDATE insumos
                 SET estado_insumo = 'INACTIVO'
                 WHERE id_insumo = :id_insumo";

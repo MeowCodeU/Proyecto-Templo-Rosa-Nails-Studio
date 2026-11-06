@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE SERVICIOS */
+/* ===================================================== */
+
 class ServicioM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla servicios */
@@ -20,7 +29,10 @@ class ServicioM extends Database implements CrudInterface
     private $estadoServicio;
 
 
-    /* Setters: asignan valores a los atributos privados */
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
+
     public function set_idServicio($idServicio) {$this->idServicio = $idServicio;}
     public function set_nombreServicio($nombreServicio) {$this->nombreServicio = $nombreServicio;}
     public function set_descripcion($descripcion) {$this->descripcion = $descripcion;}
@@ -29,16 +41,23 @@ class ServicioM extends Database implements CrudInterface
     public function set_estadoServicio($estadoServicio) {$this->estadoServicio = $estadoServicio;}
 
 
-    /* Constructor: obtiene la conexión heredada de Database */
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /* Consultar: obtiene los servicios activos */
+    /* ================================================= */
+    /* CONSULTAR SERVICIOS */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los servicios activos ordenados por su nombre */
         $sql = "SELECT
                     id_servicio,
                     nombre_servicio,
@@ -57,9 +76,13 @@ class ServicioM extends Database implements CrudInterface
     }
 
 
-    /* Registrar: inserta un nuevo servicio */
+    /* ================================================= */
+    /* REGISTRAR SERVICIO */
+    /* ================================================= */
+
     public function registrar()
     {
+        /* Registrar el servicio con su precio, duración y estado ACTIVO */
         $sql = "INSERT INTO servicios (
                     nombre_servicio,
                     descripcion,
@@ -85,9 +108,13 @@ class ServicioM extends Database implements CrudInterface
     }
 
 
-    /* Buscar: obtiene un servicio por su identificador */
+    /* ================================================= */
+    /* BUSCAR SERVICIO */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un servicio mediante su identificador */
         $sql = "SELECT
                     id_servicio,
                     nombre_servicio,
@@ -100,7 +127,6 @@ class ServicioM extends Database implements CrudInterface
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
-
         $stmt->bindParam(':id_servicio', $this->idServicio);
         $stmt->execute();
 
@@ -108,11 +134,14 @@ class ServicioM extends Database implements CrudInterface
     }
 
 
-    /* Modificar: actualiza los datos de un servicio */
+    /* ================================================= */
+    /* MODIFICAR SERVICIO */
+    /* ================================================= */
+
     public function modificar()
     {
-        $sql = "UPDATE servicios
-                SET
+        /* Actualizar los datos, el precio y la duración del servicio */
+        $sql = "UPDATE servicios SET
                     nombre_servicio = :nombre_servicio,
                     descripcion = :descripcion,
                     precio = :precio,
@@ -131,15 +160,18 @@ class ServicioM extends Database implements CrudInterface
     }
 
 
-    /* Eliminar: cambia el estado del servicio a INACTIVO */
+    /* ================================================= */
+    /* DESACTIVAR SERVICIO */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Cambiar el estado del servicio para conservar su registro */
         $sql = "UPDATE servicios
                 SET estado_servicio = 'INACTIVO'
                 WHERE id_servicio = :id_servicio";
 
         $stmt = $this->conexionMD->prepare($sql);
-
         $stmt->bindParam(':id_servicio', $this->idServicio);
 
         return $stmt->execute();

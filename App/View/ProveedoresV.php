@@ -5,17 +5,18 @@ $tituloPagina = 'Gestión de Proveedores';
 require_once __DIR__ . '/Layout/Header.php';
 
 $escaparProveedor = static function ($valor): string {
-    return htmlspecialchars(
-        (string) ($valor ?? ''),
-        ENT_QUOTES,
-        'UTF-8'
-    );
+    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 };
 
 ?>
 
+<!-- ===================================================== -->
+<!-- GESTIÓN DE PROVEEDORES -->
+<!-- ===================================================== -->
+
 <section class="module-card clientes-module proveedores-module">
 
+    <!-- Título y botón para registrar un proveedor -->
     <div class="module-header">
 
         <h2>
@@ -24,13 +25,26 @@ $escaparProveedor = static function ($valor): string {
                 aria-hidden="true"
             >
                 <svg viewBox="0 0 64 64">
-                    <path d="M4 20A3 3 0 0 1 7 17H42A3 3 0 0 1 45 20V27H52A4 4 0 0 1 55.5 29.2L60.5 36.5A4 4 0 0 1 61 38.8V48A3 3 0 0 1 58 51H54"></path>
-                    <path d="M4 20V48A3 3 0 0 0 7 51H12"></path>
+                    <path
+                        d="M4 20A3 3 0 0 1 7 17H42
+                           A3 3 0 0 1 45 20V27H52
+                           A4 4 0 0 1 55.5 29.2
+                           L60.5 36.5A4 4 0 0 1 61 38.8
+                           V48A3 3 0 0 1 58 51H54"
+                    ></path>
+
+                    <path
+                        d="M4 20V48
+                           A3 3 0 0 0 7 51H12"
+                    ></path>
+
                     <path d="M26 51H40"></path>
                     <path d="M45 27V44"></path>
                     <path d="M45 30H54L59 38H45V30Z" stroke-width="1.5"></path>
+
                     <circle cx="19" cy="51" r="7"></circle>
                     <circle cx="47" cy="51" r="7"></circle>
+
                     <path
                         d="M24.5 35
                            C23.5 33 21 32.5 21 30.5
@@ -60,7 +74,7 @@ $escaparProveedor = static function ($valor): string {
 
     </div>
 
-
+    <!-- Tabla de proveedores -->
     <div class="table-zone">
 
         <div class="templo-table-wrapper">
@@ -72,6 +86,7 @@ $escaparProveedor = static function ($valor): string {
                     class="table table-hover templo-table w-100"
                 >
 
+                    <!-- Encabezados de empresa, contacto y acciones -->
                     <thead>
 
                         <tr class="proveedores-group-row">
@@ -103,12 +118,8 @@ $escaparProveedor = static function ($valor): string {
 
                         <tr class="proveedores-columns-row">
                             <th scope="col">RIF</th>
-                            <th scope="col" class="columna-empresa">
-                                Empresa
-                            </th>
-                            <th scope="col" class="proveedores-contact-start">
-                                Nombre
-                            </th>
+                            <th scope="col" class="columna-empresa">Empresa</th>
+                            <th scope="col" class="proveedores-contact-start">Nombre</th>
                             <th scope="col">Apellido</th>
                             <th scope="col">Teléfono</th>
                             <th scope="col">Ciudad</th>
@@ -116,69 +127,49 @@ $escaparProveedor = static function ($valor): string {
 
                     </thead>
 
-
+                    <!-- Registros de proveedores -->
                     <tbody>
 
                         <?php foreach ($listaProveedores as $proveedor): ?>
 
+                            <!-- Nombre del contacto y estado del proveedor -->
                             <?php
 
-                            $nombreCompleto = trim(
-                                ($proveedor['nombre'] ?? '') . ' ' .
-                                ($proveedor['apellido'] ?? '')
-                            );
+                            $nombreCompleto = trim(($proveedor['nombre'] ?? '') . ' ' . ($proveedor['apellido'] ?? ''));
 
-                            $estadoProveedor = strtoupper(
-                                trim(
-                                    (string) (
-                                        $proveedor['estado_proveedor'] ??
-                                        'ACTIVO'
-                                    )
-                                )
-                            );
+                            $estadoProveedor = strtoupper(trim((string) ($proveedor['estado_proveedor'] ?? 'ACTIVO')));
 
                             ?>
 
                             <tr>
 
                                 <td>
-                                    <?= $escaparProveedor(
-                                        $proveedor['rif'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['rif'] ?? ''); ?>
                                 </td>
 
                                 <td class="columna-empresa">
-                                    <?= $escaparProveedor(
-                                        $proveedor['nombre_empresa'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['nombre_empresa'] ?? ''); ?>
                                 </td>
 
                                 <td class="proveedores-contact-start">
-                                    <?= $escaparProveedor(
-                                        $proveedor['nombre'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['nombre'] ?? ''); ?>
                                 </td>
 
                                 <td>
-                                    <?= $escaparProveedor(
-                                        $proveedor['apellido'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['apellido'] ?? ''); ?>
                                 </td>
 
                                 <td>
-                                    <?= $escaparProveedor(
-                                        $proveedor['telefono'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['telefono'] ?? ''); ?>
                                 </td>
 
                                 <td>
-                                    <?= $escaparProveedor(
-                                        $proveedor['ciudad'] ?? ''
-                                    ); ?>
+                                    <?= $escaparProveedor($proveedor['ciudad'] ?? ''); ?>
                                 </td>
 
                                 <td class="columna-acciones">
 
+                                    <!-- Acciones del proveedor -->
                                     <div class="btn-group-actions">
 
                                         <!-- Ver detalles -->
@@ -187,43 +178,15 @@ $escaparProveedor = static function ($valor): string {
                                             class="btn-action btn-detail btnDetalleProveedor"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalDetalleProveedor"
-
-                                            data-rif="<?= $escaparProveedor(
-                                                $proveedor['rif'] ?? ''
-                                            ); ?>"
-
-                                            data-empresa="<?= $escaparProveedor(
-                                                $proveedor['nombre_empresa'] ?? ''
-                                            ); ?>"
-
-                                            data-cedula="<?= $escaparProveedor(
-                                                $proveedor['cedula'] ?? ''
-                                            ); ?>"
-
-                                            data-nombre-completo="<?= $escaparProveedor(
-                                                $nombreCompleto
-                                            ); ?>"
-
-                                            data-telefono="<?= $escaparProveedor(
-                                                $proveedor['telefono'] ?? ''
-                                            ); ?>"
-
-                                            data-correo="<?= $escaparProveedor(
-                                                $proveedor['correo'] ?? ''
-                                            ); ?>"
-
-                                            data-ciudad="<?= $escaparProveedor(
-                                                $proveedor['ciudad'] ?? ''
-                                            ); ?>"
-
-                                            data-direccion="<?= $escaparProveedor(
-                                                $proveedor['direccion'] ?? ''
-                                            ); ?>"
-
-                                            data-estado-proveedor="<?= $escaparProveedor(
-                                                $estadoProveedor
-                                            ); ?>"
-
+                                            data-rif="<?= $escaparProveedor($proveedor['rif'] ?? ''); ?>"
+                                            data-empresa="<?= $escaparProveedor($proveedor['nombre_empresa'] ?? ''); ?>"
+                                            data-cedula="<?= $escaparProveedor($proveedor['cedula'] ?? ''); ?>"
+                                            data-nombre-completo="<?= $escaparProveedor($nombreCompleto); ?>"
+                                            data-telefono="<?= $escaparProveedor($proveedor['telefono'] ?? ''); ?>"
+                                            data-correo="<?= $escaparProveedor($proveedor['correo'] ?? ''); ?>"
+                                            data-ciudad="<?= $escaparProveedor($proveedor['ciudad'] ?? ''); ?>"
+                                            data-direccion="<?= $escaparProveedor($proveedor['direccion'] ?? ''); ?>"
+                                            data-estado-proveedor="<?= $escaparProveedor($estadoProveedor); ?>"
                                             title="Ver detalles del proveedor"
                                             aria-label="Ver detalles del proveedor"
                                         >
@@ -236,21 +199,31 @@ $escaparProveedor = static function ($valor): string {
                                                     fill="none"
                                                 >
                                                     <path
-                                                        d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                                        d="M2 12
+                                                           C2 12 5.5 5 12 5
+                                                           C18.5 5 22 12 22 12
+                                                           C22 12 18.5 19 12 19
+                                                           C5.5 19 2 12 2 12Z"
                                                         stroke="currentColor"
                                                         stroke-width="2"
                                                         stroke-linecap="round"
                                                         stroke-linejoin="round"
                                                         fill="none"
                                                     />
+
                                                     <path
-                                                        d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                                        d="M12 16
+                                                           C10 14.8 8.5 13.5 8.5 11.8
+                                                           C8.5 10.5 9.5 9.5 10.8 9.5
+                                                           C11.5 9.5 12 9.9 12 10.4
+                                                           C12 9.9 12.5 9.5 13.2 9.5
+                                                           C14.5 9.5 15.5 10.5 15.5 11.8
+                                                           C15.5 13.5 14 14.8 12 16Z"
                                                         fill="currentColor"
                                                     />
                                                 </svg>
                                             </span>
                                         </button>
-
 
                                         <!-- Editar -->
                                         <button
@@ -258,51 +231,17 @@ $escaparProveedor = static function ($valor): string {
                                             class="btn-action btn-edit btnEditarProveedor"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalEditarProveedor"
-
-                                            data-id-proveedor="<?= $escaparProveedor(
-                                                $proveedor['id_proveedor'] ?? ''
-                                            ); ?>"
-
-                                            data-id-persona-contacto="<?= $escaparProveedor(
-                                                $proveedor['id_persona_contacto'] ?? ''
-                                            ); ?>"
-
-                                            data-rif="<?= $escaparProveedor(
-                                                $proveedor['rif'] ?? ''
-                                            ); ?>"
-
-                                            data-empresa="<?= $escaparProveedor(
-                                                $proveedor['nombre_empresa'] ?? ''
-                                            ); ?>"
-
-                                            data-cedula="<?= $escaparProveedor(
-                                                $proveedor['cedula'] ?? ''
-                                            ); ?>"
-
-                                            data-nombre="<?= $escaparProveedor(
-                                                $proveedor['nombre'] ?? ''
-                                            ); ?>"
-
-                                            data-apellido="<?= $escaparProveedor(
-                                                $proveedor['apellido'] ?? ''
-                                            ); ?>"
-
-                                            data-telefono="<?= $escaparProveedor(
-                                                $proveedor['telefono'] ?? ''
-                                            ); ?>"
-
-                                            data-correo="<?= $escaparProveedor(
-                                                $proveedor['correo'] ?? ''
-                                            ); ?>"
-
-                                            data-ciudad="<?= $escaparProveedor(
-                                                $proveedor['ciudad'] ?? ''
-                                            ); ?>"
-
-                                            data-direccion="<?= $escaparProveedor(
-                                                $proveedor['direccion'] ?? ''
-                                            ); ?>"
-
+                                            data-id-proveedor="<?= $escaparProveedor($proveedor['id_proveedor'] ?? ''); ?>"
+                                            data-id-persona-contacto="<?= $escaparProveedor($proveedor['id_persona_contacto'] ?? ''); ?>"
+                                            data-rif="<?= $escaparProveedor($proveedor['rif'] ?? ''); ?>"
+                                            data-empresa="<?= $escaparProveedor($proveedor['nombre_empresa'] ?? ''); ?>"
+                                            data-cedula="<?= $escaparProveedor($proveedor['cedula'] ?? ''); ?>"
+                                            data-nombre="<?= $escaparProveedor($proveedor['nombre'] ?? ''); ?>"
+                                            data-apellido="<?= $escaparProveedor($proveedor['apellido'] ?? ''); ?>"
+                                            data-telefono="<?= $escaparProveedor($proveedor['telefono'] ?? ''); ?>"
+                                            data-correo="<?= $escaparProveedor($proveedor['correo'] ?? ''); ?>"
+                                            data-ciudad="<?= $escaparProveedor($proveedor['ciudad'] ?? ''); ?>"
+                                            data-direccion="<?= $escaparProveedor($proveedor['direccion'] ?? ''); ?>"
                                             title="Editar proveedor"
                                             aria-label="Editar proveedor"
                                         >
@@ -312,22 +251,14 @@ $escaparProveedor = static function ($valor): string {
                                             ></i>
                                         </button>
 
-
                                         <!-- Desactivar -->
                                         <button
                                             type="button"
                                             class="btn-action btn-delete btnDesactivarProveedor"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalDesactivarProveedor"
-
-                                            data-id-proveedor="<?= $escaparProveedor(
-                                                $proveedor['id_proveedor'] ?? ''
-                                            ); ?>"
-
-                                            data-empresa="<?= $escaparProveedor(
-                                                $proveedor['nombre_empresa'] ?? ''
-                                            ); ?>"
-
+                                            data-id-proveedor="<?= $escaparProveedor($proveedor['id_proveedor'] ?? ''); ?>"
+                                            data-empresa="<?= $escaparProveedor($proveedor['nombre_empresa'] ?? ''); ?>"
                                             title="Desactivar proveedor"
                                             aria-label="Desactivar proveedor"
                                         >
@@ -373,6 +304,7 @@ $escaparProveedor = static function ($valor): string {
 
         <div class="modal-content templo-modal detalle-ficha-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
 
                 <h5
@@ -382,15 +314,26 @@ $escaparProveedor = static function ($valor): string {
                     <span class="detalle-ficha-title-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                             <path
-                                d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                d="M2 12
+                                   C2 12 5.5 5 12 5
+                                   C18.5 5 22 12 22 12
+                                   C22 12 18.5 19 12 19
+                                   C5.5 19 2 12 2 12Z"
                                 stroke="currentColor"
                                 stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 fill="none"
                             />
+
                             <path
-                                d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                d="M12 16
+                                   C10 14.8 8.5 13.5 8.5 11.8
+                                   C8.5 10.5 9.5 9.5 10.8 9.5
+                                   C11.5 9.5 12 9.9 12 10.4
+                                   C12 9.9 12.5 9.5 13.2 9.5
+                                   C14.5 9.5 15.5 10.5 15.5 11.8
+                                   C15.5 13.5 14 14.8 12 16Z"
                                 fill="currentColor"
                             />
                         </svg>
@@ -408,11 +351,11 @@ $escaparProveedor = static function ($valor): string {
 
             </div>
 
-
             <div class="modal-body detalle-ficha-modal-body">
 
                 <div class="detalle-ficha-panel">
 
+                    <!-- Presentación de la ficha -->
                     <div class="detalle-ficha-intro">
 
                         <span
@@ -479,14 +422,12 @@ $escaparProveedor = static function ($valor): string {
                         </span>
 
                         <div class="detalle-ficha-intro-content">
-                            <p class="detalle-ficha-intro-title mb-0">
-                                Ficha del proveedor
-                            </p>
+                            <p class="detalle-ficha-intro-title mb-0">Ficha del proveedor</p>
                         </div>
 
                     </div>
 
-
+                    <!-- Información de la empresa y de su contacto -->
                     <div class="row g-2 detalle-ficha-grid">
 
                         <div class="col-md-6">
@@ -502,7 +443,6 @@ $escaparProveedor = static function ($valor): string {
                             </div>
                         </div>
 
-
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
                                 <span class="detalle-ficha-card-icon" aria-hidden="true">
@@ -515,7 +455,6 @@ $escaparProveedor = static function ($valor): string {
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
@@ -530,7 +469,6 @@ $escaparProveedor = static function ($valor): string {
                             </div>
                         </div>
 
-
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
                                 <span class="detalle-ficha-card-icon" aria-hidden="true">
@@ -543,7 +481,6 @@ $escaparProveedor = static function ($valor): string {
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
@@ -558,7 +495,6 @@ $escaparProveedor = static function ($valor): string {
                             </div>
                         </div>
 
-
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
                                 <span class="detalle-ficha-card-icon" aria-hidden="true">
@@ -572,7 +508,6 @@ $escaparProveedor = static function ($valor): string {
                             </div>
                         </div>
 
-
                         <div class="col-md-6">
                             <div class="detalle-ficha-card h-100">
                                 <span class="detalle-ficha-card-icon" aria-hidden="true">
@@ -585,7 +520,6 @@ $escaparProveedor = static function ($valor): string {
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="col-md-6">
                             <div class="detalle-ficha-card detalle-ficha-card-emphasis h-100">
@@ -602,7 +536,6 @@ $escaparProveedor = static function ($valor): string {
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="col-12">
                             <div class="detalle-ficha-card detalle-ficha-card-wide detalle-ficha-card-emphasis">
@@ -623,7 +556,7 @@ $escaparProveedor = static function ($valor): string {
 
             </div>
 
-
+            <!-- Botones del modal -->
             <div class="modal-footer">
 
                 <button
@@ -664,12 +597,14 @@ $escaparProveedor = static function ($valor): string {
                 autocomplete="off"
             >
 
+                <!-- Acción enviada al controlador -->
                 <input
                     type="hidden"
                     name="accion"
                     value="registrar"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
                     <h5
@@ -689,9 +624,9 @@ $escaparProveedor = static function ($valor): string {
 
                 </div>
 
-
                 <div class="modal-body">
 
+                    <!-- Datos de la empresa y de la persona de contacto -->
                     <div class="row g-3">
 
                         <div class="col-md-6">
@@ -712,7 +647,6 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
                             <label class="form-label">
@@ -730,7 +664,6 @@ $escaparProveedor = static function ($valor): string {
                             >
 
                         </div>
-
 
                         <div class="col-md-6">
 
@@ -750,12 +683,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Teléfono
-                            </label>
+                            <label class="form-label">Teléfono</label>
 
                             <input
                                 type="text"
@@ -766,7 +696,6 @@ $escaparProveedor = static function ($valor): string {
                             >
 
                         </div>
-
 
                         <div class="col-md-6">
 
@@ -786,7 +715,6 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
                             <label class="form-label">
@@ -805,12 +733,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Correo
-                            </label>
+                            <label class="form-label">Correo</label>
 
                             <input
                                 type="email"
@@ -822,12 +747,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Ciudad
-                            </label>
+                            <label class="form-label">Ciudad</label>
 
                             <input
                                 type="text"
@@ -839,12 +761,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-12">
 
-                            <label class="form-label">
-                                Dirección
-                            </label>
+                            <label class="form-label">Dirección</label>
 
                             <input
                                 type="text"
@@ -860,7 +779,7 @@ $escaparProveedor = static function ($valor): string {
 
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -911,6 +830,7 @@ $escaparProveedor = static function ($valor): string {
                 autocomplete="off"
             >
 
+                <!-- Acción enviada al controlador -->
                 <input
                     type="hidden"
                     name="accion"
@@ -929,6 +849,7 @@ $escaparProveedor = static function ($valor): string {
                     id="editarIdPersonaContacto"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
                     <h5
@@ -948,9 +869,9 @@ $escaparProveedor = static function ($valor): string {
 
                 </div>
 
-
                 <div class="modal-body">
 
+                    <!-- Datos de la empresa y de la persona de contacto -->
                     <div class="row g-3">
 
                         <div class="col-md-6">
@@ -971,7 +892,6 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
                             <label class="form-label">
@@ -990,12 +910,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Cédula del contacto
-                            </label>
+                            <label class="form-label">Cédula del contacto</label>
 
                             <input
                                 type="text"
@@ -1007,12 +924,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Teléfono
-                            </label>
+                            <label class="form-label">Teléfono</label>
 
                             <input
                                 type="text"
@@ -1023,7 +937,6 @@ $escaparProveedor = static function ($valor): string {
                             >
 
                         </div>
-
 
                         <div class="col-md-6">
 
@@ -1043,7 +956,6 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
                             <label class="form-label">
@@ -1062,12 +974,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Correo
-                            </label>
+                            <label class="form-label">Correo</label>
 
                             <input
                                 type="email"
@@ -1079,12 +988,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-6">
 
-                            <label class="form-label">
-                                Ciudad
-                            </label>
+                            <label class="form-label">Ciudad</label>
 
                             <input
                                 type="text"
@@ -1096,12 +1002,9 @@ $escaparProveedor = static function ($valor): string {
 
                         </div>
 
-
                         <div class="col-md-12">
 
-                            <label class="form-label">
-                                Dirección
-                            </label>
+                            <label class="form-label">Dirección</label>
 
                             <input
                                 type="text"
@@ -1117,7 +1020,7 @@ $escaparProveedor = static function ($valor): string {
 
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -1167,6 +1070,7 @@ $escaparProveedor = static function ($valor): string {
                 method="POST"
             >
 
+                <!-- Acción enviada al controlador -->
                 <input
                     type="hidden"
                     name="accion"
@@ -1179,6 +1083,7 @@ $escaparProveedor = static function ($valor): string {
                     id="desactivarIdProveedor"
                 >
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
 
                     <h5
@@ -1198,25 +1103,21 @@ $escaparProveedor = static function ($valor): string {
 
                 </div>
 
-
+                <!-- Confirmación de la desactivación -->
                 <div class="modal-body text-center">
 
-                    <p class="status-question">
-                        ¿Deseas desactivar este proveedor?
-                    </p>
+                    <p class="status-question">¿Deseas desactivar este proveedor?</p>
 
                     <p
                         class="status-client-name"
                         id="desactivarNombreProveedor"
                     ></p>
 
-                    <p class="status-warning">
-                        El registro permanecerá guardado en el sistema.
-                    </p>
+                    <p class="status-warning">El registro permanecerá guardado en el sistema.</p>
 
                 </div>
 
-
+                <!-- Botones del modal -->
                 <div class="modal-footer">
 
                     <button
@@ -1246,12 +1147,56 @@ $escaparProveedor = static function ($valor): string {
 </div>
 
 
+<!-- ===================================================== -->
+<!-- PLANTILLA DEL ICONO DE DETALLES -->
+<!-- ===================================================== -->
+
+<!-- Icono reutilizado por el listado al actualizar sus registros -->
+<template id="plantillaIconoDetalleProveedor">
+    <span
+        class="detalle-accion-icono"
+        aria-hidden="true"
+    >
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+        >
+            <path
+                d="M2 12
+                   C2 12 5.5 5 12 5
+                   C18.5 5 22 12 22 12
+                   C22 12 18.5 19 12 19
+                   C5.5 19 2 12 2 12Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+
+            <path
+                d="M12 16
+                   C10 14.8 8.5 13.5 8.5 11.8
+                   C8.5 10.5 9.5 9.5 10.8 9.5
+                   C11.5 9.5 12 9.9 12 10.4
+                   C12 9.9 12.5 9.5 13.2 9.5
+                   C14.5 9.5 15.5 10.5 15.5 11.8
+                   C15.5 13.5 14 14.8 12 16Z"
+                fill="currentColor"
+            />
+        </svg>
+    </span>
+</template>
+
+
+<!-- ===================================================== -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
+
 <?php
 
-$scriptVista = 'Assets/js/proveedores.js';
+$scriptVista = 'Assets/js/proveedores.js?v=2';
 
 require_once __DIR__ . '/Layout/Footer.php';
 
 ?>
-
-

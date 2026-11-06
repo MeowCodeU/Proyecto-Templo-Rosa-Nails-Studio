@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE PROVEEDORES */
+/* ===================================================== */
+
 class ProveedoresM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla proveedores */
@@ -26,7 +35,11 @@ class ProveedoresM extends Database implements CrudInterface
     private $direccion;
     private $ciudad;
 
-    /* Setters: asignan valores a los atributos privados */
+
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
+
     public function set_idProveedor($idProveedor) {$this->idProveedor = $idProveedor;}
     public function set_idPersonaContacto($idPersonaContacto) {$this->idPersonaContacto = $idPersonaContacto;}
     public function set_rif($rif) {$this->rif = $rif;}
@@ -39,15 +52,24 @@ class ProveedoresM extends Database implements CrudInterface
     public function set_direccion($direccion) {$this->direccion = $direccion;}
     public function set_ciudad($ciudad) {$this->ciudad = $ciudad;}
 
-    /* Constructor: obtiene la conexión heredada de Database */
+
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
-    /* Consultar: obtiene únicamente los proveedores activos */
+
+    /* ================================================= */
+    /* CONSULTAR PROVEEDORES */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los proveedores activos y los datos de sus contactos */
         $sql = "SELECT
                     pr.id_proveedor,
                     pr.id_persona_contacto,
@@ -81,58 +103,45 @@ class ProveedoresM extends Database implements CrudInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /* Registrar: busca o crea la persona y luego registra el proveedor */
+
+    /* ================================================= */
+    /* REGISTRAR PROVEEDOR */
+    /* ================================================= */
+
     public function registrar()
     {
         try {
+            /* Agrupar el registro del proveedor y los datos de su contacto */
             $this->conexionMD->beginTransaction();
 
-            /*Buscar si la persona de contacto ya existe. Si existe, se reutiliza su id_persona.*/
-            $sqlBuscarPersona = "SELECT
-                                    id_persona
-
+            /* Buscar a la persona de contacto mediante su cédula */
+            $sqlBuscarPersona = "SELECT id_persona
                                  FROM personas
-
                                  WHERE cedula = :cedula
-
                                  LIMIT 1";
 
-            $stmtBuscarPersona = $this->conexionMD->prepare(
-                $sqlBuscarPersona
-            );
-
-            $stmtBuscarPersona->bindParam(
-                ':cedula',
-                $this->cedula
-            );
-
+            $stmtBuscarPersona = $this->conexionMD->prepare($sqlBuscarPersona);
+            $stmtBuscarPersona->bindParam(':cedula', $this->cedula);
             $stmtBuscarPersona->execute();
 
-            $persona = $stmtBuscarPersona->fetch(
-                PDO::FETCH_ASSOC
-            );
+            $persona = $stmtBuscarPersona->fetch(PDO::FETCH_ASSOC);
 
             if ($persona) {
 
-                /*Si la persona ya existe, se reutiliza su identificador.*/
+                /* Reutilizar el identificador de la persona existente */
                 $idPersonaContacto = $persona['id_persona'];
 
-                /*También se actualizan sus datos personales y de contacto.*/
+                /* Actualizar sus datos personales y de contacto */
                 $sqlActualizarPersona = "UPDATE personas
-
-                                         SET
-                                            nombre = :nombre,
-                                            apellido = :apellido,
-                                            telefono = :telefono,
-                                            correo = :correo,
-                                            direccion = :direccion,
-                                            ciudad = :ciudad
-
+                                         SET nombre = :nombre,
+                                             apellido = :apellido,
+                                             telefono = :telefono,
+                                             correo = :correo,
+                                             direccion = :direccion,
+                                             ciudad = :ciudad
                                          WHERE id_persona = :id_persona";
 
-                $stmtActualizarPersona = $this->conexionMD->prepare(
-                    $sqlActualizarPersona
-                );
+                $stmtActualizarPersona = $this->conexionMD->prepare($sqlActualizarPersona);
 
                 $stmtActualizarPersona->bindParam(':nombre', $this->nombre);
                 $stmtActualizarPersona->bindParam(':apellido', $this->apellido);
@@ -146,7 +155,7 @@ class ProveedoresM extends Database implements CrudInterface
 
             } else {
 
-                /*Si la persona no existe, se registra primero.*/
+                /* Registrar a la persona cuando su cédula no existe */
                 $sqlPersona = "INSERT INTO personas (
                                     cedula,
                                     nombre,
@@ -165,9 +174,7 @@ class ProveedoresM extends Database implements CrudInterface
                                     :ciudad
                                )";
 
-                $stmtPersona = $this->conexionMD->prepare(
-                    $sqlPersona
-                );
+                $stmtPersona = $this->conexionMD->prepare($sqlPersona);
 
                 $stmtPersona->bindParam(':cedula', $this->cedula);
                 $stmtPersona->bindParam(':nombre', $this->nombre);
@@ -179,11 +186,11 @@ class ProveedoresM extends Database implements CrudInterface
 
                 $stmtPersona->execute();
 
-                $idPersonaContacto =
-                    $this->conexionMD->lastInsertId();
+                /* Recuperar el identificador de la persona registrada */
+                $idPersonaContacto = $this->conexionMD->lastInsertId();
             }
 
-            /*Registrar el proveedor relacionado con la persona de contacto.*/
+            /* Registrar el proveedor relacionado con la persona de contacto */
             $sqlProveedor = "INSERT INTO proveedores (
                                 id_persona_contacto,
                                 rif,
@@ -196,33 +203,22 @@ class ProveedoresM extends Database implements CrudInterface
                                 'ACTIVO'
                              )";
 
-            $stmtProveedor = $this->conexionMD->prepare(
-                $sqlProveedor
-            );
+            $stmtProveedor = $this->conexionMD->prepare($sqlProveedor);
 
-            $stmtProveedor->bindParam(
-                ':id_persona_contacto',
-                $idPersonaContacto
-            );
-
-            $stmtProveedor->bindParam(
-                ':rif',
-                $this->rif
-            );
-
-            $stmtProveedor->bindParam(
-                ':nombre_empresa',
-                $this->nombreEmpresa
-            );
+            $stmtProveedor->bindParam(':id_persona_contacto', $idPersonaContacto);
+            $stmtProveedor->bindParam(':rif', $this->rif);
+            $stmtProveedor->bindParam(':nombre_empresa', $this->nombreEmpresa);
 
             $stmtProveedor->execute();
 
+            /* Confirmar todos los cambios de la operación */
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Throwable $e) {
 
+            /* Revertir la transacción si alguna parte de la operación falla */
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -231,28 +227,28 @@ class ProveedoresM extends Database implements CrudInterface
         }
     }
 
-    /* Modificar: actualiza la persona de contacto y el proveedor */
+
+    /* ================================================= */
+    /* MODIFICAR PROVEEDOR */
+    /* ================================================= */
+
     public function modificar()
     {
         try {
+            /* Agrupar los cambios del proveedor y de su contacto */
             $this->conexionMD->beginTransaction();
 
             /* Actualizar los datos de la persona de contacto */
             $sqlPersona = "UPDATE personas
-
-                           SET
-                                nombre = :nombre,
-                                apellido = :apellido,
-                                telefono = :telefono,
-                                correo = :correo,
-                                direccion = :direccion,
-                                ciudad = :ciudad
-
+                           SET nombre = :nombre,
+                               apellido = :apellido,
+                               telefono = :telefono,
+                               correo = :correo,
+                               direccion = :direccion,
+                               ciudad = :ciudad
                            WHERE id_persona = :id_persona_contacto";
 
-            $stmtPersona = $this->conexionMD->prepare(
-                $sqlPersona
-            );
+            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
 
             $stmtPersona->bindParam(':nombre', $this->nombre);
             $stmtPersona->bindParam(':apellido', $this->apellido);
@@ -266,16 +262,11 @@ class ProveedoresM extends Database implements CrudInterface
 
             /* Actualizar los datos propios del proveedor */
             $sqlProveedor = "UPDATE proveedores
-
-                             SET
-                                rif = :rif,
-                                nombre_empresa = :nombre_empresa
-
+                             SET rif = :rif,
+                                 nombre_empresa = :nombre_empresa
                              WHERE id_proveedor = :id_proveedor";
 
-            $stmtProveedor = $this->conexionMD->prepare(
-                $sqlProveedor
-            );
+            $stmtProveedor = $this->conexionMD->prepare($sqlProveedor);
 
             $stmtProveedor->bindParam(':rif', $this->rif);
             $stmtProveedor->bindParam(':nombre_empresa', $this->nombreEmpresa);
@@ -283,12 +274,14 @@ class ProveedoresM extends Database implements CrudInterface
 
             $stmtProveedor->execute();
 
+            /* Confirmar la actualización de ambas tablas */
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Throwable $e) {
 
+            /* Revertir la transacción si alguna parte de la operación falla */
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -297,22 +290,20 @@ class ProveedoresM extends Database implements CrudInterface
         }
     }
 
-    /*Eliminar lógico: no borra al proveedor de la base de datos. Solamente cambia su estado a INACTIVO.*/
+
+    /* ================================================= */
+    /* DESACTIVAR PROVEEDOR */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Cambiar el estado del proveedor para conservar su registro */
         $sql = "UPDATE proveedores
-
-                SET
-                    estado_proveedor = 'INACTIVO'
-
+                SET estado_proveedor = 'INACTIVO'
                 WHERE id_proveedor = :id_proveedor";
 
         $stmt = $this->conexionMD->prepare($sql);
-
-        $stmt->bindParam(
-            ':id_proveedor',
-            $this->idProveedor
-        );
+        $stmt->bindParam(':id_proveedor', $this->idProveedor);
 
         return $stmt->execute();
     }

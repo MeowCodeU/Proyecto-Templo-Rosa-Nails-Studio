@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE TIPOS DE AGENDAMIENTO */
+/* ===================================================== */
+
 class TipoAgendamientoM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla tipos_agendamientos */
@@ -17,21 +26,34 @@ class TipoAgendamientoM extends Database implements CrudInterface
     private $descripcion;
     private $estadoTipoAgendamiento;
 
-    /* Setters: asignan valores a los atributos privados */
+
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
+
     public function set_idTipoAgendamiento($idTipoAgendamiento) {$this->idTipoAgendamiento = $idTipoAgendamiento;}
     public function set_nombreTipoAgendamiento($nombreTipoAgendamiento) {$this->nombreTipoAgendamiento = $nombreTipoAgendamiento;}
     public function set_descripcion($descripcion) {$this->descripcion = $descripcion;}
     public function set_estadoTipoAgendamiento($estadoTipoAgendamiento) {$this->estadoTipoAgendamiento = $estadoTipoAgendamiento;}
 
-    /* Constructor: obtiene la conexión heredada de Database */
+
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
-    /* Consultar: obtiene los tipos de agendamiento activos */
+
+    /* ================================================= */
+    /* CONSULTAR TIPOS DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los tipos activos ordenados por su nombre */
         $sql = "SELECT
                     id_tipo_agendamiento,
                     nombre_tipo_agendamiento,
@@ -47,9 +69,14 @@ class TipoAgendamientoM extends Database implements CrudInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /* Registrar: inserta un nuevo tipo de agendamiento */
+
+    /* ================================================= */
+    /* REGISTRAR TIPO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function registrar()
     {
+        /* Registrar un nuevo tipo activo en el catálogo */
         $sql = "INSERT INTO tipos_agendamientos
                     (nombre_tipo_agendamiento, descripcion, estado_tipo_agendamiento)
                 VALUES
@@ -63,9 +90,14 @@ class TipoAgendamientoM extends Database implements CrudInterface
         return $stmt->execute();
     }
 
-    /* Buscar: obtiene un tipo de agendamiento por su identificador */
+
+    /* ================================================= */
+    /* BUSCAR TIPO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un tipo del catálogo mediante su identificador */
         $sql = "SELECT
                     id_tipo_agendamiento,
                     nombre_tipo_agendamiento,
@@ -82,9 +114,14 @@ class TipoAgendamientoM extends Database implements CrudInterface
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* Modificar: actualiza un tipo de agendamiento */
+
+    /* ================================================= */
+    /* MODIFICAR TIPO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function modificar()
     {
+        /* Actualizar el nombre y la descripción del tipo de agendamiento */
         $sql = "UPDATE tipos_agendamientos SET
                     nombre_tipo_agendamiento = :nombre_tipo_agendamiento,
                     descripcion = :descripcion
@@ -99,9 +136,14 @@ class TipoAgendamientoM extends Database implements CrudInterface
         return $stmt->execute();
     }
 
-    /* Eliminar: cambia el estado del tipo de agendamiento a INACTIVO */
+
+    /* ================================================= */
+    /* DESACTIVAR TIPO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Marcar el tipo del catálogo como inactivo para conservar su registro */
         $sql = "UPDATE tipos_agendamientos
                 SET estado_tipo_agendamiento = 'INACTIVO'
                 WHERE id_tipo_agendamiento = :id_tipo_agendamiento";

@@ -2,13 +2,22 @@
 
 namespace App\Model;
 
-use App\Interfaces\CrudInterface;
 use App\Config\Database;
+use App\Interfaces\CrudInterface;
 use PDO;
+
+
+/* ===================================================== */
+/* MODELO DE CLIENTES */
+/* ===================================================== */
 
 class ClientesM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla personas */
@@ -24,58 +33,37 @@ class ClientesM extends Database implements CrudInterface
     private $alergias;
 
 
-    /* Setters: asignan valores a los atributos privados */
-    public function set_Cedula($cedula)
-    {
-        $this->cedula = $cedula;
-    }
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
 
-    public function set_Nombre($nombre)
-    {
-        $this->nombre = $nombre;
-    }
-
-    public function set_Apellido($apellido)
-    {
-        $this->apellido = $apellido;
-    }
-
-    public function set_Telefono($telefono)
-    {
-        $this->telefono = $telefono;
-    }
-
-    public function set_Correo($correo)
-    {
-        $this->correo = $correo;
-    }
-
-    public function set_Direccion($direccion)
-    {
-        $this->direccion = $direccion;
-    }
-
-    public function set_Ciudad($ciudad)
-    {
-        $this->ciudad = $ciudad;
-    }
-
-    public function set_Alergias($alergias)
-    {
-        $this->alergias = $alergias;
-    }
+    public function set_Cedula($cedula) {$this->cedula = $cedula;}
+    public function set_Nombre($nombre) {$this->nombre = $nombre;}
+    public function set_Apellido($apellido) {$this->apellido = $apellido;}
+    public function set_Telefono($telefono) {$this->telefono = $telefono;}
+    public function set_Correo($correo) {$this->correo = $correo;}
+    public function set_Direccion($direccion) {$this->direccion = $direccion;}
+    public function set_Ciudad($ciudad) {$this->ciudad = $ciudad;}
+    public function set_Alergias($alergias) {$this->alergias = $alergias;}
 
 
-    /* Constructor: obtiene la conexión heredada de Database */
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /* Consultar: obtiene los clientes activos y calcula sus visitas */
+    /* ================================================= */
+    /* CONSULTAR CLIENTES */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los clientes activos y contar sus citas realizadas */
         $sql = "SELECT
                     c.id_cliente,
                     p.id_persona,
@@ -104,18 +92,24 @@ class ClientesM extends Database implements CrudInterface
                 ORDER BY p.nombre, p.apellido";
 
         $stmt = $this->conexionMD->prepare($sql);
+
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 
-    /* Registrar: inserta primero la persona y luego el cliente */
+    /* ================================================= */
+    /* REGISTRAR CLIENTE */
+    /* ================================================= */
+
     public function registrar()
     {
         try {
+            /* Iniciar la transacción para registrar ambas tablas */
             $this->conexionMD->beginTransaction();
 
+            /* Registrar los datos de la persona */
             $sqlPersona = "INSERT INTO personas (
                                 cedula,
                                 nombre,
@@ -134,49 +128,22 @@ class ClientesM extends Database implements CrudInterface
                                 :ciudad
                             )";
 
-            $stmtPersona =
-                $this->conexionMD->prepare($sqlPersona);
+            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
 
-            $stmtPersona->bindParam(
-                ':cedula',
-                $this->cedula
-            );
-
-            $stmtPersona->bindParam(
-                ':nombre',
-                $this->nombre
-            );
-
-            $stmtPersona->bindParam(
-                ':apellido',
-                $this->apellido
-            );
-
-            $stmtPersona->bindParam(
-                ':telefono',
-                $this->telefono
-            );
-
-            $stmtPersona->bindParam(
-                ':correo',
-                $this->correo
-            );
-
-            $stmtPersona->bindParam(
-                ':direccion',
-                $this->direccion
-            );
-
-            $stmtPersona->bindParam(
-                ':ciudad',
-                $this->ciudad
-            );
+            $stmtPersona->bindParam(':cedula', $this->cedula);
+            $stmtPersona->bindParam(':nombre', $this->nombre);
+            $stmtPersona->bindParam(':apellido', $this->apellido);
+            $stmtPersona->bindParam(':telefono', $this->telefono);
+            $stmtPersona->bindParam(':correo', $this->correo);
+            $stmtPersona->bindParam(':direccion', $this->direccion);
+            $stmtPersona->bindParam(':ciudad', $this->ciudad);
 
             $stmtPersona->execute();
 
-            $idPersona =
-                $this->conexionMD->lastInsertId();
+            /* Recuperar el identificador de la persona registrada */
+            $idPersona = $this->conexionMD->lastInsertId();
 
+            /* Registrar el cliente relacionado con la persona */
             $sqlCliente = "INSERT INTO clientes (
                                 id_persona,
                                 alergias,
@@ -187,27 +154,21 @@ class ClientesM extends Database implements CrudInterface
                                 'ACTIVO'
                             )";
 
-            $stmtCliente =
-                $this->conexionMD->prepare($sqlCliente);
+            $stmtCliente = $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(
-                ':id_persona',
-                $idPersona
-            );
-
-            $stmtCliente->bindParam(
-                ':alergias',
-                $this->alergias
-            );
+            $stmtCliente->bindParam(':id_persona', $idPersona);
+            $stmtCliente->bindParam(':alergias', $this->alergias);
 
             $stmtCliente->execute();
 
+            /* Confirmar el registro de la persona y del cliente */
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Exception $e) {
 
+            /* Revertir los cambios y propagar el error */
             $this->conexionMD->rollBack();
 
             throw $e;
@@ -215,9 +176,13 @@ class ClientesM extends Database implements CrudInterface
     }
 
 
-    /* Buscar: obtiene un cliente específico por su cédula */
+    /* ================================================= */
+    /* BUSCAR CLIENTE */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un cliente activo por su cédula y calcular sus visitas */
         $sql = "SELECT
                     c.id_cliente,
                     p.id_persona,
@@ -248,10 +213,7 @@ class ClientesM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':cedula',
-            $this->cedula
-        );
+        $stmt->bindParam(':cedula', $this->cedula);
 
         $stmt->execute();
 
@@ -259,12 +221,17 @@ class ClientesM extends Database implements CrudInterface
     }
 
 
-    /* Modificar: actualiza los datos de la persona y del cliente */
+    /* ================================================= */
+    /* MODIFICAR CLIENTE */
+    /* ================================================= */
+
     public function modificar()
     {
         try {
+            /* Iniciar la transacción para actualizar ambas tablas */
             $this->conexionMD->beginTransaction();
 
+            /* Actualizar los datos de la persona */
             $sqlPersona = "UPDATE personas SET
                                 nombre = :nombre,
                                 apellido = :apellido,
@@ -274,73 +241,40 @@ class ClientesM extends Database implements CrudInterface
                                 ciudad = :ciudad
                            WHERE cedula = :cedula";
 
-            $stmtPersona =
-                $this->conexionMD->prepare($sqlPersona);
+            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
 
-            $stmtPersona->bindParam(
-                ':cedula',
-                $this->cedula
-            );
-
-            $stmtPersona->bindParam(
-                ':nombre',
-                $this->nombre
-            );
-
-            $stmtPersona->bindParam(
-                ':apellido',
-                $this->apellido
-            );
-
-            $stmtPersona->bindParam(
-                ':telefono',
-                $this->telefono
-            );
-
-            $stmtPersona->bindParam(
-                ':correo',
-                $this->correo
-            );
-
-            $stmtPersona->bindParam(
-                ':direccion',
-                $this->direccion
-            );
-
-            $stmtPersona->bindParam(
-                ':ciudad',
-                $this->ciudad
-            );
+            $stmtPersona->bindParam(':cedula', $this->cedula);
+            $stmtPersona->bindParam(':nombre', $this->nombre);
+            $stmtPersona->bindParam(':apellido', $this->apellido);
+            $stmtPersona->bindParam(':telefono', $this->telefono);
+            $stmtPersona->bindParam(':correo', $this->correo);
+            $stmtPersona->bindParam(':direccion', $this->direccion);
+            $stmtPersona->bindParam(':ciudad', $this->ciudad);
 
             $stmtPersona->execute();
 
+            /* Actualizar las alergias del cliente relacionado */
             $sqlCliente = "UPDATE clientes c
                            INNER JOIN personas p
                                ON p.id_persona = c.id_persona
                            SET c.alergias = :alergias
                            WHERE p.cedula = :cedula";
 
-            $stmtCliente =
-                $this->conexionMD->prepare($sqlCliente);
+            $stmtCliente = $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(
-                ':cedula',
-                $this->cedula
-            );
-
-            $stmtCliente->bindParam(
-                ':alergias',
-                $this->alergias
-            );
+            $stmtCliente->bindParam(':cedula', $this->cedula);
+            $stmtCliente->bindParam(':alergias', $this->alergias);
 
             $stmtCliente->execute();
 
+            /* Confirmar la actualización de la persona y del cliente */
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Exception $e) {
 
+            /* Revertir los cambios y propagar el error */
             $this->conexionMD->rollBack();
 
             throw $e;
@@ -348,9 +282,13 @@ class ClientesM extends Database implements CrudInterface
     }
 
 
-    /* Eliminar: cambia el estado del cliente a INACTIVO */
+    /* ================================================= */
+    /* DESACTIVAR CLIENTE */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Cambiar el estado del cliente para conservar su registro */
         $sql = "UPDATE clientes c
                 INNER JOIN personas p
                     ON p.id_persona = c.id_persona
@@ -359,10 +297,7 @@ class ClientesM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':cedula',
-            $this->cedula
-        );
+        $stmt->bindParam(':cedula', $this->cedula);
 
         return $stmt->execute();
     }

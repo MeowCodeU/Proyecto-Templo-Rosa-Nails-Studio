@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE ESTADOS DE AGENDAMIENTO */
+/* ===================================================== */
+
 class EstadoAgendamientoM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla estados_agendamientos */
@@ -17,21 +26,34 @@ class EstadoAgendamientoM extends Database implements CrudInterface
     private $descripcion;
     private $estadoRegistro;
 
-    /* Setters: asignan valores a los atributos privados */
+
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
+
     public function set_idEstadoAgendamiento($idEstadoAgendamiento) {$this->idEstadoAgendamiento = $idEstadoAgendamiento;}
     public function set_nombreEstado($nombreEstado) {$this->nombreEstado = $nombreEstado;}
     public function set_descripcion($descripcion) {$this->descripcion = $descripcion;}
     public function set_estadoRegistro($estadoRegistro) {$this->estadoRegistro = $estadoRegistro;}
 
-    /* Constructor: obtiene la conexión heredada de Database */
+
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
-    /* Consultar: obtiene los estados de agendamiento activos */
+
+    /* ================================================= */
+    /* CONSULTAR ESTADOS DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los estados del catálogo que permanecen activos */
         $sql = "SELECT
                     id_estado_agendamiento,
                     nombre_estado,
@@ -42,14 +64,20 @@ class EstadoAgendamientoM extends Database implements CrudInterface
                 ORDER BY nombre_estado ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
+
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /* Registrar: inserta un nuevo estado de agendamiento */
+
+    /* ================================================= */
+    /* REGISTRAR ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function registrar()
     {
+        /* Registrar un nuevo estado activo en el catálogo */
         $sql = "INSERT INTO estados_agendamientos
                     (nombre_estado, descripcion, estado_registro)
                 VALUES
@@ -63,9 +91,14 @@ class EstadoAgendamientoM extends Database implements CrudInterface
         return $stmt->execute();
     }
 
-    /* Buscar: obtiene un estado de agendamiento por su identificador */
+
+    /* ================================================= */
+    /* BUSCAR ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un estado del catálogo mediante su identificador */
         $sql = "SELECT
                     id_estado_agendamiento,
                     nombre_estado,
@@ -76,15 +109,22 @@ class EstadoAgendamientoM extends Database implements CrudInterface
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
+
         $stmt->bindParam(':id_estado_agendamiento', $this->idEstadoAgendamiento);
+
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* Modificar: actualiza un estado de agendamiento */
+
+    /* ================================================= */
+    /* MODIFICAR ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function modificar()
     {
+        /* Actualizar el nombre y la descripción del estado */
         $sql = "UPDATE estados_agendamientos SET
                     nombre_estado = :nombre_estado,
                     descripcion = :descripcion
@@ -99,19 +139,22 @@ class EstadoAgendamientoM extends Database implements CrudInterface
         return $stmt->execute();
     }
 
-    /* Eliminar: cambia el estado del registro a INACTIVO */
+
+    /* ================================================= */
+    /* DESACTIVAR ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Marcar el registro del catálogo como inactivo para conservarlo */
         $sql = "UPDATE estados_agendamientos
                 SET estado_registro = 'INACTIVO'
                 WHERE id_estado_agendamiento = :id_estado_agendamiento";
 
         $stmt = $this->conexionMD->prepare($sql);
+
         $stmt->bindParam(':id_estado_agendamiento', $this->idEstadoAgendamiento);
 
         return $stmt->execute();
     }
 }
-
-
-

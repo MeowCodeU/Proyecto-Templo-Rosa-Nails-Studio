@@ -1,175 +1,598 @@
 /* ===================================================== */
-/* DATATABLE DE INSUMOS */
+/* GESTIÓN DE INSUMOS */
 /* ===================================================== */
 
-$(document).ready(function () {
+$(function () {
+    "use strict";
 
-    const tablaInsumos = $("#tablaInsumos");
+    const urlInsumos = "Index.php?url=insumos";
+    const $tabla = $("#tablaInsumos");
+    const $modulo = $(".insumos-module");
+    const $modales = $("#modalNuevoInsumo, #modalEditarInsumo, #modalDesactivarInsumo");
 
-    if (
-        tablaInsumos.length &&
-        !$.fn.DataTable.isDataTable("#tablaInsumos")
-    ) {
-        tablaInsumos.DataTable({
+    if (!$tabla.length) return;
+
+    let operacionEnCurso = false;
+    let redirigiendo = false;
+    let versionLista = 0;
+
+    /* Reutiliza los iconos originales, incluso si no hay insumos */
+    const $iconoDetalle = $("#modalDetalleInsumoLabel svg").first().clone();
+
+    const $mensajeGeneral = $("<div>", {
+        class: "alert alert-light border mb-3",
+        role: "status",
+        "aria-live": "polite",
+        "aria-atomic": "true",
+        hidden: true
+    }).insertAfter($modulo.find(".module-header").first());
+
+
+    /* ===================================================== */
+    /* DATATABLE DE INSUMOS */
+    /* ===================================================== */
+
+    /* Esperar a que DataTables termine de cargar el idioma */
+    let habilitarTabla;
+
+    const tablaPreparada = new Promise(function (resolve) {
+        habilitarTabla = resolve;
+    });
+
+    const tablaExistente = $.fn.DataTable.isDataTable("#tablaInsumos");
+
+    const tablaInsumos = tablaExistente
+        ? $tabla.DataTable()
+        : $tabla.DataTable({
             language: {
                 url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
             },
-
             pageLength: 5,
-
-            lengthMenu: [
-                5,
-                10,
-                25,
-                50
-            ],
-
+            lengthMenu: [5, 10, 25, 50],
             responsive: false,
             autoWidth: false,
-
             columnDefs: [
                 {
                     targets: -1,
                     orderable: false,
                     searchable: false
                 }
-            ]
+            ],
+            initComplete: habilitarTabla
+        });
+
+    if (tablaExistente) habilitarTabla();
+
+
+    /* ===================================================== */
+    /* SOLICITUDES ASÍNCRONAS */
+    /* ===================================================== */
+
+    function solicitarInsumos(datos) {
+        return new Promise(function (resolve, reject) {
+            $.ajax({
+                url: urlInsumos,
+                method: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                data: JSON.stringify(datos),
+                processData: false,
+                timeout: 30000,
+
+                success: function (respuesta) {
+                    if (respuesta && respuesta.ok === true) {
+                        resolve(respuesta);
+                        return;
+                    }
+
+                    const error = new Error(
+                        typeof respuesta?.mensaje === "string"
+                            ? respuesta.mensaje
+                            : "La operación no fue confirmada."
+                    );
+
+                    error.errores = $.isPlainObject(respuesta?.errores) ? respuesta.errores : {};
+                    reject(error);
+                },
+
+                error: function (xhr, estado) {
+                    if (xhr.status === 401) {
+                        redirigiendo = true;
+                        window.location.assign("Index.php?url=login&sesion=expirada");
+                    }
+
+                    const ambiguo = xhr.status === 0 || estado === "timeout" || estado === "parsererror";
+
+                    const mensaje = ambiguo
+                        ? "No se pudo confirmar la respuesta. Actualice la lista antes de repetir la operación."
+                        : "No fue posible completar la solicitud. Intente nuevamente.";
+
+                    const respuesta = xhr.responseJSON;
+
+                    const error = new Error(
+                        typeof respuesta?.mensaje === "string" ? respuesta.mensaje : mensaje
+                    );
+
+                    error.errores = $.isPlainObject(respuesta?.errores) ? respuesta.errores : {};
+                    error.estado = xhr.status;
+                    reject(error);
+                }
+            });
         });
     }
 
 
-    /* ================================================= */
-    /* LLENAR MODAL DE DETALLES */
-    /* ================================================= */
+    /* ===================================================== */
+    /* MENSAJES GENERALES */
+    /* ===================================================== */
 
-    $(document).on("click", ".btnDetalleInsumo", function () {
+    function mostrarMensajeGeneral(texto, esError = false, reintentar = false) {
+        $mensajeGeneral
+            .empty()
+            .text(texto)
+            .prop("hidden", false)
+            .toggleClass("alert-danger", esError)
+            .toggleClass("alert-light", !esError)
+            .attr("role", esError ? "alert" : "status");
 
-        const boton = $(this);
+        if (reintentar) {
+            $("<button>", {
+                type: "button",
+                class: "btn-templo-secondary ms-2",
+                text: "Actualizar lista"
+            }).on("click", async function () {
+                if (operacionEnCurso || redirigiendo) return;
 
-        const estadoInsumo =
-            boton.attr("data-estado-insumo") || "";
+                const $boton = $(this).prop("disabled", true);
 
-        const tipoControl =
-            boton.attr("data-tipo-control") || "UNITARIO";
+                try {
+                    const actualizada = await actualizarLista();
 
-        $("#detalleNombreInsumo").text(
-            boton.attr("data-nombre-insumo") ||
-            "Sin información"
-        );
+                    if (actualizada) {
+                        mostrarMensajeGeneral("Lista de insumos actualizada.");
+                    }
+                } catch (error) {
+                    mostrarMensajeGeneral(error.message, true, true);
+                } finally {
+                    $boton.prop("disabled", false);
+                }
+            }).appendTo($mensajeGeneral);
+        }
+    }
 
-        $("#detallePresentacionInsumo").text(
-            boton.attr("data-presentacion") ||
-            "Sin información"
-        );
 
-        $("#detalleTipoControl").text(
-            tipoControl === "POR_ENVASE"
-                ? "Por envase"
-                : "Consumo unitario"
-        );
+    /* ===================================================== */
+    /* ACTUALIZAR LISTA DE INSUMOS */
+    /* ===================================================== */
 
-        $("#detalleDescripcionInsumo").text(
-            boton.attr("data-descripcion") ||
-            "Sin descripción"
-        );
+    async function actualizarLista() {
+        if (redirigiendo) return false;
 
-        $("#detalleStockActual").text(
-            boton.attr("data-stock-actual") || "0"
-        );
+        const turno = ++versionLista;
+        $tabla.attr("aria-busy", "true");
 
-        $("#detalleStockMinimo").text(
-            boton.attr("data-stock-minimo") || "0"
-        );
+        try {
+            await tablaPreparada;
 
-        $("#detalleFechaVencimiento").text(
-            boton.attr("data-fecha-vencimiento-texto") ||
-            "No aplica"
-        );
+            if (turno !== versionLista) return false;
 
-        const badgeEstado = $("#detalleEstadoInsumo");
+            const respuesta = await solicitarInsumos({ accion: "consultar" });
 
-        badgeEstado
-            .removeClass(
-                "estado-registro-activo " +
-                "estado-registro-inactivo"
+            if (turno !== versionLista) return false;
+
+            if (
+                !Array.isArray(respuesta.insumos) ||
+                !respuesta.insumos.every(insumo => $.isPlainObject(insumo))
+            ) {
+                throw new Error("La lista recibida no tiene un formato válido.");
+            }
+
+            const filas = respuesta.insumos.map(crearFilaInsumo);
+
+            tablaInsumos.clear();
+            tablaInsumos.rows.add(filas);
+            tablaInsumos.draw(false);
+
+            /* Conserva búsqueda, orden y página; corrige una última página vacía */
+            const informacion = tablaInsumos.page.info();
+
+            if (informacion.pages > 0 && informacion.page >= informacion.pages) {
+                tablaInsumos.page(informacion.pages - 1).draw("page");
+            }
+
+            return true;
+
+        } catch (error) {
+            if (turno === versionLista) throw error;
+
+            return false;
+
+        } finally {
+            if (turno === versionLista) $tabla.attr("aria-busy", "false");
+        }
+    }
+
+
+    /* ===================================================== */
+    /* CREAR BOTONES DE ACCIONES */
+    /* ===================================================== */
+
+    function crearBotonInsumo(insumo, clase, modal, titulo, $icono) {
+        const $boton = $("<button>", {
+            type: "button",
+            class: "btn-action " + clase,
+            "data-bs-toggle": "modal",
+            "data-bs-target": modal,
+            title: titulo,
+            "aria-label": titulo
+        });
+
+        const fechaVencimiento = String(insumo.fecha_vencimiento ?? "").trim();
+
+        const atributos = {
+            "id-insumo": insumo.id_insumo,
+            "nombre-insumo": insumo.nombre_insumo,
+            descripcion: insumo.descripcion,
+            presentacion: insumo.presentacion,
+            "tipo-control": insumo.tipo_control ?? "UNITARIO",
+            "stock-actual": insumo.stock_actual ?? 0,
+            "stock-minimo": insumo.stock_minimo ?? 0,
+            "fecha-vencimiento": fechaVencimiento,
+            "fecha-vencimiento-texto": fechaVencimiento || "No aplica",
+            "estado-insumo": insumo.estado_insumo ?? "ACTIVO"
+        };
+
+        Object.entries(atributos).forEach(function ([campo, valor]) {
+            $boton.attr("data-" + campo, valor ?? "");
+        });
+
+        return $boton.append($icono);
+    }
+
+
+    /* ===================================================== */
+    /* CREAR FILAS DE LA TABLA */
+    /* ===================================================== */
+
+    function crearFilaInsumo(insumo) {
+        const $fila = $("<tr>");
+        const tipoControl = String(insumo.tipo_control ?? "UNITARIO").trim().toUpperCase();
+        const estado = String(insumo.estado_insumo ?? "ACTIVO").trim().toUpperCase();
+        const fechaVencimiento = String(insumo.fecha_vencimiento ?? "").trim();
+
+        [
+            insumo.nombre_insumo ?? "",
+            insumo.presentacion ?? "",
+            tipoControl === "POR_ENVASE" ? "Por envase" : "Consumo unitario",
+            insumo.stock_actual ?? 0,
+            fechaVencimiento || "No aplica"
+        ].forEach(function (valor) {
+            $("<td>").text(valor).appendTo($fila);
+        });
+
+        const $estado = $("<span>", {
+            class: "badge " + (
+                estado === "INACTIVO"
+                    ? "estado-registro-inactivo"
+                    : "estado-registro-activo"
+            ),
+            text: estado
+        });
+
+        $("<td>").append($estado).appendTo($fila);
+
+        const $acciones = $("<div>", { class: "btn-group-actions" });
+
+        const $detalle = $("<span>", {
+            class: "cliente-detalle-icono",
+            "aria-hidden": "true"
+        }).append($iconoDetalle.clone());
+
+        $acciones.append(
+            crearBotonInsumo(
+                insumo,
+                "btn-detail btnDetalleInsumo",
+                "#modalDetalleInsumo",
+                "Ver detalles del insumo",
+                $detalle
+            ),
+
+            crearBotonInsumo(
+                insumo,
+                "btn-edit btnEditarInsumo",
+                "#modalEditarInsumo",
+                "Editar insumo",
+                $("<i>", {
+                    class: "bi bi-pencil-fill",
+                    "aria-hidden": "true"
+                })
+            ),
+
+            crearBotonInsumo(
+                insumo,
+                "btn-deactivate btnDesactivarInsumo",
+                "#modalDesactivarInsumo",
+                "Desactivar insumo",
+                $("<i>", {
+                    class: "bi bi-trash-fill",
+                    "aria-hidden": "true"
+                })
             )
+        );
+
+        $("<td>").append($acciones).appendTo($fila);
+
+        return $fila[0];
+    }
+
+
+    /* ===================================================== */
+    /* MENSAJES Y ERRORES DE LOS FORMULARIOS */
+    /* ===================================================== */
+
+    function mensajeFormulario($formulario) {
+        let $mensaje = $formulario.find(".insumos-mensaje-formulario");
+
+        if (!$mensaje.length) {
+            $mensaje = $("<div>", {
+                class: "alert alert-danger insumos-mensaje-formulario",
+                role: "alert",
+                hidden: true
+            }).prependTo($formulario.find(".modal-body").first());
+        }
+
+        return $mensaje;
+    }
+
+    function limpiarErrores($formulario) {
+        $formulario.find("[data-error-insumos]")
+            .removeClass("is-invalid")
+            .removeAttr("aria-invalid data-error-insumos");
+
+        $formulario.find(".insumos-error-servidor").remove();
+        mensajeFormulario($formulario).empty().prop("hidden", true);
+    }
+
+    function mostrarErrores($formulario, error) {
+        mensajeFormulario($formulario).text(error.message).prop("hidden", false);
+
+        let primerCampo = null;
+
+        Object.entries(error.errores || {}).forEach(function ([nombre, texto]) {
+            const $campo = $formulario.find("[name]").filter(function () {
+                return $(this).attr("name") === nombre;
+            }).first();
+
+            if (!$campo.length || $campo.attr("type") === "hidden") return;
+
+            $campo.addClass("is-invalid").attr({
+                "aria-invalid": "true",
+                "data-error-insumos": "true"
+            });
+
+            $("<div>", { class: "invalid-feedback insumos-error-servidor" })
+                .text(texto).insertAfter($campo);
+
+            if (!primerCampo) primerCampo = $campo;
+        });
+
+        $formulario.find(".modal-body").scrollTop(0);
+
+        return primerCampo;
+    }
+
+
+    /* ===================================================== */
+    /* CONTENIDO Y LIMPIEZA DE LOS MODALES */
+    /* ===================================================== */
+
+    function datoBoton($boton, nombre, alternativo = "") {
+        return $boton.attr("data-" + nombre) ?? alternativo;
+    }
+
+    $modales.on("show.bs.modal", function (evento) {
+        if (operacionEnCurso || redirigiendo) {
+            evento.preventDefault();
+            return;
+        }
+
+        const $modal = $(this);
+        const $formulario = $modal.find("form").first();
+
+        if (!$formulario.length) {
+            evento.preventDefault();
+            return;
+        }
+
+        $formulario[0].reset();
+        limpiarErrores($formulario);
+
+        const $boton = $(evento.relatedTarget);
+
+        if ($modal.attr("id") === "modalEditarInsumo") {
+            const campos = {
+                id_insumo: "id-insumo",
+                nombre_insumo: "nombre-insumo",
+                descripcion: "descripcion",
+                presentacion: "presentacion",
+                tipo_control: "tipo-control",
+                stock_actual: "stock-actual",
+                stock_minimo: "stock-minimo",
+                fecha_vencimiento: "fecha-vencimiento",
+                estado_insumo: "estado-insumo"
+            };
+
+            Object.entries(campos).forEach(function ([campo, atributo]) {
+                $formulario.find('[name="' + campo + '"]').val(datoBoton($boton, atributo));
+            });
+        }
+
+        if ($modal.attr("id") === "modalDesactivarInsumo") {
+            $("#desactivarIdInsumo").val(datoBoton($boton, "id-insumo"));
+            $("#desactivarNombreInsumo").text(datoBoton($boton, "nombre-insumo"));
+        }
+    });
+
+    $modales.on("hide.bs.modal", function (evento) {
+        if ($(this).find("form").data("enviando")) evento.preventDefault();
+    });
+
+    $modales.on("hidden.bs.modal", function () {
+        const $formulario = $(this).find("form").first();
+
+        if (!$formulario.length) return;
+
+        $formulario[0].reset();
+        limpiarErrores($formulario);
+    });
+
+
+    /* ===================================================== */
+    /* LLENAR MODAL DE DETALLES */
+    /* ===================================================== */
+
+    $("#modalDetalleInsumo").on("show.bs.modal", function (evento) {
+        const $boton = $(evento.relatedTarget);
+        const tipoControl = datoBoton($boton, "tipo-control", "UNITARIO");
+        const estado = datoBoton($boton, "estado-insumo", "ACTIVO");
+
+        $("#detalleNombreInsumo").text(datoBoton($boton, "nombre-insumo") || "Sin información");
+        $("#detallePresentacionInsumo").text(datoBoton($boton, "presentacion") || "Sin información");
+        $("#detalleDescripcionInsumo").text(datoBoton($boton, "descripcion").trim() || "Sin descripción");
+        $("#detalleTipoControl").text(tipoControl === "POR_ENVASE" ? "Por envase" : "Consumo unitario");
+        $("#detalleStockActual").text(datoBoton($boton, "stock-actual", "0"));
+        $("#detalleStockMinimo").text(datoBoton($boton, "stock-minimo", "0"));
+        $("#detalleFechaVencimiento").text(datoBoton($boton, "fecha-vencimiento-texto") || "No aplica");
+
+        $("#detalleEstadoInsumo")
+            .removeClass("estado-registro-activo estado-registro-inactivo")
             .addClass(
-                estadoInsumo === "INACTIVO"
+                estado === "INACTIVO"
                     ? "estado-registro-inactivo"
                     : "estado-registro-activo"
             )
-            .text(
-                estadoInsumo || "Sin estado"
-            );
+            .text(estado || "Sin estado");
     });
 
 
-    /* ================================================= */
-    /* LLENAR MODAL EDITAR INSUMO */
-    /* ================================================= */
+    /* ===================================================== */
+    /* REGISTRAR, MODIFICAR Y DESACTIVAR */
+    /* ===================================================== */
 
-    $(document).on("click", ".btnEditarInsumo", function () {
+    $modales.find("form").on("submit", async function (evento) {
+        evento.preventDefault();
 
-        $("#editarIdInsumo").val(
-            $(this).attr("data-id-insumo")
-        );
+        if (operacionEnCurso || redirigiendo) return;
 
-        $("#editarNombreInsumo").val(
-            $(this).attr("data-nombre-insumo")
-        );
+        const $formulario = $(this);
+        limpiarErrores($formulario);
 
-        $("#editarDescripcionInsumo").val(
-            $(this).attr("data-descripcion")
-        );
+        if (!this.reportValidity()) return;
 
-        $("#editarPresentacionInsumo").val(
-            $(this).attr("data-presentacion")
-        );
+        const datos = {};
 
-        $("#editarTipoControl").val(
-            $(this).attr("data-tipo-control") ||
-            "UNITARIO"
-        );
+        $formulario.serializeArray().forEach(function (campo) {
+            datos[campo.name] = campo.value;
+        });
 
-        $("#editarStockActual").val(
-            $(this).attr("data-stock-actual")
-        );
+        const controles = [];
 
-        $("#editarStockMinimo").val(
-            $(this).attr("data-stock-minimo")
-        );
+        $formulario.find("input, select, textarea, button").each(function () {
+            const $elemento = $(this);
 
-        $("#editarFechaVencimiento").val(
-            $(this).attr("data-fecha-vencimiento")
-        );
+            controles.push({
+                elemento: $elemento,
+                deshabilitado: $elemento.prop("disabled")
+            });
 
-        $("#editarEstadoInsumo").val(
-            $(this).attr("data-estado-insumo")
-        );
-    });
+            $elemento.prop("disabled", true);
+        });
 
+        const $enviar = $formulario.find('[type="submit"]');
+        const contenidoBoton = $enviar.html();
 
-    /* ================================================= */
-    /* LLENAR MODAL DESACTIVAR INSUMO */
-    /* ================================================= */
+        $enviar.text("Procesando...");
+        $formulario.data("enviando", true).attr("aria-busy", "true");
+        operacionEnCurso = true;
+        ++versionLista;
+        $tabla.attr("aria-busy", "false");
+        $mensajeGeneral.prop("hidden", true);
 
-    $(document).on(
-        "click",
-        ".btnDesactivarInsumo",
-        function () {
+        let primerCampo = null;
+        let respuestaConfirmada = null;
+        let mensajeExito = "Operación completada.";
 
-            const idInsumo =
-                $(this).attr("data-id-insumo");
+        try {
+            const respuesta = await solicitarInsumos(datos);
 
-            const nombreInsumo =
-                $(this).attr("data-nombre-insumo");
+            respuestaConfirmada = respuesta;
+            mensajeExito = typeof respuesta.mensaje === "string" ? respuesta.mensaje : mensajeExito;
 
-            $("#desactivarIdInsumo").val(idInsumo);
+            /* El modal se cierra únicamente después de confirmar el guardado */
+            $formulario.data("enviando", false);
 
-            $("#desactivarNombreInsumo").text(
-                nombreInsumo
-            );
+            const $modal = $formulario.closest(".modal");
+
+            const cerrarModal = function () {
+                window.bootstrap.Modal.getOrCreateInstance($modal[0]).hide();
+            };
+
+            /* Si aún está terminando de abrirse, lo cierra al finalizar */
+            $modal.one("shown.bs.modal", cerrarModal);
+
+            $modal.one("hidden.bs.modal", function () {
+                $modal.off("shown.bs.modal", cerrarModal);
+            });
+
+            cerrarModal();
+            mostrarMensajeGeneral(mensajeExito);
+
+            try {
+                await actualizarLista();
+
+            } catch (error) {
+                mostrarMensajeGeneral(
+                    mensajeExito + " No se pudo actualizar la lista. " +
+                    "Use Actualizar lista; la operación ya fue confirmada.",
+                    true,
+                    true
+                );
+            }
+
+        } catch (error) {
+            if (respuestaConfirmada) {
+                mostrarMensajeGeneral(
+                    mensajeExito + " No se pudo actualizar la vista. " +
+                    "La operación ya fue confirmada; actualice la lista antes de repetirla.",
+                    true,
+                    true
+                );
+
+            } else if (!redirigiendo) {
+                primerCampo = mostrarErrores($formulario, error);
+            }
+
+        } finally {
+            controles.forEach(function (control) {
+                control.elemento.prop("disabled", control.deshabilitado);
+            });
+
+            $enviar.html(contenidoBoton);
+            $formulario.data("enviando", false).attr("aria-busy", "false");
+            operacionEnCurso = false;
+
+            if (primerCampo && !redirigiendo) primerCampo.trigger("focus");
         }
-    );
+    });
 
+
+    /* ===================================================== */
+    /* CONSULTA INICIAL */
+    /* ===================================================== */
+
+    /* Actualizar la lista mediante AJAX */
+    actualizarLista().catch(function (error) {
+        mostrarMensajeGeneral(error.message, true, true);
+    });
 });
