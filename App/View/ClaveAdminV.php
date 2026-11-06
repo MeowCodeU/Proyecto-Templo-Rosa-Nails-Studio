@@ -1,15 +1,13 @@
+<!-- ===================================================== -->
+<!-- DATOS DE LA VISTA -->
+<!-- ===================================================== -->
+
 <?php
 
 $tituloPagina = 'Clave Universal | Templo Rosa';
 
 $escaparClaveAdmin = static function ($valor): string {
-
-    return htmlspecialchars(
-        (string) $valor,
-        ENT_QUOTES,
-        'UTF-8'
-    );
-
+    return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
 };
 
 ?>
@@ -17,8 +15,13 @@ $escaparClaveAdmin = static function ($valor): string {
 <!DOCTYPE html>
 <html lang="es">
 
+<!-- ===================================================== -->
+<!-- CONFIGURACIÓN DEL DOCUMENTO -->
+<!-- ===================================================== -->
+
 <head>
 
+    <!-- Codificación y adaptación a dispositivos -->
     <meta charset="UTF-8">
 
     <meta
@@ -26,10 +29,10 @@ $escaparClaveAdmin = static function ($valor): string {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        <?= $escaparClaveAdmin($tituloPagina); ?>
-    </title>
+    <!-- Título de la página -->
+    <title><?= $escaparClaveAdmin($tituloPagina); ?></title>
 
+    <!-- Ícono de la página -->
     <link
         rel="icon"
         type="image/png"
@@ -53,6 +56,10 @@ $escaparClaveAdmin = static function ($valor): string {
 
 <body>
 
+    <!-- ===================================================== -->
+    <!-- ACCESO CON CLAVE UNIVERSAL -->
+    <!-- ===================================================== -->
+
     <main class="login-page">
 
         <section class="login-scene">
@@ -75,6 +82,7 @@ $escaparClaveAdmin = static function ($valor): string {
                 <!-- Cuerpo -->
                 <div class="bottle-body">
 
+                    <!-- Capas que forman el cuerpo del frasco -->
                     <svg
                         class="bottle-svg"
                         viewBox="0 0 380 470"
@@ -85,115 +93,78 @@ $escaparClaveAdmin = static function ($valor): string {
                         <!-- Vidrio externo -->
                         <path
                             class="glass-shadow"
-                            d="
-                                M98 34
-                                C76 38, 56 50, 46 78
-                                C36 108, 34 180, 38 270
-                                L44 356
-                                C48 410, 82 440, 124 446
-                                L256 446
-                                C298 440, 332 410, 336 356
-                                L342 270
-                                C346 180, 344 108, 334 78
-                                C324 50, 304 38, 282 34
-                                C250 30, 130 30, 98 34
-                                Z
-                            "
+                            d="M98 34C76 38, 56 50, 46 78
+                               C36 108, 34 180, 38 270L44 356
+                               C48 410, 82 440, 124 446L256 446
+                               C298 440, 332 410, 336 356L342 270
+                               C346 180, 344 108, 334 78
+                               C324 50, 304 38, 282 34
+                               C250 30, 130 30, 98 34Z"
                         ></path>
 
 
                         <!-- Pintura interna -->
                         <path
                             class="pink-fill"
-                            d="
-                                M92 54
-                                C70 58, 58 68, 52 90
-                                C46 114, 46 178, 50 258
-                                L56 336
-                                C60 382, 88 405, 128 410
-                                L252 410
-                                C292 405, 320 382, 324 336
-                                L330 258
-                                C334 178, 334 114, 328 90
-                                C322 68, 310 58, 288 54
-                                C258 50, 122 50, 92 54
-                                Z
-                            "
+                            d="M92 54C70 58, 58 68, 52 90
+                               C46 114, 46 178, 50 258L56 336
+                               C60 382, 88 405, 128 410L252 410
+                               C292 405, 320 382, 324 336L330 258
+                               C334 178, 334 114, 328 90
+                               C322 68, 310 58, 288 54
+                               C258 50, 122 50, 92 54Z"
                         ></path>
 
 
                         <!-- Zona interior de vidrio -->
                         <path
                             class="inner-glass-zone"
-                            d="
-                                M112 76
-                                C90 80, 80 92, 76 112
-                                C72 134, 72 188, 76 252
-                                L80 328
-                                C84 364, 106 383, 138 387
-                                L242 387
-                                C274 383, 296 364, 300 328
-                                L304 252
-                                C308 188, 308 134, 304 112
-                                C300 92, 290 80, 268 76
-                                C242 73, 138 73, 112 76
-                                Z
-                            "
+                            d="M112 76C90 80, 80 92, 76 112
+                               C72 134, 72 188, 76 252L80 328
+                               C84 364, 106 383, 138 387L242 387
+                               C274 383, 296 364, 300 328L304 252
+                               C308 188, 308 134, 304 112
+                               C300 92, 290 80, 268 76
+                               C242 73, 138 73, 112 76Z"
                         ></path>
 
 
                         <!-- Borde externo -->
                         <path
                             class="glass-border"
-                            d="
-                                M98 34
-                                C76 38, 56 50, 46 78
-                                C36 108, 34 180, 38 270
-                                L44 356
-                                C48 410, 82 440, 124 446
-                                L256 446
-                                C298 440, 332 410, 336 356
-                                L342 270
-                                C346 180, 344 108, 334 78
-                                C324 50, 304 38, 282 34
-                                C250 30, 130 30, 98 34
-                                Z
-                            "
+                            d="M98 34C76 38, 56 50, 46 78
+                               C36 108, 34 180, 38 270L44 356
+                               C48 410, 82 440, 124 446L256 446
+                               C298 440, 332 410, 336 356L342 270
+                               C346 180, 344 108, 334 78
+                               C324 50, 304 38, 282 34
+                               C250 30, 130 30, 98 34Z"
                         ></path>
 
 
                         <!-- Borde interno blanco -->
                         <path
                             class="inner-border"
-                            d="
-                                M112 76
-                                C90 80, 80 92, 76 112
-                                C72 134, 72 188, 76 252
-                                L80 328
-                                C84 364, 106 383, 138 387
-                                L242 387
-                                C274 383, 296 364, 300 328
-                                L304 252
-                                C308 188, 308 134, 304 112
-                                C300 92, 290 80, 268 76
-                                C242 73, 138 73, 112 76
-                                Z
-                            "
+                            d="M112 76C90 80, 80 92, 76 112
+                               C72 134, 72 188, 76 252L80 328
+                               C84 364, 106 383, 138 387L242 387
+                               C274 383, 296 364, 300 328L304 252
+                               C308 188, 308 134, 304 112
+                               C300 92, 290 80, 268 76
+                               C242 73, 138 73, 112 76Z"
                         ></path>
 
 
                         <!-- Base -->
                         <path
                             class="bottle-base"
-                            d="
-                                M128 418
-                                C156 426, 224 426, 252 418
-                            "
+                            d="M128 418C156 426, 224 426, 252 418"
                         ></path>
 
                     </svg>
 
 
+                    <!-- Contenido del acceso -->
                     <div class="login-content">
 
                         <!-- Logo -->
@@ -208,30 +179,23 @@ $escaparClaveAdmin = static function ($valor): string {
                         </div>
 
 
-                        <h1 class="login-title">
-                            Clave Universal
-                        </h1>
+                        <!-- Título y espacio reservado para los avisos del acceso -->
+                        <div class="login-access-header">
 
-
-                        <?php if ($mensajeClaveAdmin !== ''): ?>
+                            <h1 class="login-title">Clave Universal</h1>
 
                             <p
+                                class="login-message"
                                 role="alert"
-                                style="
-                                    margin: 0 0 14px;
-                                    color: #8a2635;
-                                    font-size: 0.9rem;
-                                    text-align: center;
-                                "
+                                <?= $mensajeClaveAdmin === '' ? 'hidden' : ''; ?>
                             >
-                                <?= $escaparClaveAdmin(
-                                    $mensajeClaveAdmin
-                                ); ?>
+                                <?= $escaparClaveAdmin($mensajeClaveAdmin); ?>
                             </p>
 
-                        <?php endif; ?>
+                        </div>
 
 
+                        <!-- Indicaciones para utilizar la clave universal -->
                         <p class="clave-universal-info">
 
                             <i
@@ -246,6 +210,10 @@ $escaparClaveAdmin = static function ($valor): string {
                         </p>
 
 
+                        <!-- ===================================================== -->
+                        <!-- FORMULARIO DE CLAVE UNIVERSAL -->
+                        <!-- ===================================================== -->
+
                         <form
                             class="login-form"
                             id="formClaveAdmin"
@@ -254,6 +222,7 @@ $escaparClaveAdmin = static function ($valor): string {
                             autocomplete="off"
                         >
 
+                            <!-- Acción enviada al controlador -->
                             <input
                                 type="hidden"
                                 name="accion"
@@ -283,6 +252,7 @@ $escaparClaveAdmin = static function ($valor): string {
                             </div>
 
 
+                            <!-- Validar la clave universal -->
                             <button
                                 type="submit"
                                 class="login-btn"
@@ -291,6 +261,7 @@ $escaparClaveAdmin = static function ($valor): string {
                             </button>
 
 
+                            <!-- Regresar al formulario de inicio de sesión -->
                             <div class="login-links">
 
                                 <a href="Index.php?url=login">
@@ -311,6 +282,15 @@ $escaparClaveAdmin = static function ($valor): string {
 
     </main>
 
+
+    <!-- ===================================================== -->
+    <!-- SCRIPTS DE LA VISTA -->
+    <!-- ===================================================== -->
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Comportamiento del acceso -->
     <script src="Assets/js/login.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/login.js'); ?>"></script>
 
 </body>

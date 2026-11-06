@@ -1,1158 +1,901 @@
 /* ===================================================== */
-/* DATATABLES DE SEGURIDAD */
+/* GESTIÓN DE SEGURIDAD */
 /* ===================================================== */
 
-$(document).ready(function () {
+$(function () {
+    "use strict";
+
+    const modulo = $(".seguridad-module");
+    const urlSeguridad = "Index.php?url=seguridad";
+
+    if (!modulo.length) return;
+
+    const modales = $(
+        "#modalNuevoUsuario, #modalEditarUsuario, #modalEstadoUsuario, " +
+        "#modalNuevoRol, #modalEditarRol, #modalEstadoRol, #modalRestablecerClave"
+    );
+
+    let operacionEnCurso = false;
+    let versionLista = 0;
+    let versionPersona = 0;
+    let datosAutocompletados = false;
+    let usuariosPorId = new Map();
+
+    const mensajeGeneral = $("<div>", {
+        class: "alert alert-light border mb-3",
+        role: "status",
+        "aria-live": "polite",
+        hidden: true
+    }).insertAfter(modulo.find(".module-header").first());
+
 
     /* ================================================= */
-    /* TABLA DE USUARIOS */
+    /* TABLAS DE USUARIOS Y ROLES */
     /* ================================================= */
 
-    const selectorTablaUsuarios = "#tablaUsuarios";
+    function prepararTabla(selector, cantidad, opciones) {
+        let habilitarTabla;
 
-    if (
-        $(selectorTablaUsuarios).length &&
-        !$.fn.DataTable.isDataTable(selectorTablaUsuarios)
-    ) {
-        $(selectorTablaUsuarios).DataTable({
+        const preparada = new Promise(resolve => {
+            habilitarTabla = resolve;
+        });
 
-            language: {
-                url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
-            },
+        const existente = $.fn.DataTable.isDataTable(selector);
 
-            pageLength: 5,
+        const instancia = existente
+            ? $(selector).DataTable()
+            : $(selector).DataTable({
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
+                },
+                pageLength: cantidad,
+                lengthMenu: opciones,
+                responsive: false,
+                autoWidth: false,
+                columnDefs: [
+                    { targets: -1, orderable: false, searchable: false }
+                ],
+                initComplete: habilitarTabla
+            });
 
-            lengthMenu: [
-                5,
-                10,
-                25,
-                50
-            ],
+        if (existente) habilitarTabla();
 
-            responsive: false,
+        return { instancia, preparada };
+    }
 
-            autoWidth: false,
+    const tablaUsuarios = prepararTabla("#tablaUsuarios", 5, [5, 10, 25, 50]);
+    const tablaRoles = prepararTabla("#tablaRoles", 4, [4, 8, 16, 20]);
 
-            columnDefs: [
-                {
-                    targets: -1,
-                    orderable: false,
-                    searchable: false
+    $("#seguridadTabs").on("shown.bs.tab", 'button[data-bs-toggle="tab"]', function () {
+        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+    });
+
+
+    /* ================================================= */
+    /* SOLICITUDES Y TOKEN DE RESTABLECIMIENTO */
+    /* ================================================= */
+
+    function actualizarToken(respuesta) {
+        const token = respuesta?.token_restablecer_clave;
+
+        if (typeof token === "string" && token !== "") {
+            $("#formRestablecerClave [name='token_csrf']")
+                .val(token)
+                .prop("defaultValue", token);
+        }
+    }
+
+    function solicitarSeguridad(datos) {
+        return new Promise(function (resolve, reject) {
+            $.ajax({
+                url: urlSeguridad,
+                method: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                data: JSON.stringify(datos),
+                processData: false,
+                timeout: 30000,
+
+                success: function (respuesta) {
+                    if (datos.accion === "restablecer_clave") {
+                        actualizarToken(respuesta);
+                    }
+
+                    if (respuesta && respuesta.ok === true) {
+                        resolve(respuesta);
+                        return;
+                    }
+
+                    reject(new Error(
+                        typeof respuesta?.mensaje === "string"
+                            ? respuesta.mensaje
+                            : "No se pudo confirmar la operación. Actualice la lista antes de repetirla."
+                    ));
+                },
+
+                error: function (xhr, estado) {
+                    if (datos.accion === "restablecer_clave") {
+                        actualizarToken(xhr.responseJSON);
+                    }
+
+                    if (xhr.status === 401) {
+                        window.location.assign("Index.php?url=login&sesion=expirada");
+                    }
+
+                    const ambiguo = xhr.status === 0 || estado === "timeout" || estado === "parsererror";
+                    const mensaje = ambiguo
+                        ? "No se pudo confirmar la respuesta. Actualice la lista antes de repetir la operación."
+                        : "No fue posible completar la solicitud. Intente nuevamente.";
+
+                    reject(new Error(
+                        typeof xhr.responseJSON?.mensaje === "string"
+                            ? xhr.responseJSON.mensaje
+                            : mensaje
+                    ));
                 }
-            ]
-
+            });
         });
     }
 
 
     /* ================================================= */
-    /* TABLA DE ROLES */
+    /* MENSAJES DEL MÓDULO Y DE LOS FORMULARIOS */
     /* ================================================= */
 
-    const selectorTablaRoles = "#tablaRoles";
+    function mostrarMensaje(texto, esError = false, reintentar = false) {
+        mensajeGeneral
+            .empty()
+            .text(texto)
+            .prop("hidden", false)
+            .toggleClass("alert-danger", esError)
+            .toggleClass("alert-light", !esError)
+            .attr("role", esError ? "alert" : "status");
 
-    if (
-        $(selectorTablaRoles).length &&
-        !$.fn.DataTable.isDataTable(selectorTablaRoles)
-    ) {
-        $(selectorTablaRoles).DataTable({
+        if (reintentar) {
+            $("<button>", {
+                type: "button",
+                class: "btn-templo-secondary ms-2",
+                text: "Actualizar listas"
+            }).on("click", async function () {
+                if (operacionEnCurso) return;
 
-            language: {
-                url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
-            },
+                const boton = $(this).prop("disabled", true);
 
-            pageLength: 4,
-
-            lengthMenu: [
-                4,
-                8,
-                16,
-                20
-            ],
-
-            responsive: false,
-
-            autoWidth: false,
-
-            columnDefs: [
-                {
-                    targets: -1,
-                    orderable: false,
-                    searchable: false
+                try {
+                    if (await actualizarListas()) {
+                        mostrarMensaje("Listas actualizadas correctamente.");
+                    }
+                } catch (error) {
+                    mostrarMensaje(error.message, true, true);
+                } finally {
+                    boton.prop("disabled", false);
                 }
-            ]
+            }).appendTo(mensajeGeneral);
+        }
+    }
 
-        });
+    function mensajeFormulario(formulario) {
+        let mensaje = formulario.find(".seguridad-mensaje-formulario");
+
+        if (!mensaje.length) {
+            mensaje = $("<div>", {
+                class: "alert alert-danger seguridad-mensaje-formulario",
+                role: "alert",
+                hidden: true
+            }).prependTo(formulario.find(".modal-body").first());
+        }
+
+        return mensaje;
     }
 
 
     /* ================================================= */
-    /* AJUSTAR DATATABLES AL CAMBIAR DE PESTAÑA */
+    /* CONTRASEÑAS Y VISIBILIDAD DE LOS CAMPOS */
     /* ================================================= */
 
-    document
-        .querySelectorAll('#seguridadTabs button[data-bs-toggle="tab"]')
-        .forEach(function (boton) {
+    function validarCoincidencia(formulario) {
+        const clave = formulario.find('[name="clave"], [name="nueva_clave"]').first();
+        const confirmar = formulario.find('[name="confirmar_clave"]').first();
 
-            boton.addEventListener(
-                "shown.bs.tab",
-                function () {
-
-                    $.fn.dataTable
-                        .tables({
-                            visible: true,
-                            api: true
-                        })
-                        .columns
-                        .adjust();
-
-                }
+        if (clave.length && confirmar.length) {
+            confirmar[0].setCustomValidity(
+                confirmar.val() !== "" && clave.val() !== confirmar.val()
+                    ? "Las contraseñas no coinciden."
+                    : ""
             );
-
-        });
-
-});
-
-
-/* ===================================================== */
-/* VALIDACIÓN DE CONTRASEÑAS */
-/* ===================================================== */
-
-function prepararConfirmacionClave(
-    formularioId,
-    claveId,
-    confirmarClaveId
-) {
-
-    const formulario =
-        document.getElementById(formularioId);
-
-    const clave =
-        document.getElementById(claveId);
-
-    const confirmarClave =
-        document.getElementById(confirmarClaveId);
-
-
-    if (
-        !formulario ||
-        !clave ||
-        !confirmarClave
-    ) {
-        return;
+        }
     }
 
+    $("#formNuevoUsuario, #formRestablecerClave").on("input", "input", function () {
+        validarCoincidencia($(this).closest("form"));
+    });
 
-    function validarCoincidencia() {
+    function establecerVisibilidad(boton, visible) {
+        const idCampo = boton.attr("data-password-target");
+        const campo = idCampo ? $("#" + $.escapeSelector(idCampo)) : $();
+
+        if (!campo.length) return;
+
+        campo.prop("type", visible ? "text" : "password");
+
+        boton.find("i").attr("class", visible ? "bi bi-eye" : "bi bi-eye-slash");
+        boton.find(".templo-eye-open").toggle(visible);
+        boton.find(".templo-eye-closed").toggle(!visible);
+
+        boton.attr({
+            "aria-label": (visible ? "Ocultar" : "Mostrar") + " contraseña",
+            title: (visible ? "Ocultar" : "Mostrar") + " contraseña"
+        });
+    }
+
+    $(document).on("click", ".btnAlternarClave", function () {
+        const boton = $(this);
+        const idCampo = boton.attr("data-password-target");
+        const campo = idCampo ? $("#" + $.escapeSelector(idCampo)) : $();
+
+        if (campo.length) establecerVisibilidad(boton, campo.prop("type") !== "text");
+    });
+
+
+    /* ================================================= */
+    /* BÚSQUEDA DE PERSONAS POR CÉDULA */
+    /* ================================================= */
+
+    const camposPersona = {
+        id_persona: "#nuevoUsuarioIdPersona",
+        nombre: "#nuevoUsuarioNombre",
+        apellido: "#nuevoUsuarioApellido",
+        telefono: "#nuevoUsuarioTelefono",
+        correo: "#nuevoUsuarioCorreo",
+        direccion: "#nuevoUsuarioDireccion",
+        ciudad: "#nuevoUsuarioCiudad"
+    };
+
+    function limpiarPersona() {
+        Object.values(camposPersona).forEach(selector => $(selector).val(""));
+        datosAutocompletados = false;
+    }
+
+    async function buscarPersonaUsuario(completar = true) {
+        const campoCedula = $("#nuevoUsuarioCedula");
+
+        if (!campoCedula.length) return false;
+
+        const cedula = String(campoCedula.val() || "").trim();
+        const turno = ++versionPersona;
+
+        campoCedula[0].setCustomValidity("");
+
+        if (!cedula) {
+            if (datosAutocompletados) limpiarPersona();
+
+            $("#nuevoUsuarioIdPersona").val("");
+            return false;
+        }
+
+        const resultado = await solicitarSeguridad({
+            accion: "buscar_persona",
+            cedula
+        });
 
         if (
-            confirmarClave.value !== "" &&
-            clave.value !== confirmarClave.value
+            turno !== versionPersona ||
+            String(campoCedula.val() || "").trim() !== cedula
         ) {
-            confirmarClave.setCustomValidity(
-                "Las contraseñas no coinciden."
-            );
-        } else {
-            confirmarClave.setCustomValidity("");
+            return false;
         }
 
-    }
-
-
-    clave.addEventListener(
-        "input",
-        validarCoincidencia
-    );
-
-    confirmarClave.addEventListener(
-        "input",
-        validarCoincidencia
-    );
-
-
-    formulario.addEventListener(
-        "submit",
-        function () {
-
-            validarCoincidencia();
-
-        }
-    );
-
-}
-
-
-prepararConfirmacionClave(
-    "formNuevoUsuario",
-    "nuevoUsuarioClave",
-    "nuevoUsuarioConfirmarClave"
-);
-
-
-prepararConfirmacionClave(
-    "formRestablecerClave",
-    "restablecerNuevaClave",
-    "restablecerConfirmarClave"
-);
-
-
-/* ===================================================== */
-/* MOSTRAR U OCULTAR CONTRASEÑAS */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnAlternarClave"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const campo =
-            document.getElementById(
-                boton.dataset.passwordTarget
-            );
-
-
-        if (!campo) {
-            return;
-        }
-
-
-        const claveVisible =
-            campo.type === "text";
-
-
-        campo.type =
-            claveVisible
-                ? "password"
-                : "text";
-
-
-        const icono =
-            boton.querySelector("i");
-
-
-        if (icono) {
-            icono.className =
-                claveVisible
-                    ? "bi bi-eye-slash"
-                    : "bi bi-eye";
-        }
-
-
-        const accion =
-            claveVisible
-                ? "Mostrar"
-                : "Ocultar";
-
-
-        boton.setAttribute(
-            "aria-label",
-            accion + " contraseña"
-        );
-
-        boton.setAttribute(
-            "title",
-            accion + " contraseña"
-        );
-
-    }
-);
-
-
-/* ===================================================== */
-/* BUSCAR PERSONA POR CÉDULA */
-/* ===================================================== */
-
-const nuevoUsuarioCedula =
-    document.getElementById(
-        "nuevoUsuarioCedula"
-    );
-
-const nuevoUsuarioIdPersona =
-    document.getElementById(
-        "nuevoUsuarioIdPersona"
-    );
-
-const nuevoUsuarioNombre =
-    document.getElementById(
-        "nuevoUsuarioNombre"
-    );
-
-const nuevoUsuarioApellido =
-    document.getElementById(
-        "nuevoUsuarioApellido"
-    );
-
-const nuevoUsuarioTelefono =
-    document.getElementById(
-        "nuevoUsuarioTelefono"
-    );
-
-const nuevoUsuarioCorreo =
-    document.getElementById(
-        "nuevoUsuarioCorreo"
-    );
-
-const nuevoUsuarioDireccion =
-    document.getElementById(
-        "nuevoUsuarioDireccion"
-    );
-
-const nuevoUsuarioCiudad =
-    document.getElementById(
-        "nuevoUsuarioCiudad"
-    );
-
-let datosPersonaAutocompletados = false;
-
-
-function limpiarDatosPersonaUsuario() {
-
-    if (nuevoUsuarioIdPersona) {
-        nuevoUsuarioIdPersona.value = "";
-    }
-
-    if (nuevoUsuarioNombre) {
-        nuevoUsuarioNombre.value = "";
-    }
-
-    if (nuevoUsuarioApellido) {
-        nuevoUsuarioApellido.value = "";
-    }
-
-    if (nuevoUsuarioTelefono) {
-        nuevoUsuarioTelefono.value = "";
-    }
-
-    if (nuevoUsuarioCorreo) {
-        nuevoUsuarioCorreo.value = "";
-    }
-
-    if (nuevoUsuarioDireccion) {
-        nuevoUsuarioDireccion.value = "";
-    }
-
-    if (nuevoUsuarioCiudad) {
-        nuevoUsuarioCiudad.value = "";
-    }
-
-
-    datosPersonaAutocompletados = false;
-
-}
-
-
-function llenarDatosPersonaUsuario(persona) {
-
-    if (!persona) {
-        return;
-    }
-
-
-    if (nuevoUsuarioIdPersona) {
-        nuevoUsuarioIdPersona.value =
-            persona.id_persona || "";
-    }
-
-    if (nuevoUsuarioNombre) {
-        nuevoUsuarioNombre.value =
-            persona.nombre || "";
-    }
-
-    if (nuevoUsuarioApellido) {
-        nuevoUsuarioApellido.value =
-            persona.apellido || "";
-    }
-
-    if (nuevoUsuarioTelefono) {
-        nuevoUsuarioTelefono.value =
-            persona.telefono || "";
-    }
-
-    if (nuevoUsuarioCorreo) {
-        nuevoUsuarioCorreo.value =
-            persona.correo || "";
-    }
-
-    if (nuevoUsuarioDireccion) {
-        nuevoUsuarioDireccion.value =
-            persona.direccion || "";
-    }
-
-    if (nuevoUsuarioCiudad) {
-        nuevoUsuarioCiudad.value =
-            persona.ciudad || "";
-    }
-
-
-    datosPersonaAutocompletados = true;
-
-}
-
-
-function buscarPersonaUsuario() {
-
-    if (!nuevoUsuarioCedula) {
-        return;
-    }
-
-
-    const cedula =
-        nuevoUsuarioCedula.value.trim();
-
-
-    nuevoUsuarioCedula.setCustomValidity(
-        ""
-    );
-
-
-    if (cedula === "") {
-
-        if (datosPersonaAutocompletados) {
-            limpiarDatosPersonaUsuario();
-        } else if (nuevoUsuarioIdPersona) {
-            nuevoUsuarioIdPersona.value = "";
-        }
-
-        return;
-    }
-
-
-    const datos = new FormData();
-
-    datos.append(
-        "accion",
-        "buscar_persona"
-    );
-
-    datos.append(
-        "cedula",
-        cedula
-    );
-
-
-    fetch(
-        "Index.php?url=seguridad",
-        {
-            method: "POST",
-            body: datos
-        }
-    )
-        .then(function (respuesta) {
-
-            if (!respuesta.ok) {
-                throw new Error(
-                    "No se pudo consultar la persona."
-                );
+        if (resultado.encontrada) {
+            if (!$.isPlainObject(resultado.persona)) {
+                throw new Error("Los datos de la persona no son válidos.");
             }
 
-            return respuesta.json();
-
-        })
-        .then(function (resultado) {
-
-            /*
-             * Si la cédula cambió mientras se hacía
-             * la consulta, se ignora la respuesta.
-             */
-            if (
-                nuevoUsuarioCedula.value.trim() !==
-                cedula
-            ) {
-                return;
-            }
-
-
-            if (!resultado.encontrada) {
-
-                if (datosPersonaAutocompletados) {
-                    limpiarDatosPersonaUsuario();
-                } else if (nuevoUsuarioIdPersona) {
-                    nuevoUsuarioIdPersona.value = "";
-                }
-
-                return;
-            }
-
-
-            llenarDatosPersonaUsuario(
-                resultado.persona
-            );
-
-
-            if (resultado.es_usuario) {
-
-                nuevoUsuarioCedula.setCustomValidity(
-                    "Esta persona ya se encuentra registrada como usuario."
-                );
-
-                nuevoUsuarioCedula.reportValidity();
-
-            } else {
-
-                nuevoUsuarioCedula.setCustomValidity(
-                    ""
-                );
-            }
-
-        })
-        .catch(function (error) {
-
-            console.error(error);
-
-        });
-
-}
-
-
-if (nuevoUsuarioCedula) {
-
-    nuevoUsuarioCedula.addEventListener(
-        "input",
-        function () {
-
-            nuevoUsuarioCedula.setCustomValidity(
-                ""
-            );
-
-
-            if (datosPersonaAutocompletados) {
-
-                limpiarDatosPersonaUsuario();
-
-            } else if (nuevoUsuarioIdPersona) {
-
-                nuevoUsuarioIdPersona.value = "";
-            }
-
-        }
-    );
-
-
-    nuevoUsuarioCedula.addEventListener(
-        "blur",
-        buscarPersonaUsuario
-    );
-
-}
-
-
-/* ===================================================== */
-/* MODAL EDITAR USUARIO */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnEditarUsuario"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const idUsuario =
-            document.getElementById(
-                "editarUsuarioId"
-            );
-
-        const idPersona =
-            document.getElementById(
-                "editarUsuarioIdPersona"
-            );
-
-        const cedula =
-            document.getElementById(
-                "editarUsuarioCedula"
-            );
-
-        const nombre =
-            document.getElementById(
-                "editarUsuarioNombre"
-            );
-
-        const apellido =
-            document.getElementById(
-                "editarUsuarioApellido"
-            );
-
-        const telefono =
-            document.getElementById(
-                "editarUsuarioTelefono"
-            );
-
-        const correo =
-            document.getElementById(
-                "editarUsuarioCorreo"
-            );
-
-        const direccion =
-            document.getElementById(
-                "editarUsuarioDireccion"
-            );
-
-        const ciudad =
-            document.getElementById(
-                "editarUsuarioCiudad"
-            );
-
-        const nickname =
-            document.getElementById(
-                "editarUsuarioNickname"
-            );
-
-        const rol =
-            document.getElementById(
-                "editarUsuarioRol"
-            );
-
-
-        if (idUsuario) {
-            idUsuario.value =
-                boton.dataset.idUsuario || "";
-        }
-
-        if (idPersona) {
-            idPersona.value =
-                boton.dataset.idPersona || "";
-        }
-
-        if (cedula) {
-            cedula.value =
-                boton.dataset.cedula || "";
-        }
-
-        if (nombre) {
-            nombre.value =
-                boton.dataset.nombre || "";
-        }
-
-        if (apellido) {
-            apellido.value =
-                boton.dataset.apellido || "";
-        }
-
-        if (telefono) {
-            telefono.value =
-                boton.dataset.telefono || "";
-        }
-
-        if (correo) {
-            correo.value =
-                boton.dataset.correo || "";
-        }
-
-        if (direccion) {
-            direccion.value =
-                boton.dataset.direccion || "";
-        }
-
-        if (ciudad) {
-            ciudad.value =
-                boton.dataset.ciudad || "";
-        }
-
-        if (nickname) {
-            nickname.value =
-                boton.dataset.nickname || "";
-        }
-
-        if (rol) {
-            rol.value =
-                boton.dataset.idRol || "";
-        }
-
-    }
-);
-
-
-/* ===================================================== */
-/* MODAL RESTABLECER CONTRASEÑA */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnRestablecerClave"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const idUsuario =
-            document.getElementById(
-                "restablecerClaveIdUsuario"
-            );
-
-        const nombreUsuario =
-            document.getElementById(
-                "restablecerClaveUsuario"
-            );
-
-
-        if (idUsuario) {
-            idUsuario.value =
-                boton.dataset.idUsuario || "";
-        }
-
-        if (nombreUsuario) {
-            nombreUsuario.value =
-                boton.dataset.nombre || "";
-        }
-
-    }
-);
-
-
-/* ===================================================== */
-/* MODAL ACTIVAR O DESACTIVAR USUARIO */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnCambiarEstadoUsuario"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const idUsuario =
-            boton.dataset.idUsuario || "";
-
-        const nombreUsuario =
-            boton.dataset.nombre || "";
-
-        const estadoActual =
-            (
-                boton.dataset.estado ||
-                "ACTIVO"
-            ).toUpperCase();
-
-        const nuevoEstado =
-            estadoActual === "ACTIVO"
-                ? "INACTIVO"
-                : "ACTIVO";
-
-
-        const campoId =
-            document.getElementById(
-                "estadoUsuarioId"
-            );
-
-        const campoNuevoEstado =
-            document.getElementById(
-                "nuevoEstadoUsuario"
-            );
-
-        const nombre =
-            document.getElementById(
-                "nombreEstadoUsuario"
-            );
-
-        const titulo =
-            document.getElementById(
-                "tituloEstadoUsuario"
-            );
-
-        const pregunta =
-            document.getElementById(
-                "preguntaEstadoUsuario"
-            );
-
-        const advertencia =
-            document.getElementById(
-                "advertenciaEstadoUsuario"
-            );
-
-        const icono =
-            document.getElementById(
-                "iconoEstadoUsuario"
-            );
-
-        const botonConfirmar =
-            document.getElementById(
-                "btnConfirmarEstadoUsuario"
-            );
-
-
-        if (campoId) {
-            campoId.value = idUsuario;
-        }
-
-        if (campoNuevoEstado) {
-            campoNuevoEstado.value =
-                nuevoEstado;
-        }
-
-        if (nombre) {
-            nombre.textContent =
-                nombreUsuario;
-        }
-
-
-        if (nuevoEstado === "INACTIVO") {
-
-            if (titulo) {
-                titulo.textContent =
-                    "Desactivar Usuario";
-            }
-
-            if (pregunta) {
-                pregunta.textContent =
-                    "¿Deseas desactivar este usuario?";
-            }
-
-            if (advertencia) {
-                advertencia.textContent =
-                    "El usuario no podrá iniciar sesión mientras permanezca inactivo.";
-            }
-
-            if (icono) {
-                icono.className =
-                    "bi bi-trash-fill";
-            }
-
-            if (botonConfirmar) {
-
-                botonConfirmar.className =
-                    "btn-templo-danger";
-
-                botonConfirmar.innerHTML =
-                    '<i class="bi bi-trash-fill"></i> Sí, desactivar';
-
-            }
-
-        } else {
-
-            if (titulo) {
-                titulo.textContent =
-                    "Activar Usuario";
-            }
-
-            if (pregunta) {
-                pregunta.textContent =
-                    "¿Deseas activar este usuario?";
-            }
-
-            if (advertencia) {
-                advertencia.textContent =
-                    "El usuario podrá volver a iniciar sesión en el sistema.";
-            }
-
-            if (icono) {
-                icono.className =
-                    "bi bi-person-check";
-            }
-
-            if (botonConfirmar) {
-
-                botonConfirmar.className =
-                    "btn-templo-primary";
-
-                botonConfirmar.innerHTML =
-                    '<i class="bi bi-person-check"></i> Sí, activar';
-
-            }
-
-        }
-
-    }
-);
-
-
-/* ===================================================== */
-/* MODAL EDITAR ROL */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnEditarRol"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const idRol =
-            document.getElementById(
-                "editarIdRol"
-            );
-
-        const nombreRol =
-            document.getElementById(
-                "editarNombreRol"
-            );
-
-        const descripcionRol =
-            document.getElementById(
-                "editarDescripcionRol"
-            );
-
-        const estadoRol =
-            document.getElementById(
-                "editarEstadoRol"
-            );
-
-
-        if (idRol) {
-            idRol.value =
-                boton.dataset.idRol || "";
-        }
-
-        if (nombreRol) {
-            nombreRol.value =
-                boton.dataset.nombreRol || "";
-        }
-
-        if (descripcionRol) {
-            descripcionRol.value =
-                boton.dataset.descripcion || "";
-        }
-
-        if (estadoRol) {
-            estadoRol.value =
-                boton.dataset.estadoRol || "";
-        }
-
-    }
-);
-
-
-/* ===================================================== */
-/* MODAL CAMBIAR ESTADO DEL ROL */
-/* ===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        const boton =
-            event.target.closest(
-                ".btnDesactivarRol"
-            );
-
-
-        if (!boton) {
-            return;
-        }
-
-
-        const idRol =
-            boton.dataset.idRol || "";
-
-        const nombreRol =
-            boton.dataset.nombreRol || "";
-
-        const estadoActual =
-            (
-                boton.dataset.estadoRol ||
-                "ACTIVO"
-            ).toUpperCase();
-
-        const nuevoEstado =
-            estadoActual === "ACTIVO"
-                ? "INACTIVO"
-                : "ACTIVO";
-
-
-        const campoId =
-            document.getElementById(
-                "estadoIdRol"
-            );
-
-        const campoNuevoEstado =
-            document.getElementById(
-                "nuevoEstadoRol"
-            );
-
-        const nombre =
-            document.getElementById(
-                "nombreEstadoRol"
-            );
-
-
-        if (campoId) {
-            campoId.value = idRol;
-        }
-
-        if (campoNuevoEstado) {
-            campoNuevoEstado.value =
-                nuevoEstado;
-        }
-
-        if (nombre) {
-            nombre.textContent = nombreRol;
-        }
-
-    }
-);
-
-
-/* ===================================================== */
-/* LIMPIAR FORMULARIOS AL CERRAR LOS MODALES */
-/* ===================================================== */
-
-const modalNuevoUsuario =
-    document.getElementById(
-        "modalNuevoUsuario"
-    );
-
-const modalRestablecerClave =
-    document.getElementById(
-        "modalRestablecerClave"
-    );
-
-const modalNuevoRol =
-    document.getElementById(
-        "modalNuevoRol"
-    );
-
-
-if (modalNuevoUsuario) {
-
-    modalNuevoUsuario.addEventListener(
-        "hidden.bs.modal",
-        function () {
-
-            const formulario =
-                document.getElementById(
-                    "formNuevoUsuario"
-                );
-
-            if (formulario) {
-                formulario.reset();
-            }
-
-            if (nuevoUsuarioCedula) {
-                nuevoUsuarioCedula.setCustomValidity(
-                    ""
-                );
-            }
-
-            if (nuevoUsuarioIdPersona) {
-                nuevoUsuarioIdPersona.value = "";
-            }
-
-            datosPersonaAutocompletados = false;
-
-        }
-    );
-
-}
-
-
-if (modalRestablecerClave) {
-
-    modalRestablecerClave.addEventListener(
-        "hidden.bs.modal",
-        function () {
-
-            const formulario =
-                document.getElementById(
-                    "formRestablecerClave"
-                );
-
-            if (formulario) {
-                formulario.reset();
-            }
-
-            const usuario =
-                document.getElementById(
-                    "restablecerClaveUsuario"
-                );
-
-            if (usuario) {
-                usuario.value = "";
-            }
-
-            modalRestablecerClave
-                .querySelectorAll(
-                    ".btnAlternarClave"
-                )
-                .forEach(function (boton) {
-
-                    const campo =
-                        document.getElementById(
-                            boton.dataset.passwordTarget
-                        );
-
-                    const icono =
-                        boton.querySelector("i");
-
-                    if (campo) {
-                        campo.type = "password";
-                    }
-
-                    if (icono) {
-                        icono.className =
-                            "bi bi-eye-slash";
-                    }
-
-                    boton.setAttribute(
-                        "aria-label",
-                        "Mostrar contraseña"
-                    );
-
-                    boton.setAttribute(
-                        "title",
-                        "Mostrar contraseña"
-                    );
-
+            if (completar) {
+                Object.entries(camposPersona).forEach(function ([campo, selector]) {
+                    $(selector).val(resultado.persona[campo] ?? "");
                 });
 
+                datosAutocompletados = true;
+            } else {
+                $("#nuevoUsuarioIdPersona").val(resultado.persona.id_persona ?? "");
+            }
+        } else {
+            if (completar && datosAutocompletados) limpiarPersona();
+
+            $("#nuevoUsuarioIdPersona").val("");
         }
-    );
 
-}
+        if (resultado.es_usuario) {
+            campoCedula[0].setCustomValidity(
+                "Esta persona ya se encuentra registrada como usuario."
+            );
+
+            throw new Error("Esta persona ya se encuentra registrada como usuario.");
+        }
+
+        return true;
+    }
+
+    $("#nuevoUsuarioCedula").on("input", function () {
+        ++versionPersona;
+        this.setCustomValidity("");
+
+        if (datosAutocompletados) limpiarPersona();
+
+        $("#nuevoUsuarioIdPersona").val("");
+    }).on("blur", function () {
+        if (operacionEnCurso) return;
+
+        const turnoModal = versionPersona;
+
+        buscarPersonaUsuario().catch(function (error) {
+            if (versionPersona === turnoModal + 1) {
+                mensajeFormulario($("#formNuevoUsuario"))
+                    .text(error.message)
+                    .prop("hidden", false);
+            }
+        });
+    });
 
 
-if (modalNuevoRol) {
+    /* ================================================= */
+    /* BOTONES Y FILAS DE LOS LISTADOS */
+    /* ================================================= */
 
-    modalNuevoRol.addEventListener(
-        "hidden.bs.modal",
-        function () {
+    const atributosUsuario = {
+        id_usuario: "id-usuario",
+        id_persona: "id-persona",
+        cedula: "cedula",
+        nombre: "nombre",
+        apellido: "apellido",
+        telefono: "telefono",
+        correo: "correo",
+        direccion: "direccion",
+        ciudad: "ciudad",
+        nickname: "nickname",
+        id_rol: "id-rol"
+    };
 
-            const formulario =
-                modalNuevoRol.querySelector("form");
+    const iconoDetalleUsuario = $(
+        "#tablaUsuarios .detalle-accion-icono svg, #formNuevoUsuario .templo-eye-open"
+    ).first().clone().removeAttr("class");
 
-            if (formulario) {
-                formulario.reset();
+    function crearBoton(clase, destino, titulo, atributos, icono) {
+        return $("<button>", {
+            type: "button",
+            class: "btn-action " + clase,
+            title: titulo,
+            "aria-label": titulo,
+            "data-bs-toggle": "modal",
+            "data-bs-target": destino
+        }).attr(atributos).append($("<i>", {
+            class: "bi " + icono,
+            "aria-hidden": "true"
+        }));
+    }
+
+    function crearFilaUsuario(usuario) {
+        const fila = $("<tr>");
+        const nombreCompleto = ((usuario.nombre || "") + " " + (usuario.apellido || "")).trim();
+        const estado = String(usuario.estado_usuario || "ACTIVO").trim().toUpperCase();
+
+        [
+            usuario.cedula,
+            nombreCompleto,
+            usuario.telefono,
+            usuario.correo,
+            usuario.nombre_rol
+        ].forEach(function (valor) {
+            $("<td>").text(valor ?? "").appendTo(fila);
+        });
+
+        $("<td>").append($("<span>", {
+            class: "badge estado-realizada",
+            text: estado
+        })).appendTo(fila);
+
+        const datos = {};
+
+        Object.entries(atributosUsuario).forEach(function ([campo, atributo]) {
+            datos["data-" + atributo] = String(usuario[campo] ?? "");
+        });
+
+        const referencia = {
+            "data-id-usuario": datos["data-id-usuario"],
+            "data-nombre": nombreCompleto,
+            "data-estado": estado
+        };
+
+        const acciones = $("<div>", { class: "btn-group-actions" });
+
+        const detalle = crearBoton(
+            "btn-detail",
+            "#modalDetalleUsuarioDinamico",
+            "Ver detalles del usuario",
+            referencia,
+            "bi-eye"
+        );
+
+        if (iconoDetalleUsuario.length) {
+            detalle.empty().append($("<span>", {
+                class: "detalle-accion-icono",
+                "aria-hidden": "true"
+            }).append(iconoDetalleUsuario.clone()));
+        }
+
+        acciones.append(
+            detalle,
+
+            crearBoton(
+                "btn-edit btnEditarUsuario",
+                "#modalEditarUsuario",
+                "Editar usuario",
+                datos,
+                "bi-pencil-square"
+            ),
+
+            crearBoton(
+                "btn-reset-password btnRestablecerClave",
+                "#modalRestablecerClave",
+                "Restablecer contraseña",
+                referencia,
+                "bi-bag-heart"
+            ),
+
+            crearBoton(
+                "btn-deactivate btnCambiarEstadoUsuario",
+                "#modalEstadoUsuario",
+                "Desactivar usuario",
+                referencia,
+                "bi-trash-fill"
+            )
+        );
+
+        $("<td>", { class: "columna-acciones" }).append(acciones).appendTo(fila);
+
+        return fila[0];
+    }
+
+    function crearFilaRol(rol) {
+        const fila = $("<tr>");
+        const estado = String(rol.estado_rol || "ACTIVO").trim().toUpperCase();
+
+        const datos = {
+            "data-id-rol": String(rol.id_rol ?? ""),
+            "data-nombre-rol": String(rol.nombre_rol ?? ""),
+            "data-descripcion": String(rol.descripcion ?? ""),
+            "data-estado-rol": estado
+        };
+
+        $("<td>").text(rol.nombre_rol ?? "").appendTo(fila);
+        $("<td>").text(rol.descripcion ?? "").appendTo(fila);
+
+        $("<td>").append($("<span>", {
+            class: "badge " + (
+                estado === "ACTIVO"
+                    ? "estado-registro-activo"
+                    : "estado-registro-inactivo"
+            ),
+            text: estado
+        })).appendTo(fila);
+
+        const acciones = $("<div>", { class: "btn-group-actions" }).append(
+            crearBoton(
+                "btn-edit btnEditarRol",
+                "#modalEditarRol",
+                "Editar rol",
+                datos,
+                "bi-pencil-fill"
+            ),
+
+            crearBoton(
+                "btn-deactivate btnDesactivarRol",
+                "#modalEstadoRol",
+                "Desactivar rol",
+                datos,
+                "bi-trash-fill"
+            )
+        );
+
+        $("<td>", { class: "columna-acciones" }).append(acciones).appendTo(fila);
+
+        return fila[0];
+    }
+
+
+    /* ================================================= */
+    /* FICHA DE DETALLES DEL USUARIO */
+    /* ================================================= */
+
+    const camposDetalle = {
+        "Cédula": ["cedula", "bi-person-vcard"],
+        "Nickname": ["nickname", "bi-person-badge"],
+        "Nombre": ["nombre", "bi-person-heart"],
+        "Apellido": ["apellido", "bi-person-heart"],
+        "Teléfono": ["telefono", "bi-telephone-fill"],
+        "Correo electrónico": ["correo", "bi-envelope-heart"],
+        "Ciudad": ["ciudad", "bi-geo-alt-fill"],
+        "Rol": ["nombre_rol", "bi-person-gear"],
+        "Dirección": ["direccion", "bi-house-heart-fill"],
+        "Clave": ["clave_oculta", "bi-lock-fill"],
+        "Estado": ["estado_usuario", "bi-check-circle"]
+    };
+
+    let modalDetalle = $(".modal[id^='modalDetalleUsuario']").first().clone();
+
+    /* Utilizar la ficha existente como plantilla para los registros actualizados */
+    if (!modalDetalle.length) {
+        modalDetalle = $(
+            '<div class="modal fade" tabindex="-1" aria-hidden="true">' +
+                '<div class="modal-dialog modal-lg modal-dialog-centered">' +
+                    '<div class="modal-content templo-modal detalle-ficha-modal">' +
+                        '<div class="modal-header">' +
+                            '<h5 class="modal-title">Detalles del Usuario</h5>' +
+                            '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>' +
+                        '</div>' +
+                        '<div class="modal-body detalle-ficha-modal-body">' +
+                            '<div class="detalle-ficha-panel">' +
+                                '<div class="row g-2 detalle-ficha-grid"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="modal-footer">' +
+                            '<button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">Cerrar</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+
+        Object.entries(camposDetalle).forEach(function ([etiqueta, datos]) {
+            const contenido = $("<div>", {
+                class: "detalle-ficha-card-content"
+            }).append(
+                $("<span>", { class: "detalle-ficha-label", text: etiqueta }),
+                $("<p>", { class: "detalle-ficha-value mb-0" })
+            );
+
+            const tarjeta = $("<div>", {
+                class: "detalle-ficha-card h-100"
+            }).append(
+                $("<span>", {
+                    class: "detalle-ficha-card-icon",
+                    "aria-hidden": "true"
+                }).append($("<i>", { class: "bi " + datos[1] })),
+
+                contenido
+            );
+
+            modalDetalle.find(".detalle-ficha-grid").append(
+                $("<div>", {
+                    class: etiqueta === "Dirección" ? "col-12" : "col-md-6"
+                }).append(tarjeta)
+            );
+        });
+    }
+
+    modalDetalle.attr({
+        id: "modalDetalleUsuarioDinamico",
+        "aria-labelledby": "tituloDetalleUsuarioDinamico"
+    });
+
+    modalDetalle.find(".modal-title").attr("id", "tituloDetalleUsuarioDinamico");
+    modalDetalle.appendTo("body");
+
+    modalDetalle.on("show.bs.modal", function (evento) {
+        const usuario = usuariosPorId.get(
+            String($(evento.relatedTarget).attr("data-id-usuario"))
+        );
+
+        if (!usuario) {
+            evento.preventDefault();
+            return;
+        }
+
+        modalDetalle.find(".detalle-ficha-card").each(function () {
+            const tarjeta = $(this);
+            const etiqueta = tarjeta.find(".detalle-ficha-label").text().trim();
+            const campo = camposDetalle[etiqueta]?.[0];
+            const valor = campo === "clave_oculta" ? "********" : usuario[campo];
+
+            tarjeta.find(".detalle-ficha-value, .detalle-ficha-status")
+                .text(valor || "No registrado");
+        });
+    });
+
+
+    /* ================================================= */
+    /* ACTUALIZACIÓN DE LAS LISTAS Y SELECTORES */
+    /* ================================================= */
+
+    function reemplazarFilas(tabla, filas) {
+        const pagina = tabla.page();
+
+        tabla.clear();
+        tabla.rows.add(filas);
+        tabla.draw(false);
+
+        const ultima = Math.max(tabla.page.info().pages - 1, 0);
+
+        if (pagina > ultima) tabla.page(ultima).draw("page");
+    }
+
+    function actualizarSelectoresRoles(roles) {
+        $("#nuevoUsuarioRol, #editarUsuarioRol").each(function () {
+            const selector = $(this);
+            const seleccionado = String(selector.val() || "");
+
+            selector.empty().append($("<option>", {
+                value: "",
+                text: "Seleccione un rol"
+            }));
+
+            roles.forEach(function (rol) {
+                selector.append($("<option>", {
+                    value: String(rol.id_rol),
+                    text: rol.nombre_rol ?? ""
+                }));
+            });
+
+            selector.val(
+                roles.some(rol => String(rol.id_rol) === seleccionado)
+                    ? seleccionado
+                    : ""
+            );
+        });
+    }
+
+    async function actualizarListas() {
+        const turno = ++versionLista;
+
+        try {
+            await Promise.all([
+                tablaUsuarios.preparada,
+                tablaRoles.preparada
+            ]);
+
+            if (turno !== versionLista) return false;
+
+            const respuesta = await solicitarSeguridad({ accion: "consultar" });
+
+            if (turno !== versionLista) return false;
+
+            if (
+                !Array.isArray(respuesta.usuarios) ||
+                !Array.isArray(respuesta.roles) ||
+                !respuesta.usuarios.every(usuario => $.isPlainObject(usuario)) ||
+                !respuesta.roles.every(rol => $.isPlainObject(rol))
+            ) {
+                throw new Error("Las listas recibidas no tienen un formato válido.");
             }
 
-        }
-    );
+            const filasUsuarios = respuesta.usuarios.map(crearFilaUsuario);
+            const filasRoles = respuesta.roles.map(crearFilaRol);
 
-}
+            usuariosPorId = new Map(
+                respuesta.usuarios.map(usuario => [
+                    String(usuario.id_usuario),
+                    usuario
+                ])
+            );
+
+            reemplazarFilas(tablaUsuarios.instancia, filasUsuarios);
+            reemplazarFilas(tablaRoles.instancia, filasRoles);
+            actualizarSelectoresRoles(respuesta.roles);
+
+            return true;
+        } catch (error) {
+            if (turno === versionLista) throw error;
+
+            return false;
+        }
+    }
+
+
+    /* ================================================= */
+    /* CONTENIDO Y LIMPIEZA DE LOS FORMULARIOS */
+    /* ================================================= */
+
+    function limpiarFormulario(modal) {
+        const formulario = modal.find("form").first();
+
+        if (!formulario.length) return;
+
+        formulario[0].reset();
+
+        formulario.find("input").each(function () {
+            this.setCustomValidity("");
+        });
+
+        formulario.find(".btnAlternarClave").each(function () {
+            establecerVisibilidad($(this), false);
+        });
+
+        mensajeFormulario(formulario).empty().prop("hidden", true);
+    }
+
+    modales.on("show.bs.modal", function (evento) {
+        if (operacionEnCurso) {
+            evento.preventDefault();
+            return;
+        }
+
+        const modal = $(this);
+        const idModal = modal.attr("id");
+        const boton = $(evento.relatedTarget);
+        const formulario = modal.find("form");
+
+        limpiarFormulario(modal);
+
+        if (idModal === "modalNuevoUsuario") {
+            ++versionPersona;
+            datosAutocompletados = false;
+        }
+
+        if (idModal === "modalEditarUsuario") {
+            Object.entries(atributosUsuario).forEach(function ([campo, atributo]) {
+                formulario.find('[name="' + campo + '"]')
+                    .val(boton.attr("data-" + atributo) ?? "");
+            });
+
+            $("#editarUsuarioCedula").val(boton.attr("data-cedula") || "");
+        }
+
+        if (idModal === "modalRestablecerClave") {
+            $("#restablecerClaveIdUsuario").val(boton.attr("data-id-usuario") || "");
+            $("#restablecerClaveUsuario").val(boton.attr("data-nombre") || "");
+        }
+
+        if (idModal === "modalEstadoUsuario") {
+            $("#estadoUsuarioId").val(boton.attr("data-id-usuario") || "");
+            $("#nuevoEstadoUsuario").val("INACTIVO");
+            $("#nombreEstadoUsuario").text(boton.attr("data-nombre") || "");
+            $("#tituloEstadoUsuario").text("Desactivar Usuario");
+            $("#preguntaEstadoUsuario").text("¿Deseas desactivar este usuario?");
+            $("#advertenciaEstadoUsuario").text(
+                "El usuario no podrá iniciar sesión mientras permanezca inactivo."
+            );
+        }
+
+        if (idModal === "modalEditarRol") {
+            $("#editarIdRol").val(boton.attr("data-id-rol") || "");
+            $("#editarNombreRol").val(boton.attr("data-nombre-rol") || "");
+            $("#editarDescripcionRol").val(boton.attr("data-descripcion") || "");
+            $("#editarEstadoRol").val(boton.attr("data-estado-rol") || "");
+        }
+
+        if (idModal === "modalEstadoRol") {
+            $("#estadoIdRol").val(boton.attr("data-id-rol") || "");
+            $("#nuevoEstadoRol").val("INACTIVO");
+            $("#nombreEstadoRol").text(boton.attr("data-nombre-rol") || "");
+        }
+    });
+
+    modales.on("hide.bs.modal", function (evento) {
+        if ($(this).find("form").data("enviando")) {
+            evento.preventDefault();
+        }
+    });
+
+    modales.on("hidden.bs.modal", function () {
+        limpiarFormulario($(this));
+
+        if ($(this).attr("id") === "modalNuevoUsuario") {
+            ++versionPersona;
+            datosAutocompletados = false;
+        }
+    });
+
+
+    /* ================================================= */
+    /* ENVÍO DE LAS OPERACIONES DE SEGURIDAD */
+    /* ================================================= */
+
+    modales.find("form").on("submit", async function (evento) {
+        evento.preventDefault();
+
+        if (operacionEnCurso) return;
+
+        const formulario = $(this);
+        const aviso = mensajeFormulario(formulario).empty().prop("hidden", true);
+
+        validarCoincidencia(formulario);
+
+        if (!this.reportValidity()) return;
+
+        const controles = formulario.find("input, select, textarea, button")
+            .map(function () {
+                const elemento = $(this);
+
+                return {
+                    elemento,
+                    deshabilitado: elemento.prop("disabled")
+                };
+            }).get();
+
+        const enviar = formulario.find('[type="submit"]');
+        const contenidoBoton = enviar.html();
+
+        operacionEnCurso = true;
+        formulario.data("enviando", true);
+        enviar.prop("disabled", true).text("Procesando...");
+        ++versionLista;
+        mensajeGeneral.prop("hidden", true);
+
+        try {
+            if (formulario.attr("id") === "formNuevoUsuario") {
+                if (!await buscarPersonaUsuario(false)) {
+                    throw new Error("Revise la cédula y vuelva a enviar el formulario.");
+                }
+
+                validarCoincidencia(formulario);
+
+                if (!this.reportValidity()) {
+                    throw new Error("Revise los datos del formulario.");
+                }
+            }
+
+            const datos = {};
+
+            formulario.serializeArray().forEach(campo => {
+                datos[campo.name] = campo.value;
+            });
+
+            controles.forEach(control => {
+                control.elemento.prop("disabled", true);
+            });
+
+            const respuesta = await solicitarSeguridad(datos);
+
+            formulario.data("enviando", false);
+
+            const modal = formulario.closest(".modal");
+
+            const cerrarModal = function () {
+                window.bootstrap.Modal.getOrCreateInstance(modal[0]).hide();
+            };
+
+            modal.one("shown.bs.modal", cerrarModal);
+
+            modal.one("hidden.bs.modal", function () {
+                modal.off("shown.bs.modal", cerrarModal);
+            });
+
+            cerrarModal();
+            mostrarMensaje(respuesta.mensaje);
+
+            if (datos.accion !== "restablecer_clave") {
+                try {
+                    await actualizarListas();
+                } catch (error) {
+                    mostrarMensaje(
+                        respuesta.mensaje +
+                        " No se pudieron actualizar las listas. La operación ya fue confirmada.",
+                        true,
+                        true
+                    );
+                }
+            }
+        } catch (error) {
+            aviso.text(error.message).prop("hidden", false);
+            formulario.find(".modal-body").scrollTop(0);
+        } finally {
+            controles.forEach(control => {
+                control.elemento.prop("disabled", control.deshabilitado);
+            });
+
+            enviar.html(contenidoBoton);
+            formulario.data("enviando", false);
+            operacionEnCurso = false;
+        }
+    });
+
+
+    /* ================================================= */
+    /* CONSULTA INICIAL */
+    /* ================================================= */
+
+    actualizarListas().catch(error => {
+        mostrarMensaje(error.message, true, true);
+    });
+});

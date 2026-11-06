@@ -5,19 +5,38 @@ namespace App\Model;
 use App\Config\Database;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE ACCESO AL SISTEMA */
+/* ===================================================== */
+
 class LoginM extends Database
 {
+    /* ================================================= */
+    /* CONEXIÓN */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private PDO $conexionMD;
+
+
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
 
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
-    /* Busca la cuenta asociada a la cédula suministrada durante el inicio de sesión. 
-    La clave se recupera únicamente para comprobarla mediante password_verify(). Nunca debe almacenarse en la sesión.*/
+
+    /* ================================================= */
+    /* BUSCAR USUARIO POR CÉDULA */
+    /* ================================================= */
+
     public function buscarPorCedula(string $cedula): ?array
     {
+        /* Obtener la cuenta, los datos personales y el rol asociado */
         $sql = "SELECT
                     u.id_usuario,
                     u.id_persona,
@@ -51,20 +70,13 @@ class LoginM extends Database
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
-
-        $stmt->bindValue(
-            ':cedula',
-            $cedula,
-            PDO::PARAM_STR
-        );
-
+        $stmt->bindValue(':cedula', $cedula, PDO::PARAM_STR);
         $stmt->execute();
 
-        $usuario = $stmt->fetch(
-            PDO::FETCH_ASSOC
-        );
+        /* La clave recuperada se utiliza para verificar las credenciales */
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        /* El controlador debe retirar la clave antes de guardar la sesión */
         return $usuario ?: null;
     }
 }
-

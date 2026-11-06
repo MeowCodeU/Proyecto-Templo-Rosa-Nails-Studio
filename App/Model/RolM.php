@@ -6,9 +6,18 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+
+/* ===================================================== */
+/* MODELO DE ROLES */
+/* ===================================================== */
+
 class RolM extends Database implements CrudInterface
 {
-    /* Atributo de conexión del modelo */
+    /* ================================================= */
+    /* CONEXIÓN Y ATRIBUTOS */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla roles */
@@ -18,23 +27,33 @@ class RolM extends Database implements CrudInterface
     private $estadoRol;
 
 
-    /* Setters: asignan valores a los atributos privados */
+    /* ================================================= */
+    /* SETTERS */
+    /* ================================================= */
+
     public function set_idRol($idRol) {$this->idRol = $idRol;}
     public function set_nombreRol($nombreRol) {$this->nombreRol = $nombreRol;}
     public function set_descripcion($descripcion) {$this->descripcion = $descripcion;}
     public function set_estadoRol($estadoRol) {$this->estadoRol = $estadoRol;}
 
 
-    /* Constructor: obtiene la conexión heredada de Database */
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /* Consultar: obtiene los roles activos */
+    /* ================================================= */
+    /* CONSULTAR ROLES */
+    /* ================================================= */
+
     public function consultar()
     {
+        /* Obtener los roles activos ordenados por su nombre */
         $sql = "SELECT
                     id_rol,
                     nombre_rol,
@@ -51,18 +70,17 @@ class RolM extends Database implements CrudInterface
     }
 
 
-    /* Registrar: inserta un nuevo rol */
+    /* ================================================= */
+    /* REGISTRAR ROL */
+    /* ================================================= */
+
     public function registrar()
     {
-        $sql = "INSERT INTO roles (
-                    nombre_rol,
-                    descripcion,
-                    estado_rol
-                ) VALUES (
-                    :nombre_rol,
-                    :descripcion,
-                    'ACTIVO'
-                )";
+        /* Registrar un nuevo rol con estado ACTIVO */
+        $sql = "INSERT INTO roles
+                    (nombre_rol, descripcion, estado_rol)
+                VALUES
+                    (:nombre_rol, :descripcion, 'ACTIVO')";
 
         $stmt = $this->conexionMD->prepare($sql);
 
@@ -73,9 +91,13 @@ class RolM extends Database implements CrudInterface
     }
 
 
-    /* Buscar: obtiene un rol por su identificador */
+    /* ================================================= */
+    /* BUSCAR ROL */
+    /* ================================================= */
+
     public function buscar()
     {
+        /* Obtener un rol mediante su identificador */
         $sql = "SELECT
                     id_rol,
                     nombre_rol,
@@ -86,7 +108,6 @@ class RolM extends Database implements CrudInterface
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
-
         $stmt->bindParam(':id_rol', $this->idRol);
         $stmt->execute();
 
@@ -94,11 +115,14 @@ class RolM extends Database implements CrudInterface
     }
 
 
-    /* Modificar: actualiza los datos de un rol */
+    /* ================================================= */
+    /* MODIFICAR ROL */
+    /* ================================================= */
+
     public function modificar()
     {
-        $sql = "UPDATE roles
-                SET
+        /* Actualizar el nombre y la descripción del rol */
+        $sql = "UPDATE roles SET
                     nombre_rol = :nombre_rol,
                     descripcion = :descripcion
                 WHERE id_rol = :id_rol";
@@ -113,15 +137,18 @@ class RolM extends Database implements CrudInterface
     }
 
 
-    /* Eliminar: cambia el estado del rol a INACTIVO */
+    /* ================================================= */
+    /* DESACTIVAR ROL */
+    /* ================================================= */
+
     public function eliminar()
     {
+        /* Marcar el rol como inactivo para conservar su registro */
         $sql = "UPDATE roles
                 SET estado_rol = 'INACTIVO'
                 WHERE id_rol = :id_rol";
 
         $stmt = $this->conexionMD->prepare($sql);
-
         $stmt->bindParam(':id_rol', $this->idRol);
 
         return $stmt->execute();
