@@ -2,115 +2,95 @@
 
 namespace App\Controller;
 
-
 use App\Controller\Components\Session;
 
 
+/* ===================================================== */
+/* ENRUTAMIENTO DEL SISTEMA */
+/* ===================================================== */
+
 class FrontController
 {
-    /*Rutas que pueden abrirse sin que exista un usuario autenticado.*/
+    /* Rutas disponibles sin autenticación previa */
     private const RUTAS_PUBLICAS = [
         'login',
         'claveAdmin',
         'registroUsuario'
     ];
 
-    /*Módulo solicitado mediante la URL.*/
+    /* Módulo solicitado mediante la URL */
     private string $url;
 
-    /*Obtiene la ruta solicitada, comprueba la sesión y carga el controlador.*/
+
+    /* ================================================= */
+    /* RECEPCIÓN DE LA RUTA */
+    /* ================================================= */
+
     public function __construct()
     {
-        /*Si se recibió una ruta, se utiliza esa ruta.*/
-        if (
-            isset($_GET['url']) &&
-            !empty($_GET['url'])
-        ) {
-            $this->url = trim(
-                (string) $_GET['url']
-            );
+        /* Utilizar la ruta recibida o determinar la ruta inicial */
+        if (isset($_GET['url']) && !empty($_GET['url'])) {
+            $this->url = trim((string) $_GET['url']);
 
         } else {
-
-            /*Si no se especificó una ruta:
-              - Usuario autenticado: Inicio.
-              - Usuario no autenticado: Login.*/
-            $this->url =
-                Session::estaAutenticada()
-                    ? 'inicio'
-                    : 'login';
+            $this->url = Session::estaAutenticada() ? 'inicio' : 'login';
         }
 
-        /*Solamente se permiten letras y números en el nombre de la ruta.*/
-        if (
-            !preg_match(
-                '/^[a-zA-Z][a-zA-Z0-9]*$/',
-                $this->url
-            )
-        ) {
+
+        /* Aceptar únicamente letras y números en el nombre de la ruta */
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $this->url)) {
             $this->mostrarError404();
 
             return;
         }
 
-        /*Procesar el cierre de sesión.*/
-        if ($this->url === 'logout') {
 
+        /* Procesar el cierre de sesión */
+        if ($this->url === 'logout') {
             Session::cerrar();
 
-            header(
-                'Location: Index.php?url=login'
-            );
+            header('Location: Index.php?url=login');
 
             exit;
         }
 
-        /*Comprobar si el usuario puede continuar hacia la ruta solicitada.*/
-        $this->protegerRuta();
 
-        /*Cargar el controlador solicitado.*/
+        /* Comprobar el acceso y cargar el controlador solicitado */
+        $this->protegerRuta();
         $this->cargarControlador();
     }
 
-    /*Impide acceder a los módulos internos cuando no existe una sesión vigente.*/
+
+    /* ================================================= */
+    /* PROTECCIÓN DE LAS RUTAS */
+    /* ================================================= */
+
     private function protegerRuta(): void
     {
-        /*Las rutas públicas no requieren autenticación previa.*/
-        if (
-            in_array(
-                $this->url,
-                self::RUTAS_PUBLICAS,
-                true
-            )
-        ) {
+        /* Permitir el acceso directo a las rutas públicas */
+        if (in_array($this->url, self::RUTAS_PUBLICAS, true)) {
             return;
         }
 
-        /*Permite continuar cuando existe una sesión activa y vigente.*/
-        $teniaSesion =
-            Session::estaAutenticada();
 
-        if (
-            $teniaSesion &&
-            Session::validarVigencia()
-        ) {
+        /* Permitir el acceso cuando la sesión esté activa y vigente */
+        $teniaSesion = Session::estaAutenticada();
+
+        if ($teniaSesion && Session::validarVigencia()) {
             return;
         }
 
-        /* Si la solicitud fue realizada mediante AJAX, se devuelve JSON.*/
+
+        /* Informar la falta de sesión mediante una respuesta asíncrona */
         if ($this->esPeticionAjax()) {
-
             http_response_code(401);
 
-            header(
-                'Content-Type: application/json; charset=utf-8'
-            );
+            header('Content-Type: application/json; charset=utf-8');
 
             echo json_encode(
                 [
                     'ok' => false,
-                    'mensaje' =>
-                        'La sesión no se encuentra activa.'
+                    'mensaje' => 'La sesión no se encuentra activa.'
                 ],
                 JSON_UNESCAPED_UNICODE
             );
@@ -118,59 +98,47 @@ class FrontController
             exit;
         }
 
-        /*Una navegación normal vuelve al formulario de inicio de sesión.*/
-        $destino =
-            'Index.php?url=login';
 
-        /*Permite informar que la sesión terminó por inactividad.*/
+        /* Preparar el regreso al formulario de inicio de sesión */
+        $destino = 'Index.php?url=login';
+
         if ($teniaSesion) {
-            $destino .=
-                '&sesion=expirada';
+            $destino .= '&sesion=expirada';
         }
 
-        header(
-            'Location: ' . $destino
-        );
+        header('Location: ' . $destino);
 
         exit;
     }
 
-    /*Determina si la solicitud procede de una operación asíncrona.*/
+
+    /* ================================================= */
+    /* IDENTIFICACIÓN DE SOLICITUDES ASÍNCRONAS */
+    /* ================================================= */
+
     private function esPeticionAjax(): bool
     {
-        /*Solicitud identificada mediante el encabezado convencional AJAX.*/
-        $encabezadoAjax =
-            isset(
-                $_SERVER[
-                    'HTTP_X_REQUESTED_WITH'
-                ]
-            ) &&
-            strtolower(
-                (string) $_SERVER[
-                    'HTTP_X_REQUESTED_WITH'
-                ]
-            ) === 'xmlhttprequest';
+        /* Comprobar el encabezado utilizado por las solicitudes asíncronas */
+        $encabezadoAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-        /*Actualmente esta acción se realiza mediante fetch() en seguridad.js.*/
-        $buscarPersona =
-            ($_POST['accion'] ?? '')
-            === 'buscar_persona';
 
-        return
-            $encabezadoAjax ||
-            $buscarPersona;
+        /* Reconocer también la acción de búsqueda de personas */
+        $buscarPersona = ($_POST['accion'] ?? '') === 'buscar_persona';
+
+        return $encabezadoAjax || $buscarPersona;
     }
 
-    /*Localiza y carga el controlador correspondiente a la ruta.*/
+
+    /* ================================================= */
+    /* CARGA DEL CONTROLADOR */
+    /* ================================================= */
+
     private function cargarControlador(): void
     {
-        $controlador =
-            __DIR__ . '/' .
-            ucfirst($this->url) .
-            'C.php';
+        $controlador = __DIR__ . '/' . ucfirst($this->url) . 'C.php';
 
         if (file_exists($controlador)) {
-
             require_once $controlador;
 
             return;
@@ -179,7 +147,11 @@ class FrontController
         $this->mostrarError404();
     }
 
-    /*Devuelve una respuesta cuando el controlador solicitado no existe.*/
+
+    /* ================================================= */
+    /* RESPUESTA DE RUTA NO ENCONTRADA */
+    /* ================================================= */
+
     private function mostrarError404(): void
     {
         http_response_code(404);

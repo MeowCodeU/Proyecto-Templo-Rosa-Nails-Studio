@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 
+<!-- ===================================================== -->
+<!-- CONFIGURACIÓN DEL DOCUMENTO -->
+<!-- ===================================================== -->
+
 <head>
 
+    <!-- Codificación y adaptación a dispositivos -->
     <meta charset="UTF-8">
 
     <meta
@@ -10,27 +15,29 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <?php
-    $tituloPagina = $tituloPagina ?? 'Inicio';
-    
-    $tituloCompleto =
-    $tituloPagina . ' | Templo Rosa';
-    ?>
-    
-    <title>
-    <?= htmlspecialchars(
-        $tituloCompleto,
-        ENT_QUOTES,
-        'UTF-8'
-    ) ?>
-    </title>
 
+    <!-- Título de la página -->
+    <?php
+
+    $tituloPagina = $tituloPagina ?? 'Inicio';
+    $tituloCompleto = $tituloPagina . ' | Templo Rosa';
+
+    ?>
+
+    <title><?= htmlspecialchars($tituloCompleto, ENT_QUOTES, 'UTF-8'); ?></title>
+
+
+    <!-- Ícono de la página -->
     <link
         rel="icon"
         type="image/png"
         href="Assets/img/LogoTR.png"
     >
 
+
+    <!-- ===================================================== -->
+    <!-- HOJAS DE ESTILO -->
+    <!-- ===================================================== -->
 
     <!-- Bootstrap CSS -->
     <link
@@ -53,9 +60,9 @@
     >
 
 
+    <!-- Estilos del calendario cuando la vista los requiere -->
     <?php if (!empty($usarFullCalendar)): ?>
 
-        <!-- FullCalendar CSS -->
         <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css"
@@ -64,7 +71,7 @@
     <?php endif; ?>
 
 
-    <!-- CSS propio -->
+    <!-- Estilos generales del sistema -->
     <link
         rel="stylesheet"
         href="Assets/css/styles.css"
@@ -73,6 +80,11 @@
 </head>
 
 
+<!-- ===================================================== -->
+<!-- INICIO DE LA ESTRUCTURA VISUAL -->
+<!-- ===================================================== -->
+
 <body>
 
-<div class="bg-overlay"></div>
+    <!-- Capa visual del fondo -->
+    <div class="bg-overlay"></div>

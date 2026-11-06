@@ -1,7 +1,7 @@
 <?php
 
-$moduloActual = $moduloActual ??
-    ($_GET['url'] ?? 'inicio');
+/* Identificar el módulo para resaltar su enlace en la navegación */
+$moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
 
 ?>
 
@@ -15,20 +15,15 @@ $moduloActual = $moduloActual ??
     aria-label="Navegación principal"
 >
 
-    <ul
-        class="dock-menu dock-menu-balanced"
-        id="dockMenu"
-    >
+    <!-- Módulos principales y logo central -->
+    <ul class="dock-menu dock-menu-balanced" id="dockMenu">
 
         <!-- Inicio -->
         <li class="dock-item <?= ($moduloActual === 'inicio') ? 'active' : ''; ?>">
 
             <a href="Index.php?url=inicio">
 
-                <span
-                    class="icon custom-pagoda"
-                    aria-hidden="true"
-                >
+                <span class="icon custom-pagoda" aria-hidden="true">
 
                     <svg viewBox="0 0 64 64">
 
@@ -63,9 +58,7 @@ $moduloActual = $moduloActual ??
 
                 </span>
 
-                <span class="label">
-                    Inicio
-                </span>
+                <span class="label">Inicio</span>
 
             </a>
 
@@ -77,16 +70,11 @@ $moduloActual = $moduloActual ??
 
             <a href="Index.php?url=clientes">
 
-                <span
-                    class="icon"
-                    aria-hidden="true"
-                >
+                <span class="icon" aria-hidden="true">
                     <i class="bi bi-person-hearts"></i>
                 </span>
 
-                <span class="label">
-                    Clientes
-                </span>
+                <span class="label">Clientes</span>
 
             </a>
 
@@ -98,16 +86,11 @@ $moduloActual = $moduloActual ??
 
             <a href="Index.php?url=agendamiento">
 
-                <span
-                    class="icon"
-                    aria-hidden="true"
-                >
+                <span class="icon" aria-hidden="true">
                     <i class="bi bi-calendar-heart"></i>
                 </span>
 
-                <span class="label">
-                    Agendamiento
-                </span>
+                <span class="label">Agendamiento</span>
 
             </a>
 
@@ -140,10 +123,7 @@ $moduloActual = $moduloActual ??
 
             <a href="Index.php?url=registroServicio">
 
-                <span
-                    class="icon custom-servicios"
-                    aria-hidden="true"
-                >
+                <span class="icon custom-servicios" aria-hidden="true">
 
                     <svg viewBox="0 0 64 64">
 
@@ -164,12 +144,9 @@ $moduloActual = $moduloActual ??
                         <path d="M35 28C35 30 36 31 38 31"></path>
 
                         <path
-                            d="M18 31H46
-                               L44 50
-                               C43.7 53 41.4 55 38.4 55
-                               H25.6
-                               C22.6 55 20.3 53 20 50
-                               L18 31Z"
+                            d="M18 31H46L44 50
+                               C43.7 53 41.4 55 38.4 55H25.6
+                               C22.6 55 20.3 53 20 50L18 31Z"
                         ></path>
 
                         <path d="M22 50C26 52 38 52 42 50"></path>
@@ -189,9 +166,7 @@ $moduloActual = $moduloActual ??
 
                 </span>
 
-                <span class="label">
-                    Servicios
-                </span>
+                <span class="label">Servicios</span>
 
             </a>
 
@@ -203,16 +178,11 @@ $moduloActual = $moduloActual ??
 
             <a href="Index.php?url=insumos">
 
-                <span
-                    class="icon"
-                    aria-hidden="true"
-                >
+                <span class="icon" aria-hidden="true">
                     <i class="bi bi-box2-heart"></i>
                 </span>
 
-                <span class="label">
-                    Insumos
-                </span>
+                <span class="label">Insumos</span>
 
             </a>
 
@@ -224,32 +194,21 @@ $moduloActual = $moduloActual ??
 
             <a href="Index.php?url=proveedores">
 
-                <span
-                    class="icon custom-proveedores"
-                    aria-hidden="true"
-                >
+                <span class="icon custom-proveedores" aria-hidden="true">
 
                     <svg viewBox="0 0 64 64">
 
                         <path
-                            d="M4 20
-                               A3 3 0 0 1 7 17
-                               H42
-                               A3 3 0 0 1 45 20
-                               V27
-                               H52
+                            d="M4 20A3 3 0 0 1 7 17H42
+                               A3 3 0 0 1 45 20V27H52
                                A4 4 0 0 1 55.5 29.2
-                               L60.5 36.5
-                               A4 4 0 0 1 61 38.8
-                               V48
-                               A3 3 0 0 1 58 51
-                               H54"
+                               L60.5 36.5A4 4 0 0 1 61 38.8
+                               V48A3 3 0 0 1 58 51H54"
                         ></path>
 
                         <path
                             d="M4 20V48
-                               A3 3 0 0 0 7 51
-                               H12"
+                               A3 3 0 0 0 7 51H12"
                         ></path>
 
                         <path d="M26 51H40"></path>
@@ -289,9 +248,7 @@ $moduloActual = $moduloActual ??
 
                 </span>
 
-                <span class="label">
-                    Proveedores
-                </span>
+                <span class="label">Proveedores</span>
 
             </a>
 
@@ -311,6 +268,7 @@ $moduloActual = $moduloActual ??
     aria-label="Cabecera de navegación móvil"
 >
 
+    <!-- Botón para abrir el menú lateral -->
     <button
         class="mobile-menu-btn"
         type="button"
@@ -323,6 +281,7 @@ $moduloActual = $moduloActual ??
     </button>
 
 
+    <!-- Marca de la cabecera móvil -->
     <a
         href="Index.php?url=inicio"
         class="mobile-brand-link"
@@ -352,8 +311,10 @@ $moduloActual = $moduloActual ??
     aria-labelledby="menuMovilTemploRosaLabel"
 >
 
+    <!-- Encabezado del menú lateral -->
     <div class="offcanvas-header mobile-offcanvas-header">
 
+        <!-- Logo y nombre del negocio -->
         <a
             href="Index.php?url=inicio"
             class="mobile-offcanvas-brand"
@@ -366,13 +327,12 @@ $moduloActual = $moduloActual ??
                 class="mobile-offcanvas-logo"
             >
 
-            <span id="menuMovilTemploRosaLabel">
-                Templo Rosa
-            </span>
+            <span id="menuMovilTemploRosaLabel">Templo Rosa</span>
 
         </a>
 
 
+        <!-- Botón para cerrar el menú lateral -->
         <button
             type="button"
             class="btn-close mobile-offcanvas-close"
@@ -383,6 +343,7 @@ $moduloActual = $moduloActual ??
     </div>
 
 
+    <!-- Contenido del menú lateral -->
     <div class="offcanvas-body mobile-offcanvas-body">
 
         <nav
@@ -402,10 +363,7 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'inicio') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
 
                             <svg
                                 class="mobile-menu-svg"
@@ -443,9 +401,7 @@ $moduloActual = $moduloActual ??
 
                         </span>
 
-                        <span>
-                            Inicio
-                        </span>
+                        <span>Inicio</span>
 
                     </a>
 
@@ -461,16 +417,11 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'clientes') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
                             <i class="bi bi-person-hearts"></i>
                         </span>
 
-                        <span>
-                            Clientes
-                        </span>
+                        <span>Clientes</span>
 
                     </a>
 
@@ -486,16 +437,11 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'agendamiento') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
                             <i class="bi bi-calendar-heart"></i>
                         </span>
 
-                        <span>
-                            Agendamiento
-                        </span>
+                        <span>Agendamiento</span>
 
                     </a>
 
@@ -511,10 +457,7 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'registroServicio') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
 
                             <svg
                                 class="mobile-menu-svg"
@@ -538,12 +481,9 @@ $moduloActual = $moduloActual ??
                                 <path d="M35 28C35 30 36 31 38 31"></path>
 
                                 <path
-                                    d="M18 31H46
-                                       L44 50
-                                       C43.7 53 41.4 55 38.4 55
-                                       H25.6
-                                       C22.6 55 20.3 53 20 50
-                                       L18 31Z"
+                                    d="M18 31H46L44 50
+                                       C43.7 53 41.4 55 38.4 55H25.6
+                                       C22.6 55 20.3 53 20 50L18 31Z"
                                 ></path>
 
                                 <path d="M22 50C26 52 38 52 42 50"></path>
@@ -563,9 +503,7 @@ $moduloActual = $moduloActual ??
 
                         </span>
 
-                        <span>
-                            Servicios
-                        </span>
+                        <span>Servicios</span>
 
                     </a>
 
@@ -581,16 +519,11 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'insumos') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
                             <i class="bi bi-box2-heart"></i>
                         </span>
 
-                        <span>
-                            Insumos
-                        </span>
+                        <span>Insumos</span>
 
                     </a>
 
@@ -606,10 +539,7 @@ $moduloActual = $moduloActual ??
                         <?= ($moduloActual === 'proveedores') ? 'aria-current="page"' : ''; ?>
                     >
 
-                        <span
-                            class="mobile-menu-icon"
-                            aria-hidden="true"
-                        >
+                        <span class="mobile-menu-icon" aria-hidden="true">
 
                             <svg
                                 class="mobile-menu-svg"
@@ -617,24 +547,16 @@ $moduloActual = $moduloActual ??
                             >
 
                                 <path
-                                    d="M4 20
-                                       A3 3 0 0 1 7 17
-                                       H42
-                                       A3 3 0 0 1 45 20
-                                       V27
-                                       H52
+                                    d="M4 20A3 3 0 0 1 7 17H42
+                                       A3 3 0 0 1 45 20V27H52
                                        A4 4 0 0 1 55.5 29.2
-                                       L60.5 36.5
-                                       A4 4 0 0 1 61 38.8
-                                       V48
-                                       A3 3 0 0 1 58 51
-                                       H54"
+                                       L60.5 36.5A4 4 0 0 1 61 38.8
+                                       V48A3 3 0 0 1 58 51H54"
                                 ></path>
 
                                 <path
                                     d="M4 20V48
-                                       A3 3 0 0 0 7 51
-                                       H12"
+                                       A3 3 0 0 0 7 51H12"
                                 ></path>
 
                                 <path d="M26 51H40"></path>
@@ -670,9 +592,7 @@ $moduloActual = $moduloActual ??
 
                         </span>
 
-                        <span>
-                            Proveedores
-                        </span>
+                        <span>Proveedores</span>
 
                     </a>
 
@@ -695,10 +615,7 @@ $moduloActual = $moduloActual ??
                             title="Manual de usuario"
                         >
 
-                            <span
-                                class="mobile-access-icon"
-                                aria-hidden="true"
-                            >
+                            <span class="mobile-access-icon" aria-hidden="true">
 
                                 <svg
                                     class="mobile-menu-svg"
@@ -758,9 +675,7 @@ $moduloActual = $moduloActual ??
 
                             </span>
 
-                            <span>
-                                Manual de usuario
-                            </span>
+                            <span>Manual de usuario</span>
 
                         </a>
 
@@ -776,10 +691,7 @@ $moduloActual = $moduloActual ??
                             <?= ($moduloActual === 'seguridad') ? 'aria-current="page"' : ''; ?>
                         >
 
-                            <span
-                                class="mobile-access-icon"
-                                aria-hidden="true"
-                            >
+                            <span class="mobile-access-icon" aria-hidden="true">
 
                                 <svg
                                     class="mobile-menu-svg"
@@ -827,9 +739,7 @@ $moduloActual = $moduloActual ??
 
                             </span>
 
-                            <span>
-                                Seguridad
-                            </span>
+                            <span>Seguridad</span>
 
                         </a>
 
@@ -845,16 +755,11 @@ $moduloActual = $moduloActual ??
                             <?= ($moduloActual === 'configuracion') ? 'aria-current="page"' : ''; ?>
                         >
 
-                            <span
-                                class="mobile-access-icon"
-                                aria-hidden="true"
-                            >
+                            <span class="mobile-access-icon" aria-hidden="true">
                                 <i class="bi bi-gear-wide-connected"></i>
                             </span>
 
-                            <span>
-                                Configuración
-                            </span>
+                            <span>Configuración</span>
 
                         </a>
 
@@ -865,21 +770,16 @@ $moduloActual = $moduloActual ??
                     <li>
 
                         <a
-                            href="#"
+                            href="Index.php?url=reportes"
                             class="mobile-access-link"
                             title="Reportes"
                         >
 
-                            <span
-                                class="mobile-access-icon"
-                                aria-hidden="true"
-                            >
+                            <span class="mobile-access-icon" aria-hidden="true">
                                 <i class="bi bi-bar-chart-line"></i>
                             </span>
 
-                            <span>
-                                Reportes
-                            </span>
+                            <span>Reportes</span>
 
                         </a>
 

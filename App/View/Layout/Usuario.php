@@ -1,47 +1,28 @@
+<!-- ===================================================== -->
+<!-- DATOS DEL USUARIO -->
+<!-- ===================================================== -->
+
 <?php
 
-/* Datos del usuario */
 $datosUsuarioHeader = [];
 
-if (
-    isset($usuarioActual) &&
-    is_array($usuarioActual)
-) {
+if (isset($usuarioActual) && is_array($usuarioActual)) {
     $datosUsuarioHeader = $usuarioActual;
 
-} elseif (
-    isset($_SESSION['usuario']) &&
-    is_array($_SESSION['usuario'])
-) {
+} elseif (isset($_SESSION['usuario']) && is_array($_SESSION['usuario'])) {
     $datosUsuarioHeader = $_SESSION['usuario'];
 }
 
+?>
 
-/* Nombre visible */
-$nicknameHeader = trim(
-    (string) (
-        $datosUsuarioHeader['nickname'] ??
-        ''
-    )
-);
 
-$nombreHeader = trim(
-    (string) (
-        $datosUsuarioHeader['nombre'] ??
-        ''
-    )
-);
+<!-- Nombre que se muestra en la cabecera -->
+<?php
 
-$apellidoHeader = trim(
-    (string) (
-        $datosUsuarioHeader['apellido'] ??
-        ''
-    )
-);
-
-$nombreCompletoHeader = trim(
-    $nombreHeader . ' ' . $apellidoHeader
-);
+$nicknameHeader = trim((string) ($datosUsuarioHeader['nickname'] ?? ''));
+$nombreHeader = trim((string) ($datosUsuarioHeader['nombre'] ?? ''));
+$apellidoHeader = trim((string) ($datosUsuarioHeader['apellido'] ?? ''));
+$nombreCompletoHeader = trim($nombreHeader . ' ' . $apellidoHeader);
 
 if ($nicknameHeader !== '') {
     $nombreUsuarioHeader = $nicknameHeader;
@@ -53,53 +34,52 @@ if ($nicknameHeader !== '') {
     $nombreUsuarioHeader = 'Usuario';
 }
 
+?>
 
-/* Rol visible */
-$rolUsuarioHeader = trim(
-    (string) (
-        $datosUsuarioHeader['nombre_rol'] ??
-        $datosUsuarioHeader['rol'] ??
-        ''
-    )
-);
+
+<!-- Rol del usuario -->
+<?php
+
+$rolUsuarioHeader = trim((string) ($datosUsuarioHeader['nombre_rol'] ?? $datosUsuarioHeader['rol'] ?? ''));
 
 if ($rolUsuarioHeader === '') {
     $rolUsuarioHeader = 'SIN ROL';
 }
 
+?>
 
-/* Foto visible */
-$fotoUsuarioHeader = trim(
-    (string) (
-        $datosUsuarioHeader['foto_perfil'] ??
-        ''
-    )
-);
+
+<!-- Foto de perfil e imagen predeterminada -->
+<?php
+
+$fotoUsuarioHeader = trim((string) ($datosUsuarioHeader['foto_perfil'] ?? ''));
 
 if ($fotoUsuarioHeader === '') {
-    $fotoUsuarioHeader =
-        'Assets/img/LogoTR.png';
+    $fotoUsuarioHeader = 'Assets/img/LogoTR.png';
 }
 
+?>
 
-/* Escape de salida */
+
+<!-- Escapar los datos que se muestran en la cabecera -->
+<?php
+
 $escaparHeader = static function ($valor): string {
-
-    return htmlspecialchars(
-        (string) $valor,
-        ENT_QUOTES,
-        'UTF-8'
-    );
+    return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
 };
 
 ?>
 
 
-<!-- Usuario / sesión -->
+<!-- ===================================================== -->
+<!-- USUARIO Y ACCIONES DE SESIÓN -->
+<!-- ===================================================== -->
+
 <div class="session-actions">
 
     <div class="user-session dropdown">
 
+        <!-- Botón que abre el menú del usuario -->
         <button
             class="user-session-btn"
             type="button"
@@ -107,93 +87,62 @@ $escaparHeader = static function ($valor): string {
             aria-expanded="false"
         >
 
+            <!-- Foto de perfil -->
             <img
-                src="<?= $escaparHeader(
-                    $fotoUsuarioHeader
-                ); ?>"
+                src="<?= $escaparHeader($fotoUsuarioHeader); ?>"
                 alt="Foto de perfil"
                 class="user-session-photo"
             >
 
-
+            <!-- Nombre y rol del usuario -->
             <div class="user-session-info">
 
                 <span class="user-session-name">
-
-                    <?= $escaparHeader(
-                        $nombreUsuarioHeader
-                    ); ?>
-
+                    <?= $escaparHeader($nombreUsuarioHeader); ?>
                 </span>
 
                 <small class="user-session-role">
-
-                    <?= $escaparHeader(
-                        strtoupper(
-                            $rolUsuarioHeader
-                        )
-                    ); ?>
-
+                    <?= $escaparHeader(strtoupper($rolUsuarioHeader)); ?>
                 </small>
 
             </div>
 
-
-            <i
-                class="bi bi-chevron-down user-session-arrow"
-            ></i>
+            <i class="bi bi-chevron-down user-session-arrow"></i>
 
         </button>
 
 
-        <ul
-            class="dropdown-menu dropdown-menu-end user-session-menu"
-        >
+        <!-- Menú de perfil y cambio de contraseña -->
+        <ul class="dropdown-menu dropdown-menu-end user-session-menu">
 
+            <!-- Editar los datos del perfil -->
             <li>
-
                 <a
                     class="dropdown-item"
                     href="#"
                     data-bs-toggle="modal"
                     data-bs-target="#modalPerfil"
                 >
-
-                    <i
-                        class="bi bi-person-circle me-2"
-                    ></i>
-
+                    <i class="bi bi-person-circle me-2"></i>
                     Editar Perfil
-
                 </a>
-
             </li>
 
-
             <li>
-
                 <hr class="dropdown-divider">
-
             </li>
 
-
+            <!-- Abrir el formulario de cambio de contraseña -->
             <li>
-
                 <a
                     class="dropdown-item"
                     href="#"
                     data-bs-toggle="modal"
                     data-bs-target="#modalCambiarClave"
                 >
-
-                    <i
-                        class="bi bi-key me-2"
-                    ></i>
-
+                    <i class="bi bi-key me-2"></i>
                     Cambiar Contraseña
-
                 </a>
-
             </li>
 
         </ul>
@@ -201,15 +150,14 @@ $escaparHeader = static function ($valor): string {
     </div>
 
 
+    <!-- Cerrar sesión -->
     <a
         href="Index.php?url=logout"
         class="logout-header-btn"
         title="Cerrar sesión"
         aria-label="Cerrar sesión"
     >
-
         <i class="bi bi-box-arrow-right"></i>
-
     </a>
 
 </div>

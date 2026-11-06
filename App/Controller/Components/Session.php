@@ -2,140 +2,140 @@
 
 namespace App\Controller\Components;
 
+
+/* ===================================================== */
+/* GESTIÓN DE SESIONES */
+/* ===================================================== */
+
 final class Session
 {
-    /* Tiempo máximo permitido sin actividad.
-    1800 segundos equivalen a 30 minutos.*/
+    /* Tiempo máximo de inactividad: 1800 segundos equivalen a 30 minutos */
     private const TIEMPO_MAXIMO_INACTIVIDAD = 1800;
 
-    /*Impide crear objetos de esta clase.
-    Sus métodos se utilizarán de forma estática.*/
+
+    /* Impedir la creación de objetos; la clase utiliza métodos estáticos */
     private function __construct()
     {
     }
 
-    /*Inicia o recupera la sesión del sistema.*/
+
+    /* ================================================= */
+    /* INICIO DE LA SESIÓN */
+    /* ================================================= */
+
     public static function iniciar(): void
     {
-        /*Evita iniciar nuevamente una sesión que ya se encuentra activa.*/
-        if (
-            session_status()
-            === PHP_SESSION_ACTIVE
-        ) {
+        /* Evitar iniciar nuevamente una sesión que ya esté activa */
+        if (session_status() === PHP_SESSION_ACTIVE) {
             return;
         }
 
-        /*Comprueba si la aplicación está funcionando mediante HTTPS.
-        En localhost normalmente será false.*/
-        $conexionSegura =
-            !empty($_SERVER['HTTPS']) &&
-            $_SERVER['HTTPS'] !== 'off';
 
-        /*Configuraciones de seguridad se utilizan únicamente cookies 
-         para transportar el identificador.*/
-        ini_set(
-            'session.use_strict_mode',
-            '1'
-        );
+        /* Identificar si la conexión utiliza HTTPS */
+        $conexionSegura = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 
-        ini_set(
-            'session.use_only_cookies',
-            '1'
-        );
 
-        ini_set(
-            'session.gc_maxlifetime',
-            (string) self::TIEMPO_MAXIMO_INACTIVIDAD
-        );
+        /* Utilizar únicamente cookies y rechazar identificadores no inicializados */
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.gc_maxlifetime', (string) self::TIEMPO_MAXIMO_INACTIVIDAD);
 
-        /*Nombre identificador de la cookie utilizada exclusivamente por Templo Rosa.*/
-        session_name(
-            'TEMPLO_ROSA_SESSID'
-        );
 
-        /*Configuración de la cookie de sesión.*/
-        session_set_cookie_params(
-            [
-                /*Valor cero: la cookie desaparece cuando se cierra el navegador.*/
-                'lifetime' => 0,
+        /* Establecer el nombre de la cookie del sistema */
+        session_name('TEMPLO_ROSA_SESSID');
 
-                /*La sesión será accesible desde todo el proyecto.*/
-                'path' => '/',
 
-                'domain' => '',
+        /* Configurar los atributos de la cookie de sesión */
+        session_set_cookie_params([
+            /* Cookie de sesión, sin una duración persistente configurada */
+            'lifetime' => 0,
 
-                /*En producción con HTTPS la cookie viajará solamente mediante conexiones seguras. */
-                'secure' => $conexionSegura,
+            /* Permitir su uso en las rutas del sitio */
+            'path' => '/',
 
-                /*Impide acceder a la cookie mediante JavaScript.*/
-                'httponly' => true,
+            'domain' => '',
 
-                /*Reduce el envío de la cookie en solicitudes provenientes de otros sitios.*/
-                'samesite' => 'Lax'
-            ]
-        );
+            /* Restringir su envío a HTTPS cuando la conexión sea segura */
+            'secure' => $conexionSegura,
 
-        /*Crea una sesión nueva o recuperala sesión identificada por la cookie.*/
+            /* Impedir la lectura de la cookie mediante JavaScript */
+            'httponly' => true,
+
+            /* Limitar el envío de la cookie entre sitios */
+            'samesite' => 'Lax'
+        ]);
+
+
+        /* Crear la sesión o recuperar la identificada por la cookie */
         session_start();
     }
 
-    /*Comprueba si existe un usuario correctamente autenticado.*/
+
+    /* ================================================= */
+    /* COMPROBACIÓN DE AUTENTICACIÓN */
+    /* ================================================= */
+
     public static function estaAutenticada(): bool
     {
+        /* Comprobar los identificadores del usuario y del rol */
         return isset(
             $_SESSION['usuario']['id_usuario'],
             $_SESSION['usuario']['id_rol']
         );
     }
 
-    /*Registra al usuario autenticado dentro de la sesión. */
-    public static function registrarUsuario(
-        array $usuario
-    ): void {
 
-        /*Genera un nuevo identificador después de autenticar al usuario.*/
-        session_regenerate_id(true); 
+    /* ================================================= */
+    /* REGISTRO DEL USUARIO AUTENTICADO */
+    /* ================================================= */
+
+    public static function registrarUsuario(array $usuario): void
+    {
+        /* Renovar el identificador después de autenticar al usuario */
+        session_regenerate_id(true);
 
 
-        /*Guarda los datos permitidos, el controlador debe haber eliminado previamente la clave.*/
+        /* Guardar los datos recibidos; el controlador debe excluir la contraseña */
         $_SESSION['usuario'] = $usuario;
 
 
-        /*Guarda el momento de la última actividad realizada.*/
-        $_SESSION['ultima_actividad'] =
-            time();
+        /* Registrar el momento de la última actividad */
+        $_SESSION['ultima_actividad'] = time();
     }
 
-    /*Comprueba que la sesión no haya expirado por inactividad.*/
+
+    /* ================================================= */
+    /* CONTROL DE INACTIVIDAD */
+    /* ================================================= */
+
     public static function validarVigencia(): bool
     {
         if (!self::estaAutenticada()) {
             return false;
         }
 
-        $ultimaActividad = (int) (
-            $_SESSION['ultima_actividad']
-            ?? time()
-        );
+        $ultimaActividad = (int) ($_SESSION['ultima_actividad'] ?? time());
 
-        /*Si transcurrieron más de 30 minutos sin actividad, se cierra la sesión.*/
-        if (
-            time() - $ultimaActividad
-            > self::TIEMPO_MAXIMO_INACTIVIDAD
-        ) {
+
+        /* Cerrar la sesión cuando se supere el tiempo máximo de inactividad */
+        if (time() - $ultimaActividad > self::TIEMPO_MAXIMO_INACTIVIDAD) {
             self::cerrar();
 
             return false;
         }
 
-        /* Actualiza el momento de actividad en cada solicitud válida.*/
-        $_SESSION['ultima_actividad'] =
-            time();
+
+        /* Actualizar el momento de actividad en cada solicitud válida */
+        $_SESSION['ultima_actividad'] = time();
 
         return true;
     }
 
-    /*Devuelve los datos del usuario autenticado.*/
+
+    /* ================================================= */
+    /* DATOS DEL USUARIO AUTENTICADO */
+    /* ================================================= */
+
     public static function obtenerUsuario(): ?array
     {
         if (!self::estaAutenticada()) {
@@ -145,51 +145,35 @@ final class Session
         return $_SESSION['usuario'];
     }
 
-    /*Finaliza completamente la sesión.*/
+
+    /* ================================================= */
+    /* CIERRE DE LA SESIÓN */
+    /* ================================================= */
+
     public static function cerrar(): void
     {
-        /*Elimina las variables almacenadas.*/
+        /* Eliminar las variables almacenadas en la sesión */
         $_SESSION = [];
 
-        /*Elimina la cookie identificadora del navegador.*/
+
+        /* Expirar la cookie utilizando sus atributos originales */
         if (ini_get('session.use_cookies')) {
+            $parametros = session_get_cookie_params();
 
-            $parametros =
-                session_get_cookie_params();
-
-            setcookie(
-                session_name(),
-                '',
-                [
-                    'expires' =>
-                        time() - 42000,
-
-                    'path' =>
-                        $parametros['path'],
-
-                    'domain' =>
-                        $parametros['domain'],
-
-                    'secure' =>
-                        $parametros['secure'],
-
-                    'httponly' =>
-                        $parametros['httponly'],
-
-                    'samesite' =>
-                        $parametros['samesite']
-                        ?? 'Lax'
-                ]
-            );
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $parametros['path'],
+                'domain' => $parametros['domain'],
+                'secure' => $parametros['secure'],
+                'httponly' => $parametros['httponly'],
+                'samesite' => $parametros['samesite'] ?? 'Lax'
+            ]);
         }
 
-        /*Destruye los datos de la sesión almacenados en el servidor.*/
-        if (
-            session_status()
-            === PHP_SESSION_ACTIVE
-        ) {
+
+        /* Destruir los datos de la sesión almacenados en el servidor */
+        if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
         }
     }
 }
-
