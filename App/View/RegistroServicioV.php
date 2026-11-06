@@ -6,43 +6,58 @@ require_once __DIR__ . '/Layout/Header.php';
 
 ?>
 
+<!-- ===================================================== -->
+<!-- REGISTRO DE SERVICIOS -->
+<!-- ===================================================== -->
+
 <section class="module-card registro-servicio-module">
 
+    <!-- Título y acciones del módulo -->
     <div class="module-header">
-        <h2>
-    <span class="servicio-icono" aria-hidden="true">
-        <svg viewBox="0 0 64 64">
-            <rect x="24" y="6" width="16" height="20" rx="2"></rect>
-            <path d="M28 10V22"></path>
-            <path d="M32 10V22"></path>
-            <path d="M36 10V22"></path>
-            <path d="M24 28H29"></path>
-            <path d="M35 28H40"></path>
-            <path d="M29 28C29 30 28 31 26 31"></path>
-            <path d="M35 28C35 30 36 31 38 31"></path>
-            <path d="M18 31H46L44 50C43.7 53 41.4 55 38.4 55H25.6C22.6 55 20.3 53 20 50L18 31Z"></path>
-            <path d="M22 50C26 52 38 52 42 50"></path>
 
-            <path
-                class="bottle-heart"
-                d="M32 45
-                   C31 43.5 28 41.8 28 39.5
-                   C28 37.7 29.4 36.5 31 36.5
-                   C32 36.5 32.8 37 33.3 37.9
-                   C33.8 37 34.6 36.5 35.6 36.5
-                   C37.2 36.5 38.6 37.7 38.6 39.5
-                   C38.6 41.8 35.6 43.5 32 46Z"
-            ></path>
-        </svg>
-    </span>
-    Registro de Servicios
-</h2>
+        <h2>
+            <span class="servicio-icono" aria-hidden="true">
+                <svg viewBox="0 0 64 64">
+                    <rect x="24" y="6" width="16" height="20" rx="2"></rect>
+
+                    <path d="M28 10V22"></path>
+                    <path d="M32 10V22"></path>
+                    <path d="M36 10V22"></path>
+                    <path d="M24 28H29"></path>
+                    <path d="M35 28H40"></path>
+                    <path d="M29 28C29 30 28 31 26 31"></path>
+                    <path d="M35 28C35 30 36 31 38 31"></path>
+
+                    <path
+                        d="M18 31H46L44 50
+                           C43.7 53 41.4 55 38.4 55H25.6
+                           C22.6 55 20.3 53 20 50L18 31Z"
+                    ></path>
+
+                    <path d="M22 50C26 52 38 52 42 50"></path>
+
+                    <path
+                        class="bottle-heart"
+                        d="M32 45
+                           C31 43.5 28 41.8 28 39.5
+                           C28 37.7 29.4 36.5 31 36.5
+                           C32 36.5 32.8 37 33.3 37.9
+                           C33.8 37 34.6 36.5 35.6 36.5
+                           C37.2 36.5 38.6 37.7 38.6 39.5
+                           C38.6 41.8 35.6 43.5 32 46Z"
+                    ></path>
+                </svg>
+            </span>
+
+            Registro de Servicios
+        </h2>
+
         <div class="d-flex gap-2 flex-wrap">
 
             <button
-            class="btn-templo-secondary d-none"
-            type="button"
-            id="btnVolverAgendamientos"
+                class="btn-templo-secondary d-none"
+                type="button"
+                id="btnVolverAgendamientos"
             >
                 <i class="bi bi-arrow-left-circle"></i>
                 Volver a la lista
@@ -59,20 +74,23 @@ require_once __DIR__ . '/Layout/Header.php';
             </button>
 
             <button
-            class="btn-templo-primary"
-            type="button"
-            id="btnRefrescarRegistroServicio"
+                class="btn-templo-primary"
+                type="button"
+                id="btnRefrescarRegistroServicio"
             >
-
                 <i class="bi bi-arrow-clockwise"></i>
                 Refrescar
             </button>
 
         </div>
+
     </div>
 
 
-    <!-- Lista de agendamientos -->
+    <!-- ===================================================== -->
+    <!-- AGENDAMIENTOS PARA ATENDER -->
+    <!-- ===================================================== -->
+
     <div
         id="panelAgendamientosServicio"
         class="registro-panel"
@@ -81,6 +99,7 @@ require_once __DIR__ . '/Layout/Header.php';
         <div class="templo-table-wrapper registro-servicio-table-wrapper">
 
             <div class="registro-table-head">
+
                 <h5>
                     <i class="bi bi-calendar2-heart"></i>
                     Agendamientos para atender
@@ -89,6 +108,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <small>
                     Seleccione una clienta para registrar el servicio prestado.
                 </small>
+
             </div>
 
             <div class="table-responsive registro-servicio-table-responsive">
@@ -97,6 +117,8 @@ require_once __DIR__ . '/Layout/Header.php';
                     class="table templo-table table-hover align-middle"
                     id="tablaServiciosPendientes"
                 >
+
+                    <!-- Encabezados de la tabla -->
                     <thead>
                         <tr>
                             <th>Fecha</th>
@@ -109,16 +131,22 @@ require_once __DIR__ . '/Layout/Header.php';
                         </tr>
                     </thead>
 
+                    <!-- Agendamientos cargados por el JavaScript del módulo -->
                     <tbody id="tbodyServiciosPendientes"></tbody>
+
                 </table>
 
             </div>
+
         </div>
 
     </div>
 
 
-    <!-- Registro del servicio seleccionado -->
+    <!-- ===================================================== -->
+    <!-- REGISTRO DEL SERVICIO SELECCIONADO -->
+    <!-- ===================================================== -->
+
     <div
         id="panelRegistroServicio"
         class="registro-panel d-none"
@@ -131,8 +159,8 @@ require_once __DIR__ . '/Layout/Header.php';
             value=""
         >
 
+        <!-- Distribución de la ficha y las pestañas de atención -->
         <div class="registro-atencion-layout">
-
 
             <!-- Ficha de la clienta -->
             <div class="registro-card">
@@ -145,12 +173,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="registro-card-body text-center">
 
                     <div class="mb-4">
-                        <h5
-                            class="registro-ficha-nombre mb-0"
-                            id="fichaNombreClienta"
-                        >
-                            —
-                        </h5>
+                        <h5 class="registro-ficha-nombre mb-0" id="fichaNombreClienta">—</h5>
                     </div>
 
                     <div class="registro-ficha-list">
@@ -163,9 +186,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaAlergias">
-                                —
-                            </span>
+                            <span id="fichaAlergias">—</span>
                         </p>
 
                         <p>
@@ -176,63 +197,53 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaNotaTecnicaAnterior">
-                                —
-                            </span>
+                            <span id="fichaNotaTecnicaAnterior">—</span>
                         </p>
 
                         <p>
                             <strong>
-    <span
-        class="registro-icono-servicio"
-        aria-hidden="true"
-    >
-        <svg viewBox="0 0 64 64">
-            <rect
-                x="24"
-                y="6"
-                width="16"
-                height="20"
-                rx="2"
-            ></rect>
+                                <span
+                                    class="registro-icono-servicio"
+                                    aria-hidden="true"
+                                >
+                                    <svg viewBox="0 0 64 64">
+                                        <rect x="24" y="6" width="16" height="20" rx="2"></rect>
 
-            <path d="M28 10V22"></path>
-            <path d="M32 10V22"></path>
-            <path d="M36 10V22"></path>
+                                        <path d="M28 10V22"></path>
+                                        <path d="M32 10V22"></path>
+                                        <path d="M36 10V22"></path>
+                                        <path d="M24 28H29"></path>
+                                        <path d="M35 28H40"></path>
+                                        <path d="M29 28C29 30 28 31 26 31"></path>
+                                        <path d="M35 28C35 30 36 31 38 31"></path>
 
-            <path d="M24 28H29"></path>
-            <path d="M35 28H40"></path>
+                                        <path
+                                            d="M18 31H46L44 50
+                                               C43.7 53 41.4 55 38.4 55H25.6
+                                               C22.6 55 20.3 53 20 50L18 31Z"
+                                        ></path>
 
-            <path d="M29 28C29 30 28 31 26 31"></path>
-            <path d="M35 28C35 30 36 31 38 31"></path>
+                                        <path d="M22 50C26 52 38 52 42 50"></path>
 
-            <path
-                d="M18 31H46L44 50C43.7 53 41.4 55 38.4 55H25.6C22.6 55 20.3 53 20 50L18 31Z"
-            ></path>
+                                        <path
+                                            class="bottle-heart"
+                                            d="M32 45
+                                               C31 43.5 28 41.8 28 39.5
+                                               C28 37.7 29.4 36.5 31 36.5
+                                               C32 36.5 32.8 37 33.3 37.9
+                                               C33.8 37 34.6 36.5 35.6 36.5
+                                               C37.2 36.5 38.6 37.7 38.6 39.5
+                                               C38.6 41.8 35.6 43.5 32 46Z"
+                                        ></path>
+                                    </svg>
+                                </span>
 
-            <path d="M22 50C26 52 38 52 42 50"></path>
-
-            <path
-                class="bottle-heart"
-                d="M32 45
-                   C31 43.5 28 41.8 28 39.5
-                   C28 37.7 29.4 36.5 31 36.5
-                   C32 36.5 32.8 37 33.3 37.9
-                   C33.8 37 34.6 36.5 35.6 36.5
-                   C37.2 36.5 38.6 37.7 38.6 39.5
-                   C38.6 41.8 35.6 43.5 32 46Z"
-            ></path>
-        </svg>
-    </span>
-
-    Último servicio realizado:
-</strong>
+                                Último servicio realizado:
+                            </strong>
 
                             <br>
 
-                            <span id="fichaUltimoServicio">
-                                —
-                            </span>
+                            <span id="fichaUltimoServicio">—</span>
                         </p>
 
                         <p>
@@ -243,9 +254,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaUltimaAtencion">
-                                —
-                            </span>
+                            <span id="fichaUltimaAtencion">—</span>
                         </p>
 
                         <hr>
@@ -258,9 +267,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaServiciosAgendados">
-                                —
-                            </span>
+                            <span id="fichaServiciosAgendados">—</span>
                         </p>
 
                         <p>
@@ -271,9 +278,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaMontoAgendamiento">
-                                —
-                            </span>
+                            <span id="fichaMontoAgendamiento">—</span>
                         </p>
 
                         <p>
@@ -284,18 +289,17 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             <br>
 
-                            <span id="fichaEspecialistaAsignada">
-                                —
-                            </span>
+                            <span id="fichaEspecialistaAsignada">—</span>
                         </p>
 
                     </div>
 
                 </div>
+
             </div>
 
 
-            <!-- Pestañas -->
+            <!-- Pestañas del registro de servicio -->
             <div class="registro-card registro-tabs">
 
                 <div class="registro-card-header">
@@ -305,89 +309,97 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 <div class="registro-card-body">
 
+                    <!-- Navegación entre servicio, insumos e historial -->
                     <ul
                         class="nav nav-tabs"
                         id="registroServicioTabs"
                         role="tablist"
                     >
 
-                        <li
-                            class="nav-item"
-                            role="presentation"
-                        >
+                        <li class="nav-item" role="presentation">
+
                             <button
-    class="nav-link active"
-    id="servicio-realizado-tab"
-    data-bs-toggle="tab"
-    data-bs-target="#servicio-realizado"
-    type="button"
-    role="tab"
-    aria-controls="servicio-realizado"
-    aria-selected="true"
->
-    <span class="registro-icono-servicio" aria-hidden="true">
-        <svg viewBox="0 0 64 64">
-            <rect x="24" y="6" width="16" height="20" rx="2"></rect>
-            <path d="M28 10V22"></path>
-            <path d="M32 10V22"></path>
-            <path d="M36 10V22"></path>
-            <path d="M24 28H29"></path>
-            <path d="M35 28H40"></path>
-            <path d="M29 28C29 30 28 31 26 31"></path>
-            <path d="M35 28C35 30 36 31 38 31"></path>
-            <path d="M18 31H46L44 50C43.7 53 41.4 55 38.4 55H25.6C22.6 55 20.3 53 20 50L18 31Z"></path>
-            <path d="M22 50C26 52 38 52 42 50"></path>
+                                class="nav-link active"
+                                id="servicio-realizado-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#servicio-realizado"
+                                type="button"
+                                role="tab"
+                                aria-controls="servicio-realizado"
+                                aria-selected="true"
+                            >
+                                <span class="registro-icono-servicio" aria-hidden="true">
+                                    <svg viewBox="0 0 64 64">
+                                        <rect x="24" y="6" width="16" height="20" rx="2"></rect>
 
-            <path
-                class="bottle-heart"
-                d="M32 45
-                   C31 43.5 28 41.8 28 39.5
-                   C28 37.7 29.4 36.5 31 36.5
-                   C32 36.5 32.8 37 33.3 37.9
-                   C33.8 37 34.6 36.5 35.6 36.5
-                   C37.2 36.5 38.6 37.7 38.6 39.5
-                   C38.6 41.8 35.6 43.5 32 46Z"
-            ></path>
-        </svg>
-    </span>
+                                        <path d="M28 10V22"></path>
+                                        <path d="M32 10V22"></path>
+                                        <path d="M36 10V22"></path>
+                                        <path d="M24 28H29"></path>
+                                        <path d="M35 28H40"></path>
+                                        <path d="M29 28C29 30 28 31 26 31"></path>
+                                        <path d="M35 28C35 30 36 31 38 31"></path>
 
-    Servicio realizado
-</button>
+                                        <path
+                                            d="M18 31H46L44 50
+                                               C43.7 53 41.4 55 38.4 55H25.6
+                                               C22.6 55 20.3 53 20 50L18 31Z"
+                                        ></path>
+
+                                        <path d="M22 50C26 52 38 52 42 50"></path>
+
+                                        <path
+                                            class="bottle-heart"
+                                            d="M32 45
+                                               C31 43.5 28 41.8 28 39.5
+                                               C28 37.7 29.4 36.5 31 36.5
+                                               C32 36.5 32.8 37 33.3 37.9
+                                               C33.8 37 34.6 36.5 35.6 36.5
+                                               C37.2 36.5 38.6 37.7 38.6 39.5
+                                               C38.6 41.8 35.6 43.5 32 46Z"
+                                        ></path>
+                                    </svg>
+                                </span>
+
+                                Servicio realizado
+                            </button>
+
                         </li>
 
-                        <li
-                            class="nav-item"
-                            role="presentation"
-                        >
-                            <button class="nav-link" 
-                            id="insumos-utilizados-tab" 
-                            data-bs-toggle="tab" 
-                            data-bs-target="#insumos-utilizados" 
-                            type="button" 
-                            role="tab" 
-                            aria-controls="insumos-utilizados" 
-                            aria-selected="false" > 
-                            <i class="bi bi-box2-heart-fill" 
-                            aria-hidden="true">
-                        </i> Insumos utilizados 
-                    </button>
+                        <li class="nav-item" role="presentation">
+
+                            <button
+                                class="nav-link"
+                                id="insumos-utilizados-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#insumos-utilizados"
+                                type="button"
+                                role="tab"
+                                aria-controls="insumos-utilizados"
+                                aria-selected="false"
+                            >
+                                <i class="bi bi-box2-heart-fill" aria-hidden="true"></i>
+                                Insumos utilizados
+                            </button>
+
                         </li>
 
-                        <li
-                            class="nav-item"
-                            role="presentation"
-                        >
-                            <button class="nav-link" 
-                            id="historial-servicios-tab" 
-                            data-bs-toggle="tab" 
-                            data-bs-target="#historial-servicios" 
-                            type="button" 
-                            role="tab" 
-                            aria-controls="historial-servicios" 
-                            aria-selected="false" > 
-                            <i class="bi bi-postcard-heart" 
-                            aria-hidden="true">
-                        </i> Historial </button>
+                        <li class="nav-item" role="presentation">
+
+                            <button
+                                class="nav-link"
+                                id="historial-servicios-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#historial-servicios"
+                                type="button"
+                                role="tab"
+                                aria-controls="historial-servicios"
+                                aria-selected="false"
+                            >
+                                <i class="bi bi-postcard-heart" aria-hidden="true"></i>
+                                Historial
+                            </button>
+
                         </li>
 
                     </ul>
@@ -398,8 +410,10 @@ require_once __DIR__ . '/Layout/Header.php';
                         id="registroServicioTabsContent"
                     >
 
+                        <!-- ===================================================== -->
+                        <!-- SERVICIO REALIZADO -->
+                        <!-- ===================================================== -->
 
-                        <!-- Servicio realizado -->
                         <div
                             class="tab-pane fade show active"
                             id="servicio-realizado"
@@ -414,6 +428,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 enctype="multipart/form-data"
                             >
 
+                                <!-- Acción enviada al controlador -->
                                 <input
                                     type="hidden"
                                     name="accion"
@@ -427,16 +442,15 @@ require_once __DIR__ . '/Layout/Header.php';
                                     value=""
                                 >
 
+                                <!-- Datos de la atención -->
                                 <div class="row">
 
                                     <div class="col-md-6 mb-3">
 
-                                        <label
-                                            for="servicioRealizado"
-                                            class="form-label"
-                                        >
+                                        <label for="servicioRealizado" class="form-label">
                                             Servicio realizado
-                                         <span class="required-mark" aria-hidden="true">*</span></label>
+                                            <span class="required-mark" aria-hidden="true">*</span>
+                                        </label>
 
                                         <select
                                             class="form-select templo-input"
@@ -444,9 +458,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             name="id_detalle_agendamiento"
                                             required
                                         >
-                                            <option value="">
-                                                Seleccionar servicio agendado...
-                                            </option>
+                                            <option value="">Seleccionar servicio agendado...</option>
                                         </select>
 
                                         <small class="templo-help-text">
@@ -455,15 +467,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-6 mb-3">
 
-                                        <label
-                                            for="totalServicio"
-                                            class="form-label"
-                                        >
-                                            Total a cobrar
-                                        </label>
+                                        <label for="totalServicio" class="form-label">Total a cobrar</label>
 
                                         <input
                                             type="number"
@@ -477,15 +483,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-6 mb-3">
 
-                                        <label
-                                            for="fechaServicio"
-                                            class="form-label"
-                                        >
-                                            Fecha de atención
-                                        </label>
+                                        <label for="fechaServicio" class="form-label">Fecha de atención</label>
 
                                         <input
                                             type="date"
@@ -496,15 +496,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-12 mb-3">
 
-                                        <label
-                                            for="notaTecnicaServicio"
-                                            class="form-label"
-                                        >
-                                            Nota técnica
-                                        </label>
+                                        <label for="notaTecnicaServicio" class="form-label">Nota técnica</label>
 
                                         <textarea
                                             class="form-control templo-input"
@@ -516,13 +510,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-6 mb-3">
 
-                                        <label
-                                            for="fotoResultadoServicio"
-                                            class="form-label"
-                                        >
+                                        <label for="fotoResultadoServicio" class="form-label">
                                             Fotografía del resultado
                                             <i class="bi bi-camera2"></i>
                                         </label>
@@ -535,15 +525,13 @@ require_once __DIR__ . '/Layout/Header.php';
                                             accept="image/*"
                                         >
 
+                                        <!-- Vista previa de la fotografía seleccionada -->
                                         <div
                                             id="previewResultadoVacio"
                                             class="registro-resultado-preview registro-preview-vacio"
                                         >
                                             <i class="bi bi-image"></i>
-
-                                            <span>
-                                                Sin fotografía seleccionada
-                                            </span>
+                                            <span>Sin fotografía seleccionada</span>
                                         </div>
 
                                         <img
@@ -559,9 +547,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-6 mb-3">
 
+                                        <!-- Selección de fotografías para el catálogo -->
                                         <div class="form-check mt-md-4">
 
                                             <input
@@ -590,7 +578,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                 </div>
 
-
+                                <!-- Botones del registro de servicio -->
                                 <div class="d-flex justify-content-end gap-2 mt-3 flex-wrap">
 
                                     <button
@@ -618,7 +606,10 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
 
-                        <!-- Insumos utilizados -->
+                        <!-- ===================================================== -->
+                        <!-- INSUMOS UTILIZADOS -->
+                        <!-- ===================================================== -->
+
                         <div
                             class="tab-pane fade"
                             id="insumos-utilizados"
@@ -632,6 +623,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 method="POST"
                             >
 
+                                <!-- Acción enviada al controlador -->
                                 <input
                                     type="hidden"
                                     name="accion"
@@ -645,6 +637,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                     value=""
                                 >
 
+                                <!-- Indicaciones para registrar el consumo -->
                                 <p
                                     class="mb-4"
                                     style="color: rgba(122, 101, 91, 0.78); font-weight: 600;"
@@ -658,39 +651,26 @@ require_once __DIR__ . '/Layout/Header.php';
                                     Al guardar, las cantidades serán descontadas del inventario.
                                 </p>
 
-
+                                <!-- Selección del insumo y cantidad utilizada -->
                                 <div class="row">
 
                                     <div class="col-md-5 mb-3">
 
-                                        <label
-                                            for="insumoUtilizado"
-                                            class="form-label"
-                                        >
-                                            Insumo utilizado
-                                        </label>
+                                        <label for="insumoUtilizado" class="form-label">Insumo utilizado</label>
 
                                         <select
                                             class="form-select templo-input"
                                             id="insumoUtilizado"
                                             name="id_insumo"
                                         >
-                                            <option value="">
-                                                Seleccionar insumo...
-                                            </option>
+                                            <option value="">Seleccionar insumo...</option>
                                         </select>
 
                                     </div>
 
-
                                     <div class="col-md-2 mb-3">
 
-                                        <label
-                                            for="cantidadInsumo"
-                                            class="form-label"
-                                        >
-                                            Cantidad
-                                        </label>
+                                        <label for="cantidadInsumo" class="form-label">Cantidad</label>
 
                                         <input
                                             type="number"
@@ -704,15 +684,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-3 mb-3">
 
-                                        <label
-                                            for="presentacionInsumo"
-                                            class="form-label"
-                                        >
-                                            Presentación
-                                        </label>
+                                        <label for="presentacionInsumo" class="form-label">Presentación</label>
 
                                         <input
                                             type="text"
@@ -724,15 +698,9 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                     </div>
 
-
                                     <div class="col-md-2 mb-3">
 
-                                        <label
-                                            for="stockDisponibleInsumo"
-                                            class="form-label"
-                                        >
-                                            Disponible
-                                        </label>
+                                        <label for="stockDisponibleInsumo" class="form-label">Disponible</label>
 
                                         <input
                                             type="text"
@@ -743,7 +711,6 @@ require_once __DIR__ . '/Layout/Header.php';
                                         >
 
                                     </div>
-
 
                                     <div class="col-12 mb-3 d-flex justify-content-end">
 
@@ -760,39 +727,38 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                 </div>
 
-
+                                <!-- Tabla de insumos seleccionados -->
                                 <div class="table-responsive">
 
                                     <table
                                         class="table templo-table table-hover align-middle"
                                         id="tablaInsumosSeleccionados"
                                     >
+
+                                        <!-- Encabezados de la tabla -->
                                         <thead>
                                             <tr>
                                                 <th>Insumo</th>
                                                 <th>Cantidad</th>
                                                 <th>Presentación</th>
-                                                <th class="text-center">
-                                                    Acción
-                                                </th>
+                                                <th class="text-center">Acción</th>
                                             </tr>
                                         </thead>
 
+                                        <!-- Insumos agregados durante la atención -->
                                         <tbody id="tbodyInsumosSeleccionados">
                                             <tr>
-                                                <td
-                                                    colspan="4"
-                                                    class="text-center"
-                                                >
+                                                <td colspan="4" class="text-center">
                                                     No hay insumos agregados.
                                                 </td>
                                             </tr>
                                         </tbody>
+
                                     </table>
 
                                 </div>
 
-
+                                <!-- Guardar los insumos utilizados -->
                                 <div class="d-flex justify-content-end mt-3">
 
                                     <button
@@ -811,7 +777,10 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
 
-                        <!-- Historial -->
+                        <!-- ===================================================== -->
+                        <!-- HISTORIAL DE SERVICIOS -->
+                        <!-- ===================================================== -->
+
                         <div
                             class="tab-pane fade"
                             id="historial-servicios"
@@ -834,43 +803,46 @@ require_once __DIR__ . '/Layout/Header.php';
                                     Historial de servicios
                                 </h5>
 
-                               <div class="registro-historial-controles">
+                                <!-- Búsqueda e impresión del historial -->
+                                <div class="registro-historial-controles">
 
-    <label
-        class="registro-historial-busqueda"
-        for="buscarHistorialServicios"
-    >
-        <span>Buscar:</span>
+                                    <label
+                                        class="registro-historial-busqueda"
+                                        for="buscarHistorialServicios"
+                                    >
+                                        <span>Buscar:</span>
 
-        <input
-            type="search"
-            id="buscarHistorialServicios"
-            class="buscador-historial"
-            aria-label="Buscar en el historial de servicios"
-            autocomplete="off"
-        >
-    </label>
+                                        <input
+                                            type="search"
+                                            id="buscarHistorialServicios"
+                                            class="buscador-historial"
+                                            aria-label="Buscar en el historial de servicios"
+                                            autocomplete="off"
+                                        >
+                                    </label>
 
-    <button
-        type="button"
-        class="btn-templo-secondary"
-        id="btnImprimirHistorial"
-    >
-        <i class="bi bi-printer"></i>
-        Imprimir historial
-    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-templo-secondary"
+                                        id="btnImprimirHistorial"
+                                    >
+                                        <i class="bi bi-printer"></i>
+                                        Imprimir historial
+                                    </button>
 
-</div>
+                                </div>
 
                             </div>
 
-
+                            <!-- Tabla del historial de servicios -->
                             <div class="table-responsive">
 
                                 <table
                                     class="table templo-table table-hover align-middle"
                                     id="tablaHistorialServicios"
                                 >
+
+                                    <!-- Encabezados de la tabla -->
                                     <thead>
                                         <tr>
                                             <th>Fecha</th>
@@ -878,27 +850,24 @@ require_once __DIR__ . '/Layout/Header.php';
                                             <th>Servicio realizado</th>
                                             <th>Total</th>
                                             <th>Nota técnica</th>
-                                            <th class="text-center">
-                                                Acción
-                                            </th>
+                                            <th class="text-center">Acción</th>
                                         </tr>
                                     </thead>
 
+                                    <!-- Servicios registrados en el historial -->
                                     <tbody id="tbodyHistorialServicios">
                                         <tr>
-                                            <td
-                                                colspan="6"
-                                                class="text-center"
-                                            >
+                                            <td colspan="6" class="text-center">
                                                 No hay servicios registrados.
                                             </td>
                                         </tr>
                                     </tbody>
+
                                 </table>
 
                             </div>
 
-
+                            <!-- Finalizar el registro de la atención -->
                             <div class="d-flex justify-content-end mt-3">
 
                                 <button
@@ -917,6 +886,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     </div>
 
                 </div>
+
             </div>
 
         </div>
@@ -926,7 +896,10 @@ require_once __DIR__ . '/Layout/Header.php';
 </section>
 
 
-<!-- Catálogo de trabajos -->
+<!-- ===================================================== -->
+<!-- CATÁLOGO DE TRABAJOS DESTACADOS -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalCatalogoTrabajos"
@@ -938,12 +911,10 @@ require_once __DIR__ . '/Layout/Header.php';
 
         <div class="modal-content templo-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
 
-                <h5
-                    class="modal-title"
-                    id="modalCatalogoTrabajosLabel"
-                >
+                <h5 class="modal-title" id="modalCatalogoTrabajosLabel">
                     <i class="bi bi-images"></i>
                     Catálogo de Trabajos Destacados
                 </h5>
@@ -957,17 +928,14 @@ require_once __DIR__ . '/Layout/Header.php';
 
             </div>
 
-
             <div class="modal-body">
 
+                <!-- Filtro de fotografías por servicio -->
                 <div class="row align-items-end mb-4">
 
                     <div class="col-md-6 mb-3 mb-md-0">
 
-                        <label
-                            for="filtroCatalogoServicio"
-                            class="form-label"
-                        >
+                        <label for="filtroCatalogoServicio" class="form-label">
                             Filtrar por servicio
                         </label>
 
@@ -975,33 +943,15 @@ require_once __DIR__ . '/Layout/Header.php';
                             class="form-select templo-input"
                             id="filtroCatalogoServicio"
                         >
-                            <option value="">
-                                Todos los trabajos
-                            </option>
-
-                            <option value="Soft Gel">
-                                Soft Gel
-                            </option>
-
-                            <option value="Polygel">
-                                Polygel
-                            </option>
-
-                            <option value="Capping">
-                                Capping
-                            </option>
-
-                            <option value="Rusa">
-                                Rusa
-                            </option>
-
-                            <option value="Pedicura">
-                                Pedicura
-                            </option>
+                            <option value="">Todos los trabajos</option>
+                            <option value="Soft Gel">Soft Gel</option>
+                            <option value="Polygel">Polygel</option>
+                            <option value="Capping">Capping</option>
+                            <option value="Rusa">Rusa</option>
+                            <option value="Pedicura">Pedicura</option>
                         </select>
 
                     </div>
-
 
                     <div class="col-md-6 text-md-end">
 
@@ -1013,7 +963,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
-
+                <!-- Galería de trabajos destacados -->
                 <div
                     class="row g-4"
                     id="catalogoTrabajosGrid"
@@ -1034,7 +984,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             </div>
 
-
+            <!-- Botones del modal -->
             <div class="modal-footer">
 
                 <button
@@ -1049,9 +999,14 @@ require_once __DIR__ . '/Layout/Header.php';
             </div>
 
         </div>
+
     </div>
 </div>
 
+
+<!-- ===================================================== -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
 
 <?php
 
