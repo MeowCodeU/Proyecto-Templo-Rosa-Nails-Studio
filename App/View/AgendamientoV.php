@@ -1,78 +1,105 @@
 <?php
+
 $tituloPagina = 'Gestión de Agendamientos';
 
 $usarFullCalendar = true;
 
 require_once __DIR__ . '/Layout/Header.php';
+
 ?>
+
+<!-- ===================================================== -->
+<!-- GESTIÓN DE AGENDAMIENTO -->
+<!-- ===================================================== -->
 
 <section class="module-card agendamiento-module">
 
-<div class="module-header">
-    <h2>
-        <i class="bi bi-calendar-heart"></i>
-        Gestión de Agendamiento
-    </h2>
+    <!-- Título y acciones del módulo -->
+    <div class="module-header">
 
-    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-        <button
-            type="button"
-            class="btn-templo-secondary"
-            id="btnBuscarAgendamientos"
-        >
-            <i class="bi bi-search-heart-fill"></i>
-            Buscar Agendamientos
-        </button>
+        <h2>
+            <i class="bi bi-calendar-heart"></i>
+            Gestión de Agendamiento
+        </h2>
 
-        <button
-            type="button"
-            class="btn-templo-bloqueo"
-            data-bs-toggle="modal"
-            data-bs-target="#modalNuevoBloqueoHorario"
-        >
-<svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="templo-lock-heart"
-                aria-hidden="true"
+        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+
+            <button
+                type="button"
+                class="btn-templo-secondary"
+                id="btnBuscarAgendamientos"
             >
-                <path
-                    d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                ></path>
-                <rect
-                    x="5"
-                    y="9.5"
-                    width="14"
-                    height="11"
-                    rx="2.5"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                ></rect>
-                <path
-                    d="M12 17.45s-3.1-1.72-3.1-3.86c0-1.04.78-1.82 1.79-1.82.58 0 1.05.28 1.31.69.26-.41.73-.69 1.31-.69 1.01 0 1.79.78 1.79 1.82 0 2.14-3.1 3.86-3.1 3.86Z"
-                    fill="currentColor"
-                ></path>
-            </svg>
-            Bloquear Horario
-        </button>
+                <i class="bi bi-search-heart-fill"></i>
+                Buscar Agendamientos
+            </button>
 
-        <button
-            type="button"
-            class="btn-templo-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#modalNuevoAgendamiento"
-        >
-            <i class="bi bi-plus-circle"></i>
-            Nuevo Agendamiento
-        </button>
+            <button
+                type="button"
+                class="btn-templo-bloqueo"
+                data-bs-toggle="modal"
+                data-bs-target="#modalNuevoBloqueoHorario"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    class="templo-lock-heart"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    ></path>
+
+                    <rect
+                        x="5"
+                        y="9.5"
+                        width="14"
+                        height="11"
+                        rx="2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    ></rect>
+
+                    <path
+                        d="M12 17.45
+                           s-3.1 -1.72 -3.1 -3.86
+                           c0 -1.04 .78 -1.82 1.79 -1.82
+                           .58 0 1.05 .28 1.31 .69
+                           .26 -.41 .73 -.69 1.31 -.69
+                           1.01 0 1.79 .78 1.79 1.82
+                           0 2.14 -3.1 3.86 -3.1 3.86Z"
+                        fill="currentColor"
+                    ></path>
+                </svg>
+
+                Bloquear Horario
+            </button>
+
+            <button
+                type="button"
+                class="btn-templo-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#modalNuevoAgendamiento"
+            >
+                <i class="bi bi-plus-circle"></i>
+                Nuevo Agendamiento
+            </button>
+
+        </div>
+
     </div>
-</div>
 
+    <!-- Mensajes de actualización del calendario -->
+    <div
+        id="mensajeCalendarioAgendamiento"
+        class="alert d-none mb-0"
+        role="alert"
+        aria-live="polite"
+    ></div>
 
     <div class="agendamiento-layout">
 
@@ -100,6 +127,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             <div class="agendamiento-card-body">
 
+                <!-- Búsqueda de agendamientos -->
                 <div
                     id="contenedorBusquedaAgendamientos"
                     class="agendamiento-search d-none"
@@ -124,15 +152,19 @@ require_once __DIR__ . '/Layout/Header.php';
                     </div>
                 </div>
 
+                <!-- Información del día y última actualización -->
                 <div class="agendamiento-info-row">
+
                     <small>
                         <i class="bi bi-info-circle me-1"></i>
                         Agendamientos correspondientes al día de hoy
                     </small>
 
                     <small id="ultima-actualizacion"></small>
+
                 </div>
 
+                <!-- Lista cargada por el JavaScript del módulo -->
                 <ul
                     class="list-group list-group-flush"
                     id="agendamientos-list"
@@ -152,7 +184,10 @@ require_once __DIR__ . '/Layout/Header.php';
 </section>
 
 
-<!-- Modal Nuevo Agendamiento -->
+<!-- ===================================================== -->
+<!-- MODAL NUEVO AGENDAMIENTO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalNuevoAgendamiento"
@@ -161,6 +196,7 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
+
         <div class="modal-content templo-modal">
 
             <form
@@ -168,17 +204,14 @@ require_once __DIR__ . '/Layout/Header.php';
                 action="Index.php?url=agendamiento"
                 method="POST"
             >
-                <input
-                    type="hidden"
-                    name="accion"
-                    value="registrar"
-                >
 
+                <!-- Acción enviada al controlador -->
+                <input type="hidden" name="accion" value="registrar">
+
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
-                    <h5
-                        class="modal-title"
-                        id="modalNuevoAgendamientoLabel"
-                    >
+
+                    <h5 class="modal-title" id="modalNuevoAgendamientoLabel">
                         <i class="bi bi-calendar-plus"></i>
                         Nuevo Agendamiento
                     </h5>
@@ -189,57 +222,47 @@ require_once __DIR__ . '/Layout/Header.php';
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
+
                 </div>
 
                 <div class="modal-body">
+
+                    <!-- Campos del formulario -->
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevoCliente"
-                                class="form-label"
-                            >
-                                Cliente
-                            </label>
+
+                            <label for="nuevoCliente" class="form-label">Cliente</label>
 
                             <select
                                 class="form-select templo-input"
                                 id="nuevoCliente"
                                 name="id_cliente"
                             >
-                                <option value="">
-                                    Seleccionar cliente...
-                                </option>
+                                <option value="">Seleccionar cliente...</option>
 
                                 <?php if (!empty($clientes)): ?>
                                     <?php foreach ($clientes as $cliente): ?>
-                                        <option
-                                            value="<?= (int) $cliente['id_cliente']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $cliente['cedula']
-                                                . ' - '
-                                                . $cliente['nombre']
-                                                . ' '
-                                                . $cliente['apellido']
-                                            ); ?>
+
+                                        <option value="<?= (int) $cliente['id_cliente']; ?>">
+                                            <?= htmlspecialchars($cliente['cedula'] . ' - ' . $cliente['nombre'] . ' ' . $cliente['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione un cliente.
-                            </div>
+                            <div class="invalid-feedback">Seleccione un cliente.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevoUsuarioAsignado"
-                                class="form-label"
-                            >
+
+                            <label for="nuevoUsuarioAsignado" class="form-label">
                                 Especialista asignada
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -247,37 +270,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_usuario_asignado"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar especialista...
-                                </option>
+                                <option value="">Seleccionar especialista...</option>
 
                                 <?php if (!empty($usuarios)): ?>
                                     <?php foreach ($usuarios as $usuario): ?>
-                                        <option
-                                            value="<?= (int) $usuario['id_usuario']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $usuario['nombre']
-                                                . ' '
-                                                . $usuario['apellido']
-                                            ); ?>
+
+                                        <option value="<?= (int) $usuario['id_usuario']; ?>">
+                                            <?= htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione la especialista asignada.
-                            </div>
+                            <div class="invalid-feedback">Seleccione la especialista asignada.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevoTipoAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevoTipoAgendamiento" class="form-label">
                                 Tipo de agendamiento
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -285,38 +301,33 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_tipo_agendamiento"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar tipo...
-                                </option>
+                                <option value="">Seleccionar tipo...</option>
 
                                 <?php if (!empty($tiposAgendamientos)): ?>
                                     <?php foreach ($tiposAgendamientos as $tipo): ?>
+
                                         <option
                                             value="<?= (int) $tipo['id_tipo_agendamiento']; ?>"
-                                            data-nombre="<?= htmlspecialchars(
-                                                $tipo['nombre_tipo_agendamiento']
-                                            ); ?>"
+                                            data-nombre="<?= htmlspecialchars($tipo['nombre_tipo_agendamiento']); ?>"
                                         >
-                                            <?= htmlspecialchars(
-                                                $tipo['nombre_tipo_agendamiento']
-                                            ); ?>
+                                            <?= htmlspecialchars($tipo['nombre_tipo_agendamiento']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione el tipo de agendamiento.
-                            </div>
+                            <div class="invalid-feedback">Seleccione el tipo de agendamiento.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevoEstadoAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevoEstadoAgendamiento" class="form-label">
                                 Estado
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -324,35 +335,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_estado_agendamiento"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar estado...
-                                </option>
+                                <option value="">Seleccionar estado...</option>
 
                                 <?php if (!empty($estadosAgendamientos)): ?>
                                     <?php foreach ($estadosAgendamientos as $estado): ?>
-                                        <option
-                                            value="<?= (int) $estado['id_estado_agendamiento']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $estado['nombre_estado']
-                                            ); ?>
+
+                                        <option value="<?= (int) $estado['id_estado_agendamiento']; ?>">
+                                            <?= htmlspecialchars($estado['nombre_estado']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione el estado.
-                            </div>
+                            <div class="invalid-feedback">Seleccione el estado.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevaFechaAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevaFechaAgendamiento" class="form-label">
                                 Fecha
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <input
                                 type="date"
@@ -362,18 +368,16 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una fecha válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una fecha válida.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevaHoraAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevaHoraAgendamiento" class="form-label">
                                 Hora
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <input
                                 type="time"
@@ -383,16 +387,14 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una hora válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una hora válida.</div>
+
                         </div>
 
+                        <!-- Selección de servicios del nuevo agendamiento -->
                         <div class="col-md-12">
-                            <label
-                                class="form-label"
-                                id="nuevosServiciosAgendamientoLabel"
-                            >
+
+                            <label class="form-label" id="nuevosServiciosAgendamientoLabel">
                                 Servicios
                             </label>
 
@@ -408,22 +410,20 @@ require_once __DIR__ . '/Layout/Header.php';
                                     aria-expanded="false"
                                     aria-controls="nuevoServiciosPanel"
                                 >
-                                    <span id="nuevoServiciosTexto">
-                                        Seleccionar servicios...
-                                    </span>
-
-                                    <i
-                                        class="bi bi-chevron-down"
-                                        aria-hidden="true"
-                                    ></i>
+                                    <span id="nuevoServiciosTexto">Seleccionar servicios...</span>
+                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
                                 </button>
 
+                                <!-- Panel de selección múltiple de servicios -->
                                 <div
                                     class="agendamiento-servicios-panel"
                                     id="nuevoServiciosPanel"
                                     hidden
                                 >
+
+                                    <!-- Búsqueda dentro de los servicios disponibles -->
                                     <div class="agendamiento-servicios-buscador">
+
                                         <i class="bi bi-search"></i>
 
                                         <input
@@ -433,43 +433,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                             placeholder="Buscar servicio..."
                                             autocomplete="off"
                                         >
+
                                     </div>
 
+                                    <!-- Lista de servicios activos -->
                                     <div
                                         class="agendamiento-servicios-lista"
                                         id="nuevoServiciosLista"
                                     >
-                                        <?php if (!empty($servicios)): ?>
 
+                                        <?php if (!empty($servicios)): ?>
                                             <?php foreach ($servicios as $servicio): ?>
 
                                                 <?php
 
-                                                $idServicio = (int) (
-                                                    $servicio['id_servicio'] ?? 0
-                                                );
-
-                                                $nombreServicio = (string) (
-                                                    $servicio['nombre_servicio'] ?? ''
-                                                );
-
-                                                $precioServicio = (float) (
-                                                    $servicio['precio'] ?? 0
-                                                );
-
-                                                $duracionServicio = (int) (
-                                                    $servicio['duracion_estimada'] ?? 0
-                                                );
+                                                $idServicio = (int) ($servicio['id_servicio'] ?? 0);
+                                                $nombreServicio = (string) ($servicio['nombre_servicio'] ?? '');
+                                                $precioServicio = (float) ($servicio['precio'] ?? 0);
+                                                $duracionServicio = (int) ($servicio['duracion_estimada'] ?? 0);
 
                                                 ?>
 
                                                 <label
                                                     class="agendamiento-servicio-opcion"
-                                                    data-servicio-nombre="<?= htmlspecialchars(
-                                                        $nombreServicio,
-                                                        ENT_QUOTES,
-                                                        'UTF-8'
-                                                    ); ?>"
+                                                    data-servicio-nombre="<?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>"
                                                     for="nuevoServicio<?= $idServicio; ?>"
                                                 >
                                                     <input
@@ -478,46 +465,29 @@ require_once __DIR__ . '/Layout/Header.php';
                                                         id="nuevoServicio<?= $idServicio; ?>"
                                                         name="servicios[]"
                                                         value="<?= $idServicio; ?>"
-                                                        data-nombre="<?= htmlspecialchars(
-                                                            $nombreServicio,
-                                                            ENT_QUOTES,
-                                                            'UTF-8'
-                                                        ); ?>"
-                                                        data-precio="<?= number_format(
-                                                            $precioServicio,
-                                                            2,
-                                                            '.',
-                                                            ''
-                                                        ); ?>"
+                                                        data-nombre="<?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-precio="<?= number_format($precioServicio, 2, '.', ''); ?>"
                                                         data-duracion="<?= $duracionServicio; ?>"
                                                     >
 
                                                     <span class="agendamiento-servicio-contenido">
+
                                                         <span class="agendamiento-servicio-nombre">
-                                                            <?= htmlspecialchars(
-                                                                $nombreServicio,
-                                                                ENT_QUOTES,
-                                                                'UTF-8'
-                                                            ); ?>
+                                                            <?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>
                                                         </span>
 
                                                         <span class="agendamiento-servicio-duracion">
                                                             · <?= $duracionServicio; ?> min
                                                         </span>
+
                                                     </span>
 
                                                     <span class="agendamiento-servicio-precio">
-                                                        <?= number_format(
-                                                            $precioServicio,
-                                                            2,
-                                                            ',',
-                                                            '.'
-                                                        ); ?>
+                                                        <?= number_format($precioServicio, 2, ',', '.'); ?>
                                                     </span>
                                                 </label>
 
                                             <?php endforeach; ?>
-
                                         <?php else: ?>
 
                                             <p class="agendamiento-servicios-sin-resultados">
@@ -525,6 +495,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             </p>
 
                                         <?php endif; ?>
+
                                     </div>
 
                                     <p
@@ -533,13 +504,16 @@ require_once __DIR__ . '/Layout/Header.php';
                                     >
                                         No se encontraron servicios.
                                     </p>
+
                                 </div>
+
                             </div>
 
                             <small class="templo-help-text">
                                 Puede seleccionar uno o varios servicios.
                             </small>
 
+                            <!-- Resumen de los servicios seleccionados -->
                             <div
                                 class="agendamiento-servicios-resumen"
                                 id="nuevoServiciosResumen"
@@ -549,19 +523,15 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </span>
                             </div>
 
-                            <div
-                                class="invalid-feedback"
-                                id="nuevoServiciosFeedback"
-                            >
+                            <div class="invalid-feedback" id="nuevoServiciosFeedback">
                                 Seleccione al menos un servicio.
                             </div>
+
                         </div>
 
                         <div class="col-md-12">
-                            <label
-                                for="nuevaObservacionAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevaObservacionAgendamiento" class="form-label">
                                 Observación inicial
                             </label>
 
@@ -572,13 +542,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 rows="3"
                                 placeholder="Ingrese una observación"
                             ></textarea>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevaDuracionAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="nuevaDuracionAgendamiento" class="form-label">
                                 Duración total
                             </label>
 
@@ -600,15 +569,12 @@ require_once __DIR__ . '/Layout/Header.php';
                             <div class="invalid-feedback">
                                 Indique la duración del agendamiento.
                             </div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="nuevoMontoTotal"
-                                class="form-label"
-                            >
-                                Monto total
-                            </label>
+
+                            <label for="nuevoMontoTotal" class="form-label">Monto total</label>
 
                             <input
                                 type="number"
@@ -620,8 +586,10 @@ require_once __DIR__ . '/Layout/Header.php';
                                 value="0.00"
                                 readonly
                             >
+
                         </div>
 
+                        <!-- Aviso de disponibilidad del horario seleccionado -->
                         <div class="col-12">
                             <div
                                 id="mensajeDisponibilidadNuevoAgendamiento"
@@ -632,13 +600,13 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                     </div>
+
                 </div>
 
+                <!-- Botones del modal -->
                 <div class="modal-footer">
-                    <button
-                        type="submit"
-                        class="btn-templo-primary"
-                    >
+
+                    <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Agendamiento
                     </button>
@@ -651,16 +619,21 @@ require_once __DIR__ . '/Layout/Header.php';
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
+
                 </div>
 
             </form>
 
         </div>
+
     </div>
 </div>
 
 
-<!-- Modal Nuevo Bloqueo de Horario -->
+<!-- ===================================================== -->
+<!-- MODAL NUEVO BLOQUEO DE HORARIO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalNuevoBloqueoHorario"
@@ -669,6 +642,7 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
+
         <div class="modal-content templo-modal bloqueo-horario-modal">
 
             <form
@@ -676,9 +650,13 @@ require_once __DIR__ . '/Layout/Header.php';
                 action="Index.php?url=agendamiento"
                 method="POST"
             >
+
+                <!-- Acción enviada al controlador -->
                 <input type="hidden" name="accion" value="registrar_bloqueo">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
+
                     <h5 class="modal-title" id="modalNuevoBloqueoHorarioLabel">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -693,6 +671,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 stroke-width="1.8"
                                 stroke-linecap="round"
                             ></path>
+
                             <rect
                                 x="5"
                                 y="9.5"
@@ -703,11 +682,19 @@ require_once __DIR__ . '/Layout/Header.php';
                                 stroke="currentColor"
                                 stroke-width="1.8"
                             ></rect>
+
                             <path
-                                d="M12 17.45s-3.1-1.72-3.1-3.86c0-1.04.78-1.82 1.79-1.82.58 0 1.05.28 1.31.69.26-.41.73-.69 1.31-.69 1.01 0 1.79.78 1.79 1.82 0 2.14-3.1 3.86-3.1 3.86Z"
+                                d="M12 17.45
+                                   s-3.1 -1.72 -3.1 -3.86
+                                   c0 -1.04 .78 -1.82 1.79 -1.82
+                                   .58 0 1.05 .28 1.31 .69
+                                   .26 -.41 .73 -.69 1.31 -.69
+                                   1.01 0 1.79 .78 1.79 1.82
+                                   0 2.14 -3.1 3.86 -3.1 3.86Z"
                                 fill="currentColor"
                             ></path>
                         </svg>
+
                         Bloquear Horario
                     </h5>
 
@@ -717,12 +704,16 @@ require_once __DIR__ . '/Layout/Header.php';
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
+
                 </div>
 
                 <div class="modal-body">
+
+                    <!-- Campos del formulario -->
                     <div class="row g-3">
 
                         <div class="col-md-12">
+
                             <label for="bloqueoUsuarioEspecialista" class="form-label">
                                 Especialista
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -738,23 +729,22 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                 <?php if (!empty($usuarios)): ?>
                                     <?php foreach ($usuarios as $usuario): ?>
+
                                         <option value="<?= (int) $usuario['id_usuario']; ?>">
-                                            <?= htmlspecialchars(
-                                                $usuario['nombre']
-                                                . ' '
-                                                . $usuario['apellido']
-                                            ); ?>
+                                            <?= htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione la especialista.
-                            </div>
+                            <div class="invalid-feedback">Seleccione la especialista.</div>
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="bloqueoFecha" class="form-label">
                                 Fecha
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -768,12 +758,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una fecha válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una fecha válida.</div>
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="bloqueoHoraInicio" class="form-label">
                                 Hora inicio
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -786,9 +776,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="hora_inicio"
                                 required
                             >
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="bloqueoHoraFin" class="form-label">
                                 Hora fin
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -805,12 +797,12 @@ require_once __DIR__ . '/Layout/Header.php';
                             <div class="invalid-feedback">
                                 La hora fin debe ser posterior a la hora inicio.
                             </div>
+
                         </div>
 
                         <div class="col-md-12">
-                            <label for="bloqueoMotivo" class="form-label">
-                                Motivo
-                            </label>
+
+                            <label for="bloqueoMotivo" class="form-label">Motivo</label>
 
                             <textarea
                                 class="form-control templo-input"
@@ -819,8 +811,10 @@ require_once __DIR__ . '/Layout/Header.php';
                                 rows="3"
                                 placeholder="Indique el motivo del bloqueo"
                             ></textarea>
+
                         </div>
 
+                        <!-- Aviso de disponibilidad del horario seleccionado -->
                         <div class="col-12">
                             <div
                                 id="mensajeDisponibilidadNuevoBloqueo"
@@ -831,9 +825,12 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                     </div>
+
                 </div>
 
+                <!-- Botones del modal -->
                 <div class="modal-footer">
+
                     <button type="submit" class="btn-templo-primary">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -848,6 +845,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                 stroke-width="1.8"
                                 stroke-linecap="round"
                             ></path>
+
                             <rect
                                 x="5"
                                 y="9.5"
@@ -858,11 +856,19 @@ require_once __DIR__ . '/Layout/Header.php';
                                 stroke="currentColor"
                                 stroke-width="1.8"
                             ></rect>
+
                             <path
-                                d="M12 17.45s-3.1-1.72-3.1-3.86c0-1.04.78-1.82 1.79-1.82.58 0 1.05.28 1.31.69.26-.41.73-.69 1.31-.69 1.01 0 1.79.78 1.79 1.82 0 2.14-3.1 3.86-3.1 3.86Z"
+                                d="M12 17.45
+                                   s-3.1 -1.72 -3.1 -3.86
+                                   c0 -1.04 .78 -1.82 1.79 -1.82
+                                   .58 0 1.05 .28 1.31 .69
+                                   .26 -.41 .73 -.69 1.31 -.69
+                                   1.01 0 1.79 .78 1.79 1.82
+                                   0 2.14 -3.1 3.86 -3.1 3.86Z"
                                 fill="currentColor"
                             ></path>
                         </svg>
+
                         Bloquear Horario
                     </button>
 
@@ -874,16 +880,21 @@ require_once __DIR__ . '/Layout/Header.php';
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
+
                 </div>
 
             </form>
 
         </div>
+
     </div>
 </div>
 
 
-<!-- Modal Editar Bloqueo de Horario -->
+<!-- ===================================================== -->
+<!-- MODAL EDITAR BLOQUEO DE HORARIO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalEditarBloqueoHorario"
@@ -892,6 +903,7 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
+
         <div class="modal-content templo-modal bloqueo-horario-modal">
 
             <form
@@ -899,10 +911,14 @@ require_once __DIR__ . '/Layout/Header.php';
                 action="Index.php?url=agendamiento"
                 method="POST"
             >
+
+                <!-- Acción y datos ocultos del formulario -->
                 <input type="hidden" name="accion" value="modificar_bloqueo">
                 <input type="hidden" name="id_bloqueo" id="editarIdBloqueo">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
+
                     <h5 class="modal-title" id="modalEditarBloqueoHorarioLabel">
                         <i class="bi bi-pencil-square"></i>
                         Editar Bloqueo de Horario
@@ -914,12 +930,16 @@ require_once __DIR__ . '/Layout/Header.php';
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
+
                 </div>
 
                 <div class="modal-body">
+
+                    <!-- Campos del formulario -->
                     <div class="row g-3">
 
                         <div class="col-md-12">
+
                             <label for="editarBloqueoUsuarioEspecialista" class="form-label">
                                 Especialista
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -935,19 +955,20 @@ require_once __DIR__ . '/Layout/Header.php';
 
                                 <?php if (!empty($usuarios)): ?>
                                     <?php foreach ($usuarios as $usuario): ?>
+
                                         <option value="<?= (int) $usuario['id_usuario']; ?>">
-                                            <?= htmlspecialchars(
-                                                $usuario['nombre']
-                                                . ' '
-                                                . $usuario['apellido']
-                                            ); ?>
+                                            <?= htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="editarBloqueoFecha" class="form-label">
                                 Fecha
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -961,12 +982,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una fecha válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una fecha válida.</div>
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="editarBloqueoHoraInicio" class="form-label">
                                 Hora inicio
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -979,9 +1000,11 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="hora_inicio"
                                 required
                             >
+
                         </div>
 
                         <div class="col-md-4">
+
                             <label for="editarBloqueoHoraFin" class="form-label">
                                 Hora fin
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -998,12 +1021,12 @@ require_once __DIR__ . '/Layout/Header.php';
                             <div class="invalid-feedback">
                                 La hora fin debe ser posterior a la hora inicio.
                             </div>
+
                         </div>
 
                         <div class="col-md-12">
-                            <label for="editarBloqueoMotivo" class="form-label">
-                                Motivo
-                            </label>
+
+                            <label for="editarBloqueoMotivo" class="form-label">Motivo</label>
 
                             <textarea
                                 class="form-control templo-input"
@@ -1011,8 +1034,10 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="motivo"
                                 rows="3"
                             ></textarea>
+
                         </div>
 
+                        <!-- Aviso de disponibilidad del horario seleccionado -->
                         <div class="col-12">
                             <div
                                 id="mensajeDisponibilidadEditarBloqueo"
@@ -1023,9 +1048,12 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                     </div>
+
                 </div>
 
+                <!-- Botones del modal -->
                 <div class="modal-footer">
+
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Cambios
@@ -1039,16 +1067,21 @@ require_once __DIR__ . '/Layout/Header.php';
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
+
                 </div>
 
             </form>
 
         </div>
+
     </div>
 </div>
 
 
-<!-- Modal Detalle del Bloqueo de Horario -->
+<!-- ===================================================== -->
+<!-- MODAL DETALLE DEL BLOQUEO DE HORARIO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalDetalleBloqueoHorario"
@@ -1057,9 +1090,12 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
+
         <div class="modal-content templo-modal bloqueo-horario-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
+
                 <h5 class="modal-title" id="modalDetalleBloqueoHorarioLabel">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1074,6 +1110,7 @@ require_once __DIR__ . '/Layout/Header.php';
                             stroke-width="1.8"
                             stroke-linecap="round"
                         ></path>
+
                         <rect
                             x="5"
                             y="9.5"
@@ -1084,11 +1121,19 @@ require_once __DIR__ . '/Layout/Header.php';
                             stroke="currentColor"
                             stroke-width="1.8"
                         ></rect>
+
                         <path
-                            d="M12 17.45s-3.1-1.72-3.1-3.86c0-1.04.78-1.82 1.79-1.82.58 0 1.05.28 1.31.69.26-.41.73-.69 1.31-.69 1.01 0 1.79.78 1.79 1.82 0 2.14-3.1 3.86-3.1 3.86Z"
+                            d="M12 17.45
+                               s-3.1 -1.72 -3.1 -3.86
+                               c0 -1.04 .78 -1.82 1.79 -1.82
+                               .58 0 1.05 .28 1.31 .69
+                               .26 -.41 .73 -.69 1.31 -.69
+                               1.01 0 1.79 .78 1.79 1.82
+                               0 2.14 -3.1 3.86 -3.1 3.86Z"
                             fill="currentColor"
                         ></path>
                     </svg>
+
                     Detalle del Bloqueo
                 </h5>
 
@@ -1098,9 +1143,12 @@ require_once __DIR__ . '/Layout/Header.php';
                     data-bs-dismiss="modal"
                     aria-label="Cerrar"
                 ></button>
+
             </div>
 
+            <!-- Información del bloqueo seleccionado -->
             <div class="modal-body detalle-agendamiento detalle-bloqueo-horario">
+
                 <div class="bloqueo-estado-wrap">
                     <span id="detalleEstadoBloqueo" class="badge estado-bloqueado">
                         BLOQUEADO
@@ -1126,9 +1174,12 @@ require_once __DIR__ . '/Layout/Header.php';
                     <strong>Motivo:</strong>
                     <span id="detalleMotivoBloqueo">—</span>
                 </p>
+
             </div>
 
+            <!-- Botones del modal -->
             <div class="modal-footer">
+
                 <button
                     type="button"
                     class="btn-templo-secondary"
@@ -1155,14 +1206,19 @@ require_once __DIR__ . '/Layout/Header.php';
                     <i class="bi bi-x-circle"></i>
                     Cerrar
                 </button>
+
             </div>
 
         </div>
+
     </div>
 </div>
 
 
-<!-- Modal Confirmar Desbloqueo de Horario -->
+<!-- ===================================================== -->
+<!-- MODAL CONFIRMAR DESBLOQUEO DE HORARIO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalConfirmarDesbloqueoHorario"
@@ -1174,12 +1230,10 @@ require_once __DIR__ . '/Layout/Header.php';
 
         <div class="modal-content templo-modal bloqueo-horario-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
 
-                <h5
-                    class="modal-title"
-                    id="modalConfirmarDesbloqueoHorarioLabel"
-                >
+                <h5 class="modal-title" id="modalConfirmarDesbloqueoHorarioLabel">
                     Confirmar Desbloqueo
                 </h5>
 
@@ -1192,7 +1246,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             </div>
 
-
+            <!-- Confirmación del desbloqueo -->
             <div class="modal-body text-center py-4">
 
                 <div
@@ -1206,12 +1260,8 @@ require_once __DIR__ . '/Layout/Header.php';
                         font-size: 2rem;
                     "
                 >
-                    <i
-                        class="bi bi-unlock-fill"
-                        aria-hidden="true"
-                    ></i>
+                    <i class="bi bi-unlock-fill" aria-hidden="true"></i>
                 </div>
-
 
                 <p
                     class="mb-2"
@@ -1223,7 +1273,6 @@ require_once __DIR__ . '/Layout/Header.php';
                 >
                     ¿Desea desbloquear este horario?
                 </p>
-
 
                 <p
                     class="mb-0"
@@ -1237,9 +1286,17 @@ require_once __DIR__ . '/Layout/Header.php';
                     El período volverá a estar disponible para registrar citas.
                 </p>
 
+                <!-- Resultado de la operación enviada al servidor -->
+                <div
+                    id="mensajeConfirmarDesbloqueoHorario"
+                    class="alert d-none mb-0"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
             </div>
 
-
+            <!-- Botones del modal -->
             <div class="modal-footer justify-content-center">
 
                 <button
@@ -1250,7 +1307,6 @@ require_once __DIR__ . '/Layout/Header.php';
                     <i class="bi bi-unlock-fill"></i>
                     Sí, desbloquear
                 </button>
-
 
                 <button
                     type="button"
@@ -1269,7 +1325,123 @@ require_once __DIR__ . '/Layout/Header.php';
 </div>
 
 
-<!-- Modal Editar Agendamiento -->
+<!-- ===================================================== -->
+<!-- MODAL CONFIRMAR CANCELACIÓN DE AGENDAMIENTO -->
+<!-- ===================================================== -->
+
+<div
+    class="modal fade"
+    id="modalConfirmarCancelacionAgendamiento"
+    tabindex="-1"
+    aria-labelledby="modalConfirmarCancelacionAgendamientoLabel"
+    aria-describedby="modalConfirmarCancelacionAgendamientoTexto"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+
+        <div class="modal-content templo-modal">
+
+            <!-- Encabezado del modal -->
+            <div class="modal-header">
+
+                <h5 class="modal-title" id="modalConfirmarCancelacionAgendamientoLabel">
+                    Confirmar cancelación
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Cerrar"
+                ></button>
+
+            </div>
+
+            <!-- Confirmación de la cancelación -->
+            <div class="modal-body text-center py-4">
+
+                <div
+                    class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                    style="
+                        width: 72px;
+                        height: 72px;
+                        color: #a65f6d;
+                        background: rgba(198, 122, 139, 0.14);
+                        border: 2px solid rgba(198, 122, 139, 0.28);
+                        font-size: 2rem;
+                    "
+                >
+                    <i class="bi bi-calendar-x" aria-hidden="true"></i>
+                </div>
+
+                <p
+                    class="mb-2"
+                    id="modalConfirmarCancelacionAgendamientoTexto"
+                    style="
+                        color: #7a655b;
+                        font-size: 1rem;
+                        font-weight: 700;
+                    "
+                >
+                    ¿Desea cancelar este agendamiento?
+                </p>
+
+                <p
+                    class="mb-0"
+                    style="
+                        color: rgba(122, 101, 91, 0.82);
+                        font-size: 0.86rem;
+                        font-weight: 600;
+                        line-height: 1.5;
+                    "
+                >
+                    La cita quedará en estado CANCELADA y dejará de mostrarse
+                    en la lista y en el calendario.
+                </p>
+
+                <!-- Resultado de la operación enviada al servidor -->
+                <div
+                    id="mensajeConfirmarCancelacionAgendamiento"
+                    class="alert d-none mb-0"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
+            </div>
+
+            <!-- Botones del modal -->
+            <div class="modal-footer justify-content-center">
+
+                <button
+                    type="button"
+                    class="btn-templo-danger"
+                    id="btnConfirmarCancelacionAgendamiento"
+                >
+                    <i class="bi bi-calendar-x"></i>
+                    Sí, cancelar
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-templo-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    <i class="bi bi-arrow-left"></i>
+                    Volver
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ===================================================== -->
+<!-- MODAL EDITAR AGENDAMIENTO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalEditarAgendamiento"
@@ -1278,6 +1450,7 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
+
         <div class="modal-content templo-modal">
 
             <form
@@ -1285,23 +1458,15 @@ require_once __DIR__ . '/Layout/Header.php';
                 action="Index.php?url=agendamiento"
                 method="POST"
             >
-                <input
-                    type="hidden"
-                    name="accion"
-                    value="modificar"
-                >
 
-                <input
-                    type="hidden"
-                    name="id_agendamiento"
-                    id="editarIdAgendamiento"
-                >
+                <!-- Acción y datos ocultos del formulario -->
+                <input type="hidden" name="accion" value="modificar">
+                <input type="hidden" name="id_agendamiento" id="editarIdAgendamiento">
 
+                <!-- Encabezado del modal -->
                 <div class="modal-header">
-                    <h5
-                        class="modal-title"
-                        id="modalEditarAgendamientoLabel"
-                    >
+
+                    <h5 class="modal-title" id="modalEditarAgendamientoLabel">
                         <i class="bi bi-pencil-square"></i>
                         Editar Agendamiento
                     </h5>
@@ -1312,57 +1477,47 @@ require_once __DIR__ . '/Layout/Header.php';
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
+
                 </div>
 
                 <div class="modal-body">
+
+                    <!-- Campos del formulario -->
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label
-                                for="editarClienteAgendamiento"
-                                class="form-label"
-                            >
-                                Cliente
-                            </label>
+
+                            <label for="editarClienteAgendamiento" class="form-label">Cliente</label>
 
                             <select
                                 class="form-select templo-input"
                                 id="editarClienteAgendamiento"
                                 name="id_cliente"
                             >
-                                <option value="">
-                                    Seleccionar cliente...
-                                </option>
+                                <option value="">Seleccionar cliente...</option>
 
                                 <?php if (!empty($clientes)): ?>
                                     <?php foreach ($clientes as $cliente): ?>
-                                        <option
-                                            value="<?= (int) $cliente['id_cliente']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $cliente['cedula']
-                                                . ' - '
-                                                . $cliente['nombre']
-                                                . ' '
-                                                . $cliente['apellido']
-                                            ); ?>
+
+                                        <option value="<?= (int) $cliente['id_cliente']; ?>">
+                                            <?= htmlspecialchars($cliente['cedula'] . ' - ' . $cliente['nombre'] . ' ' . $cliente['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione un cliente.
-                            </div>
+                            <div class="invalid-feedback">Seleccione un cliente.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarUsuarioAsignado"
-                                class="form-label"
-                            >
+
+                            <label for="editarUsuarioAsignado" class="form-label">
                                 Especialista asignada
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -1370,37 +1525,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_usuario_asignado"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar especialista...
-                                </option>
+                                <option value="">Seleccionar especialista...</option>
 
                                 <?php if (!empty($usuarios)): ?>
                                     <?php foreach ($usuarios as $usuario): ?>
-                                        <option
-                                            value="<?= (int) $usuario['id_usuario']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $usuario['nombre']
-                                                . ' '
-                                                . $usuario['apellido']
-                                            ); ?>
+
+                                        <option value="<?= (int) $usuario['id_usuario']; ?>">
+                                            <?= htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione la especialista asignada.
-                            </div>
+                            <div class="invalid-feedback">Seleccione la especialista asignada.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarTipoAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarTipoAgendamiento" class="form-label">
                                 Tipo de agendamiento
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -1408,38 +1556,33 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_tipo_agendamiento"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar tipo...
-                                </option>
+                                <option value="">Seleccionar tipo...</option>
 
                                 <?php if (!empty($tiposAgendamientos)): ?>
                                     <?php foreach ($tiposAgendamientos as $tipo): ?>
+
                                         <option
                                             value="<?= (int) $tipo['id_tipo_agendamiento']; ?>"
-                                            data-nombre="<?= htmlspecialchars(
-                                                $tipo['nombre_tipo_agendamiento']
-                                            ); ?>"
+                                            data-nombre="<?= htmlspecialchars($tipo['nombre_tipo_agendamiento']); ?>"
                                         >
-                                            <?= htmlspecialchars(
-                                                $tipo['nombre_tipo_agendamiento']
-                                            ); ?>
+                                            <?= htmlspecialchars($tipo['nombre_tipo_agendamiento']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione el tipo de agendamiento.
-                            </div>
+                            <div class="invalid-feedback">Seleccione el tipo de agendamiento.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarEstadoAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarEstadoAgendamiento" class="form-label">
                                 Estado
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <select
                                 class="form-select templo-input"
@@ -1447,35 +1590,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="id_estado_agendamiento"
                                 required
                             >
-                                <option value="">
-                                    Seleccionar estado...
-                                </option>
+                                <option value="">Seleccionar estado...</option>
 
                                 <?php if (!empty($estadosAgendamientos)): ?>
                                     <?php foreach ($estadosAgendamientos as $estado): ?>
-                                        <option
-                                            value="<?= (int) $estado['id_estado_agendamiento']; ?>"
-                                        >
-                                            <?= htmlspecialchars(
-                                                $estado['nombre_estado']
-                                            ); ?>
+
+                                        <option value="<?= (int) $estado['id_estado_agendamiento']; ?>">
+                                            <?= htmlspecialchars($estado['nombre_estado']); ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+
                             </select>
 
-                            <div class="invalid-feedback">
-                                Seleccione el estado.
-                            </div>
+                            <div class="invalid-feedback">Seleccione el estado.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarFechaAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarFechaAgendamiento" class="form-label">
                                 Fecha
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <input
                                 type="date"
@@ -1485,18 +1623,16 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una fecha válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una fecha válida.</div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarHoraAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarHoraAgendamiento" class="form-label">
                                 Hora
-                             <span class="required-mark" aria-hidden="true">*</span></label>
+                                <span class="required-mark" aria-hidden="true">*</span>
+                            </label>
 
                             <input
                                 type="time"
@@ -1506,16 +1642,14 @@ require_once __DIR__ . '/Layout/Header.php';
                                 required
                             >
 
-                            <div class="invalid-feedback">
-                                Seleccione una hora válida.
-                            </div>
+                            <div class="invalid-feedback">Seleccione una hora válida.</div>
+
                         </div>
 
+                        <!-- Selección de servicios del agendamiento -->
                         <div class="col-md-12">
-                            <label
-                                class="form-label"
-                                id="editarServiciosAgendamientoLabel"
-                            >
+
+                            <label class="form-label" id="editarServiciosAgendamientoLabel">
                                 Servicios
                             </label>
 
@@ -1531,22 +1665,20 @@ require_once __DIR__ . '/Layout/Header.php';
                                     aria-expanded="false"
                                     aria-controls="editarServiciosPanel"
                                 >
-                                    <span id="editarServiciosTexto">
-                                        Seleccionar servicios...
-                                    </span>
-
-                                    <i
-                                        class="bi bi-chevron-down"
-                                        aria-hidden="true"
-                                    ></i>
+                                    <span id="editarServiciosTexto">Seleccionar servicios...</span>
+                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
                                 </button>
 
+                                <!-- Panel de selección múltiple de servicios -->
                                 <div
                                     class="agendamiento-servicios-panel"
                                     id="editarServiciosPanel"
                                     hidden
                                 >
+
+                                    <!-- Búsqueda dentro de los servicios disponibles -->
                                     <div class="agendamiento-servicios-buscador">
+
                                         <i class="bi bi-search"></i>
 
                                         <input
@@ -1556,43 +1688,30 @@ require_once __DIR__ . '/Layout/Header.php';
                                             placeholder="Buscar servicio..."
                                             autocomplete="off"
                                         >
+
                                     </div>
 
+                                    <!-- Lista de servicios activos -->
                                     <div
                                         class="agendamiento-servicios-lista"
                                         id="editarServiciosLista"
                                     >
-                                        <?php if (!empty($servicios)): ?>
 
+                                        <?php if (!empty($servicios)): ?>
                                             <?php foreach ($servicios as $servicio): ?>
 
                                                 <?php
 
-                                                $idServicio = (int) (
-                                                    $servicio['id_servicio'] ?? 0
-                                                );
-
-                                                $nombreServicio = (string) (
-                                                    $servicio['nombre_servicio'] ?? ''
-                                                );
-
-                                                $precioServicio = (float) (
-                                                    $servicio['precio'] ?? 0
-                                                );
-
-                                                $duracionServicio = (int) (
-                                                    $servicio['duracion_estimada'] ?? 0
-                                                );
+                                                $idServicio = (int) ($servicio['id_servicio'] ?? 0);
+                                                $nombreServicio = (string) ($servicio['nombre_servicio'] ?? '');
+                                                $precioServicio = (float) ($servicio['precio'] ?? 0);
+                                                $duracionServicio = (int) ($servicio['duracion_estimada'] ?? 0);
 
                                                 ?>
 
                                                 <label
                                                     class="agendamiento-servicio-opcion"
-                                                    data-servicio-nombre="<?= htmlspecialchars(
-                                                        $nombreServicio,
-                                                        ENT_QUOTES,
-                                                        'UTF-8'
-                                                    ); ?>"
+                                                    data-servicio-nombre="<?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>"
                                                     for="editarServicio<?= $idServicio; ?>"
                                                 >
                                                     <input
@@ -1601,46 +1720,29 @@ require_once __DIR__ . '/Layout/Header.php';
                                                         id="editarServicio<?= $idServicio; ?>"
                                                         name="servicios[]"
                                                         value="<?= $idServicio; ?>"
-                                                        data-nombre="<?= htmlspecialchars(
-                                                            $nombreServicio,
-                                                            ENT_QUOTES,
-                                                            'UTF-8'
-                                                        ); ?>"
-                                                        data-precio="<?= number_format(
-                                                            $precioServicio,
-                                                            2,
-                                                            '.',
-                                                            ''
-                                                        ); ?>"
+                                                        data-nombre="<?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-precio="<?= number_format($precioServicio, 2, '.', ''); ?>"
                                                         data-duracion="<?= $duracionServicio; ?>"
                                                     >
 
                                                     <span class="agendamiento-servicio-contenido">
+
                                                         <span class="agendamiento-servicio-nombre">
-                                                            <?= htmlspecialchars(
-                                                                $nombreServicio,
-                                                                ENT_QUOTES,
-                                                                'UTF-8'
-                                                            ); ?>
+                                                            <?= htmlspecialchars($nombreServicio, ENT_QUOTES, 'UTF-8'); ?>
                                                         </span>
 
                                                         <span class="agendamiento-servicio-duracion">
                                                             · <?= $duracionServicio; ?> min
                                                         </span>
+
                                                     </span>
 
                                                     <span class="agendamiento-servicio-precio">
-                                                        <?= number_format(
-                                                            $precioServicio,
-                                                            2,
-                                                            ',',
-                                                            '.'
-                                                        ); ?>
+                                                        <?= number_format($precioServicio, 2, ',', '.'); ?>
                                                     </span>
                                                 </label>
 
                                             <?php endforeach; ?>
-
                                         <?php else: ?>
 
                                             <p class="agendamiento-servicios-sin-resultados">
@@ -1648,6 +1750,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                             </p>
 
                                         <?php endif; ?>
+
                                     </div>
 
                                     <p
@@ -1656,13 +1759,16 @@ require_once __DIR__ . '/Layout/Header.php';
                                     >
                                         No se encontraron servicios.
                                     </p>
+
                                 </div>
+
                             </div>
 
                             <small class="templo-help-text">
                                 Puede seleccionar uno o varios servicios.
                             </small>
 
+                            <!-- Resumen de los servicios seleccionados -->
                             <div
                                 class="agendamiento-servicios-resumen"
                                 id="editarServiciosResumen"
@@ -1672,19 +1778,15 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </span>
                             </div>
 
-                            <div
-                                class="invalid-feedback"
-                                id="editarServiciosFeedback"
-                            >
+                            <div class="invalid-feedback" id="editarServiciosFeedback">
                                 Seleccione al menos un servicio.
                             </div>
+
                         </div>
 
                         <div class="col-md-12">
-                            <label
-                                for="editarObservacionAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarObservacionAgendamiento" class="form-label">
                                 Observación inicial
                             </label>
 
@@ -1694,13 +1796,12 @@ require_once __DIR__ . '/Layout/Header.php';
                                 name="observacion_inicial"
                                 rows="3"
                             ></textarea>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarDuracionAgendamiento"
-                                class="form-label"
-                            >
+
+                            <label for="editarDuracionAgendamiento" class="form-label">
                                 Duración total
                             </label>
 
@@ -1722,15 +1823,12 @@ require_once __DIR__ . '/Layout/Header.php';
                             <div class="invalid-feedback">
                                 Indique la duración del agendamiento.
                             </div>
+
                         </div>
 
                         <div class="col-md-6">
-                            <label
-                                for="editarMontoTotal"
-                                class="form-label"
-                            >
-                                Monto total
-                            </label>
+
+                            <label for="editarMontoTotal" class="form-label">Monto total</label>
 
                             <input
                                 type="number"
@@ -1742,8 +1840,10 @@ require_once __DIR__ . '/Layout/Header.php';
                                 value="0.00"
                                 readonly
                             >
+
                         </div>
 
+                        <!-- Aviso de disponibilidad del horario seleccionado -->
                         <div class="col-12">
                             <div
                                 id="mensajeDisponibilidadEditarAgendamiento"
@@ -1754,13 +1854,13 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                     </div>
+
                 </div>
 
+                <!-- Botones del modal -->
                 <div class="modal-footer">
-                    <button
-                        type="submit"
-                        class="btn-templo-primary"
-                    >
+
+                    <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Cambios
                     </button>
@@ -1773,16 +1873,21 @@ require_once __DIR__ . '/Layout/Header.php';
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
+
                 </div>
 
             </form>
 
         </div>
+
     </div>
 </div>
 
 
-<!-- Modal Detalle del Agendamiento -->
+<!-- ===================================================== -->
+<!-- MODAL DETALLE DEL AGENDAMIENTO -->
+<!-- ===================================================== -->
+
 <div
     class="modal fade"
     id="modalDetalleAgendamiento"
@@ -1791,13 +1896,13 @@ require_once __DIR__ . '/Layout/Header.php';
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
+
         <div class="modal-content templo-modal">
 
+            <!-- Encabezado del modal -->
             <div class="modal-header">
-                <h5
-                    class="modal-title"
-                    id="modalDetalleAgendamientoLabel"
-                >
+
+                <h5 class="modal-title" id="modalDetalleAgendamientoLabel">
                     <span
                         class="agendamiento-detalle-icono"
                         aria-hidden="true"
@@ -1808,7 +1913,11 @@ require_once __DIR__ . '/Layout/Header.php';
                             xmlns="http://www.w3.org/2000/svg"
                         >
                             <path
-                                d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
+                                d="M2 12
+                                   C2 12 5.5 5 12 5
+                                   C18.5 5 22 12 22 12
+                                   C22 12 18.5 19 12 19
+                                   C5.5 19 2 12 2 12Z"
                                 stroke="currentColor"
                                 stroke-width="2"
                                 stroke-linecap="round"
@@ -1817,7 +1926,13 @@ require_once __DIR__ . '/Layout/Header.php';
                             ></path>
 
                             <path
-                                d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
+                                d="M12 16
+                                   C10 14.8 8.5 13.5 8.5 11.8
+                                   C8.5 10.5 9.5 9.5 10.8 9.5
+                                   C11.5 9.5 12 9.9 12 10.4
+                                   C12 9.9 12.5 9.5 13.2 9.5
+                                   C14.5 9.5 15.5 10.5 15.5 11.8
+                                   C15.5 13.5 14 14.8 12 16Z"
                                 fill="currentColor"
                             ></path>
                         </svg>
@@ -1832,8 +1947,10 @@ require_once __DIR__ . '/Layout/Header.php';
                     data-bs-dismiss="modal"
                     aria-label="Cerrar"
                 ></button>
+
             </div>
 
+            <!-- Información del agendamiento seleccionado -->
             <div class="modal-body detalle-agendamiento">
 
                 <p>
@@ -1893,6 +2010,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
             </div>
 
+            <!-- Botones del modal -->
             <div class="modal-footer">
 
                 <button
@@ -1925,22 +2043,48 @@ require_once __DIR__ . '/Layout/Header.php';
             </div>
 
         </div>
+
     </div>
 </div>
 
 
+<!-- ===================================================== -->
+<!-- MENSAJES DEL MÓDULO -->
+<!-- ===================================================== -->
+
+<!-- Resultados devueltos por el controlador para citas y bloqueos -->
 <?php
 
-/*Mensajes devueltos por el controlador después de registrar o modificar citas y bloqueos.*/
-$codigoMensajeAgendamiento = trim(
-    (string) (
-        $_GET['mensaje']
-        ?? ''
-    )
-);
-
+$codigoMensajeAgendamiento = is_string($_GET['mensaje'] ?? null)
+    ? trim($_GET['mensaje'])
+    : '';
 
 $mensajesAgendamiento = [
+
+    'agendamiento_registrado' => [
+        'titulo' => 'Agendamiento registrado',
+        'texto' => 'El agendamiento fue registrado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ],
+
+    'agendamiento_modificado' => [
+        'titulo' => 'Agendamiento actualizado',
+        'texto' => 'El agendamiento fue modificado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ],
+
+    'agendamiento_cancelado' => [
+        'titulo' => 'Agendamiento cancelado',
+        'texto' => 'El agendamiento fue cancelado correctamente.',
+        'icono' => 'bi-check-circle-fill'
+    ],
+
+    'horario_ocupado' => [
+        'titulo' => 'Horario ocupado por otra cita',
+        'texto' =>
+            'No es posible guardar el agendamiento porque la especialista ya tiene otra cita que coincide con el horario seleccionado. Elija otro horario u otra especialista.',
+        'icono' => 'bi-heartbreak-fill'
+    ],
 
     'horario_bloqueado' => [
         'titulo' => 'Horario no disponible',
@@ -2004,131 +2148,150 @@ $mensajesAgendamiento = [
             'El horario fue desbloqueado correctamente.',
         'icono' => 'bi-check-circle-fill'
     ]
+
 ];
 
+$mensajeAgendamiento = $mensajesAgendamiento[$codigoMensajeAgendamiento] ?? null;
 
-$mensajeAgendamiento =
-    $mensajesAgendamiento[
-        $codigoMensajeAgendamiento
-    ] ?? null;
+$mensajeGuardadoAgendamiento = $_SESSION['mensaje_agendamiento'] ?? null;
+unset($_SESSION['mensaje_agendamiento']);
+
+if (
+    is_array($mensajeGuardadoAgendamiento) &&
+    is_string($mensajeGuardadoAgendamiento['mensaje'] ?? null)
+) {
+    $operacionCorrecta = ($mensajeGuardadoAgendamiento['ok'] ?? false) === true;
+
+    $codigoGuardadoAgendamiento = is_string($mensajeGuardadoAgendamiento['codigo'] ?? null)
+        ? $mensajeGuardadoAgendamiento['codigo']
+        : '';
+
+    $mensajeBaseAgendamiento = $mensajesAgendamiento[$codigoGuardadoAgendamiento] ?? [];
+
+    $mensajeAgendamiento = [
+        'titulo' => $mensajeBaseAgendamiento['titulo'] ?? (
+            $operacionCorrecta
+                ? 'Operación completada'
+                : 'No se pudo completar la operación'
+        ),
+        'texto' => $mensajeGuardadoAgendamiento['mensaje'],
+        'icono' => $mensajeBaseAgendamiento['icono'] ?? (
+            $operacionCorrecta ? 'bi-check-circle-fill' : 'bi-heartbreak-fill'
+        )
+    ];
+}
+
+$mostrarMensajeAgendamiento = $mensajeAgendamiento !== null;
+
+$mensajeAgendamiento = $mensajeAgendamiento ?? [
+    'titulo' => 'Resultado del agendamiento',
+    'texto' => '',
+    'icono' => 'bi-check-circle-fill'
+];
 
 ?>
 
 
-<?php if ($mensajeAgendamiento !== null): ?>
+<!-- ===================================================== -->
+<!-- MODAL DE RESPUESTA DEL AGENDAMIENTO -->
+<!-- ===================================================== -->
 
-    <!-- Modal de respuesta del módulo de agendamiento -->
-    <div
-        class="modal fade"
-        id="modalMensajeAgendamiento"
-        tabindex="-1"
-        aria-labelledby="modalMensajeAgendamientoLabel"
-        aria-hidden="true"
-    >
-        <div class="modal-dialog modal-dialog-centered">
+<div
+    class="modal fade"
+    id="modalMensajeAgendamiento"
+    data-mostrar-inicial="<?= $mostrarMensajeAgendamiento ? '1' : '0'; ?>"
+    tabindex="-1"
+    aria-labelledby="modalMensajeAgendamientoLabel"
+    aria-describedby="modalMensajeAgendamientoTexto"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
 
-            <div class="modal-content templo-modal">
+        <div class="modal-content templo-modal">
 
-                <div class="modal-header">
+            <!-- Encabezado del modal -->
+            <div class="modal-header">
 
-                    <h5
-                        class="modal-title"
-                        id="modalMensajeAgendamientoLabel"
-                    >
-                        <?= htmlspecialchars(
-                            $mensajeAgendamiento['titulo'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ); ?>
-                    </h5>
+                <h5 class="modal-title" id="modalMensajeAgendamientoLabel">
+                    <?= htmlspecialchars($mensajeAgendamiento['titulo'], ENT_QUOTES, 'UTF-8'); ?>
+                </h5>
 
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"
-                    ></button>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Cerrar"
+                ></button>
 
+            </div>
+
+            <!-- Mensaje devuelto por el controlador -->
+            <div class="modal-body text-center py-4">
+
+                <div
+                    class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                    style="
+                        width: 76px;
+                        height: 76px;
+                        color: #a65f6d;
+                        background: rgba(198, 122, 139, 0.14);
+                        border: 2px solid rgba(198, 122, 139, 0.28);
+                        font-size: 2.15rem;
+                    "
+                >
+                    <i
+                        class="bi <?= htmlspecialchars($mensajeAgendamiento['icono'], ENT_QUOTES, 'UTF-8'); ?>"
+                        aria-hidden="true"
+                    ></i>
                 </div>
 
+                <p
+                    id="modalMensajeAgendamientoTexto"
+                    class="mb-0"
+                    style="
+                        color: #7a655b;
+                        font-size: 0.96rem;
+                        font-weight: 600;
+                        line-height: 1.65;
+                    "
+                >
+                    <?= htmlspecialchars($mensajeAgendamiento['texto'], ENT_QUOTES, 'UTF-8'); ?>
+                </p>
 
-                <div class="modal-body text-center py-4">
+            </div>
 
-                    <div
-                        class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                        style="
-                            width: 76px;
-                            height: 76px;
-                            color: #a65f6d;
-                            background: rgba(198, 122, 139, 0.14);
-                            border: 2px solid rgba(198, 122, 139, 0.28);
-                            font-size: 2.15rem;
-                        "
-                    >
-                        <i
-                            class="bi <?= htmlspecialchars(
-                                $mensajeAgendamiento['icono'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            ); ?>"
-                            aria-hidden="true"
-                        ></i>
-                    </div>
+            <!-- Botones del modal -->
+            <div class="modal-footer justify-content-center">
 
-
-                    <p
-                        class="mb-0"
-                        style="
-                            color: #7a655b;
-                            font-size: 0.96rem;
-                            font-weight: 600;
-                            line-height: 1.65;
-                        "
-                    >
-                        <?= htmlspecialchars(
-                            $mensajeAgendamiento['texto'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ); ?>
-                    </p>
-
-                </div>
-
-
-                <div class="modal-footer justify-content-center">
-
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-dismiss="modal"
-                    >
-                        <i class="bi bi-check-circle"></i>
-                        Entendido
-                    </button>
-
-                </div>
+                <button
+                    type="button"
+                    class="btn-templo-primary"
+                    data-bs-dismiss="modal"
+                >
+                    <i class="bi bi-check-circle"></i>
+                    Entendido
+                </button>
 
             </div>
 
         </div>
+
     </div>
+</div>
 
 
-<?php endif; ?>
+<!-- ===================================================== -->
+<!-- FORMULARIOS OCULTOS DE ACCIONES -->
+<!-- ===================================================== -->
 
-
-<!-- Formulario oculto para cancelar un agendamiento -->
+<!-- Cancelar un agendamiento -->
 <form
     id="formCancelarAgendamiento"
     action="Index.php?url=agendamiento"
     method="POST"
     class="d-none"
 >
-    <input
-        type="hidden"
-        name="accion"
-        value="cancelar"
-    >
+    <input type="hidden" name="accion" value="cancelar">
 
     <input
         type="hidden"
@@ -2137,8 +2300,7 @@ $mensajeAgendamiento =
     >
 </form>
 
-
-<!-- Formulario oculto para desbloquear un horario -->
+<!-- Desbloquear un horario -->
 <form
     id="formDesbloquearHorario"
     action="Index.php?url=agendamiento"
@@ -2148,6 +2310,54 @@ $mensajeAgendamiento =
     <input type="hidden" name="accion" value="desbloquear_horario">
     <input type="hidden" name="id_bloqueo" id="desbloquearIdBloqueo">
 </form>
+
+
+<!-- ===================================================== -->
+<!-- PLANTILLA DEL ÍCONO DE DETALLES -->
+<!-- ===================================================== -->
+
+<!-- El calendario clona este ícono para los botones de la lista -->
+<template id="plantillaIconoDetalleAgendamiento">
+    <span
+        class="agendamiento-detalle-icono"
+        aria-hidden="true"
+    >
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M2 12
+                   C2 12 5.5 5 12 5
+                   C18.5 5 22 12 22 12
+                   C22 12 18.5 19 12 19
+                   C5.5 19 2 12 2 12Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            ></path>
+
+            <path
+                d="M12 16
+                   C10 14.8 8.5 13.5 8.5 11.8
+                   C8.5 10.5 9.5 9.5 10.8 9.5
+                   C11.5 9.5 12 9.9 12 10.4
+                   C12 9.9 12.5 9.5 13.2 9.5
+                   C14.5 9.5 15.5 10.5 15.5 11.8
+                   C15.5 13.5 14 14.8 12 16Z"
+                fill="currentColor"
+            ></path>
+        </svg>
+    </span>
+</template>
+
+
+<!-- ===================================================== -->
+<!-- DATOS INICIALES DEL CALENDARIO -->
+<!-- ===================================================== -->
 
 <script>
     window.agendamientosCalendario = <?= json_encode(
@@ -2162,11 +2372,17 @@ $mensajeAgendamiento =
 </script>
 
 
+<!-- ===================================================== -->
+<!-- SCRIPTS Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
+
 <?php
+
 $scriptsVista = [
-    'Assets/js/agendamiento.js?v=6',
-    'Assets/js/agendamiento-calendario.js?v=6'
+    'Assets/js/agendamiento.js?v=8',
+    'Assets/js/agendamiento-calendario.js?v=8'
 ];
 
 require_once __DIR__ . '/Layout/Footer.php';
+
 ?>

@@ -1,135 +1,80 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const calendarEl = document.getElementById("calendar");
+/* ===================================================== */
+/* CALENDARIO DE AGENDAMIENTO */
+/* ===================================================== */
 
-    const listaAgendamientos = document.getElementById(
-        "agendamientos-list"
-    );
+$(document).ready(function () {
+    const $calendario = $("#calendar");
+    const $lista = $("#agendamientos-list");
+    const $btnBuscar = $("#btnBuscarAgendamientos");
+    const $contenedorBusqueda = $("#contenedorBusquedaAgendamientos");
+    const $inputBusqueda = $("#buscarAgendamiento");
+    const $btnEjecutarBusqueda = $("#btnEjecutarBusquedaAgendamientos");
+    const $ultimaActualizacion = $("#ultima-actualizacion");
+    const $mensajeCalendario = $("#mensajeCalendarioAgendamiento");
 
-    const btnBuscar = document.getElementById(
-        "btnBuscarAgendamientos"
-    );
+    /* Detalles y edición de citas */
+    const $modalDetalle = $("#modalDetalleAgendamiento");
+    const $modalEditar = $("#modalEditarAgendamiento");
+    const $btnEditar = $("#btnEditarAgendamiento");
+    const $btnCancelar = $("#btnCancelarAgendamiento");
+    const $formCancelar = $("#formCancelarAgendamiento");
+    const $cancelarId = $("#cancelarIdAgendamiento");
+    const $modalConfirmarCancelacion = $("#modalConfirmarCancelacionAgendamiento");
+    const $btnConfirmarCancelacion = $("#btnConfirmarCancelacionAgendamiento");
+    const $mensajeCancelacion = $("#mensajeConfirmarCancelacionAgendamiento");
 
-    const contenedorBusqueda = document.getElementById(
-        "contenedorBusquedaAgendamientos"
-    );
-
-    const inputBusqueda = document.getElementById(
-        "buscarAgendamiento"
-    );
-
-    const btnEjecutarBusqueda = document.getElementById(
-        "btnEjecutarBusquedaAgendamientos"
-    );
-
-    const ultimaActualizacion = document.getElementById(
-        "ultima-actualizacion"
-    );
-
-    const modalDetalleEl = document.getElementById(
-        "modalDetalleAgendamiento"
-    );
-
-    const modalEditarEl = document.getElementById(
-        "modalEditarAgendamiento"
-    );
-
-    const btnEditar = document.getElementById(
-        "btnEditarAgendamiento"
-    );
-
-    const btnCancelar = document.getElementById(
-        "btnCancelarAgendamiento"
-    );
-
-    const modalDetalleBloqueoEl = document.getElementById(
-        "modalDetalleBloqueoHorario"
-    );
-
-    const modalEditarBloqueoEl = document.getElementById(
-        "modalEditarBloqueoHorario"
-    );
-
-    const btnEditarBloqueo = document.getElementById(
-        "btnEditarBloqueoHorario"
-    );
-
-    const btnDesbloquear = document.getElementById(
-        "btnDesbloquearHorario"
-    );
-
-    const formDesbloquear = document.getElementById(
-        "formDesbloquearHorario"
-    );
-
-    const desbloquearId = document.getElementById(
-        "desbloquearIdBloqueo"
-    );
-
-    const modalConfirmarDesbloqueoEl =
-        document.getElementById(
-            "modalConfirmarDesbloqueoHorario"
-        );
-
-    const btnConfirmarDesbloqueo =
-        document.getElementById(
-            "btnConfirmarDesbloqueoHorario"
-        );
-
-    const formMover = document.getElementById(
-        "formMoverAgendamiento"
-    );
-
-    const moverId = document.getElementById(
-        "moverIdAgendamiento"
-    );
-
-    const moverFecha = document.getElementById(
-        "moverFechaAgendamiento"
-    );
-
-    const moverHora = document.getElementById(
-        "moverHoraAgendamiento"
-    );
-
-    const moverDuracion = document.getElementById(
-        "moverDuracionAgendamiento"
-    );
-
-    const formCancelar = document.getElementById(
-        "formCancelarAgendamiento"
-    );
-
-    const cancelarId = document.getElementById(
-        "cancelarIdAgendamiento"
-    );
-
-    let eventoSeleccionado = null;
-    let calendar = null;
+    /* Detalles y edición de bloqueos */
+    const $modalDetalleBloqueo = $("#modalDetalleBloqueoHorario");
+    const $modalEditarBloqueo = $("#modalEditarBloqueoHorario");
+    const $btnEditarBloqueo = $("#btnEditarBloqueoHorario");
+    const $btnDesbloquear = $("#btnDesbloquearHorario");
+    const $formDesbloquear = $("#formDesbloquearHorario");
+    const $desbloquearId = $("#desbloquearIdBloqueo");
+    const $modalConfirmarDesbloqueo = $("#modalConfirmarDesbloqueoHorario");
+    const $btnConfirmarDesbloqueo = $("#btnConfirmarDesbloqueoHorario");
+    const $mensajeDesbloqueo = $("#mensajeConfirmarDesbloqueoHorario");
 
     const LIMITE_CALENDARIO_MOVIL = 575.98;
     const LIMITE_CALENDARIO_TABLET = 1200;
+    const FUENTE_CALENDARIO = "agenda-templo-rosa";
+
+    let calendario = null;
+    let eventoSeleccionado = null;
+    let cancelacionEnviada = false;
+    let desbloqueoEnviado = false;
+    let transicionModal = false;
+    let peticionCalendario = null;
+    let numeroConsulta = 0;
+
+    if (!$calendario.length || typeof FullCalendar === "undefined") {
+        return;
+    }
+
+    const eventosIniciales = Array.isArray(window.agendamientosCalendario)
+        ? window.agendamientosCalendario
+        : [];
+
+
+    /* ================================================= */
+    /* CONFIGURACIÓN RESPONSIVE DEL CALENDARIO */
+    /* ================================================= */
 
     function calendarioEsMovil() {
-        return (
-            window.innerWidth <=
-            LIMITE_CALENDARIO_MOVIL
-        );
+        return window.innerWidth <= LIMITE_CALENDARIO_MOVIL;
     }
 
     function obtenerToolbarCalendario() {
-        if (calendarioEsMovil()) {
-            return {
+        return calendarioEsMovil()
+            ? {
                 left: "prev",
                 center: "title",
                 right: "next"
+            }
+            : {
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay"
             };
-        }
-
-        return {
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay"
-        };
     }
 
     function obtenerAlturaCalendario() {
@@ -137,91 +82,55 @@ document.addEventListener("DOMContentLoaded", function () {
             return 350;
         }
 
-        if (
-            window.innerWidth <=
-            LIMITE_CALENDARIO_TABLET
-        ) {
-            return 440;
-        }
-
-        return 470;
+        return window.innerWidth <= LIMITE_CALENDARIO_TABLET ? 440 : 470;
     }
 
-    let calendarioEstabaEnMovil =
-        calendarioEsMovil();
+    let calendarioEstabaEnMovil = calendarioEsMovil();
 
-    if (
-        !calendarEl ||
-        typeof FullCalendar === "undefined"
-    ) {
-        return;
-    }
 
-    const eventosIniciales = Array.isArray(
-        window.agendamientosCalendario
-    )
-        ? window.agendamientosCalendario
-        : [];
+    /* ================================================= */
+    /* FECHAS, HORAS Y DURACIÓN */
+    /* ================================================= */
 
     function obtenerFechaLocal(fecha) {
         const anio = fecha.getFullYear();
-
-        const mes = String(
-            fecha.getMonth() + 1
-        ).padStart(2, "0");
-
-        const dia = String(
-            fecha.getDate()
-        ).padStart(2, "0");
+        const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+        const dia = String(fecha.getDate()).padStart(2, "0");
 
         return `${anio}-${mes}-${dia}`;
     }
 
     function obtenerHoraLocal(fecha) {
-        const horas = String(
-            fecha.getHours()
-        ).padStart(2, "0");
-
-        const minutos = String(
-            fecha.getMinutes()
-        ).padStart(2, "0");
+        const horas = String(fecha.getHours()).padStart(2, "0");
+        const minutos = String(fecha.getMinutes()).padStart(2, "0");
 
         return `${horas}:${minutos}`;
     }
 
     function formatearFecha(fecha) {
-        if (!fecha) {
-            return "—";
-        }
-
-        return fecha.toLocaleDateString("es-VE", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        });
+        return fecha
+            ? fecha.toLocaleDateString("es-VE", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            })
+            : "—";
     }
 
     function formatearHora(fecha) {
-        if (!fecha) {
-            return "—";
-        }
-
-        return fecha.toLocaleTimeString("es-VE", {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
+        return fecha
+            ? fecha.toLocaleTimeString("es-VE", {
+                hour: "2-digit",
+                minute: "2-digit"
+            })
+            : "—";
     }
 
     function calcularDuracionMinutos(evento) {
         if (evento.start && evento.end) {
-            const diferencia =
-                evento.end.getTime() -
-                evento.start.getTime();
+            const diferencia = evento.end.getTime() - evento.start.getTime();
 
-            return Math.max(
-                1,
-                Math.round(diferencia / 60000)
-            );
+            return Math.max(1, Math.round(diferencia / 60000));
         }
 
         const duracion = parseInt(
@@ -229,37 +138,28 @@ document.addEventListener("DOMContentLoaded", function () {
             10
         );
 
-        return Number.isNaN(duracion)
-            ? 0
-            : duracion;
+        return Number.isNaN(duracion) ? 0 : duracion;
     }
 
     function actualizarHoraTexto() {
-        if (!ultimaActualizacion) {
-            return;
-        }
-
-        const ahora = new Date();
-
-        ultimaActualizacion.textContent =
+        $ultimaActualizacion.text(
             "Actualizado: " +
-            ahora.toLocaleTimeString("es-VE", {
+            new Date().toLocaleTimeString("es-VE", {
                 hour: "2-digit",
                 minute: "2-digit"
-            });
+            })
+        );
     }
 
+
+    /* ================================================= */
+    /* ESTADOS Y COLORES */
+    /* ================================================= */
+
     function obtenerClaseEstado(estado) {
-        const nombre = String(
-            estado || ""
-        )
-            .trim()
-            .toUpperCase();
+        const nombre = String(estado || "").trim().toUpperCase();
 
         switch (nombre) {
-            case "AGENDADA":
-                return "estado-programada";
-
             case "CONFIRMADA":
                 return "estado-confirmada";
 
@@ -278,17 +178,14 @@ document.addEventListener("DOMContentLoaded", function () {
             case "CANCELADA":
                 return "estado-cancelada";
 
+            case "AGENDADA":
             default:
                 return "estado-programada";
         }
     }
 
     function obtenerColorEstado(estado) {
-        const nombre = String(
-            estado || ""
-        )
-            .trim()
-            .toUpperCase();
+        const nombre = String(estado || "").trim().toUpperCase();
 
         switch (nombre) {
             case "CONFIRMADA":
@@ -315,264 +212,233 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+
+    /* ================================================= */
+    /* DATOS DE SERVICIOS Y EVENTOS */
+    /* ================================================= */
+
     function obtenerServiciosTexto(propiedades) {
-        const servicios = propiedades.servicios;
+        if (Array.isArray(propiedades.servicios)) {
+            return propiedades.servicios.map(function (servicio) {
+                if (servicio !== null && typeof servicio === "object") {
+                    return servicio.nombre_servicio || servicio.nombre || "";
+                }
 
-        if (Array.isArray(servicios)) {
-            return servicios
-                .map(function (servicio) {
-                    if (
-                        typeof servicio === "object" &&
-                        servicio !== null
-                    ) {
-                        return (
-                            servicio.nombre_servicio ||
-                            servicio.nombre ||
-                            ""
-                        );
-                    }
+                return String(servicio);
 
-                    return String(servicio);
-                })
-                .filter(Boolean)
-                .join(", ");
+            }).filter(Boolean).join(", ");
         }
 
-        return servicios || "Sin servicios";
+        return propiedades.servicios || "Sin servicios";
     }
 
     function obtenerIdsServicios(propiedades) {
-        if (
-            Array.isArray(
-                propiedades.servicios_ids
-            )
-        ) {
-            return propiedades.servicios_ids.map(
-                String
-            );
+        if (Array.isArray(propiedades.servicios_ids)) {
+            return propiedades.servicios_ids.map(String);
         }
 
         if (Array.isArray(propiedades.servicios)) {
-            return propiedades.servicios
-                .map(function (servicio) {
-                    if (
-                        typeof servicio === "object" &&
-                        servicio !== null
-                    ) {
-                        return servicio.id_servicio;
-                    }
+            return propiedades.servicios.map(function (servicio) {
+                return servicio !== null && typeof servicio === "object"
+                    ? servicio.id_servicio
+                    : servicio;
 
-                    return servicio;
-                })
-                .filter(function (id) {
-                    return (
-                        id !== undefined &&
-                        id !== null &&
-                        id !== ""
-                    );
-                })
-                .map(String);
+            }).filter(function (id) {
+                return id !== undefined && id !== null && id !== "";
+
+            }).map(String);
         }
 
         return [];
     }
 
     function esEventoBloqueo(evento) {
+        return Boolean(evento?.extendedProps?.es_bloqueo);
+    }
+
+    function colocarTexto(id, valor) {
+        $("#" + id).text(
+            valor !== null && valor !== undefined && valor !== ""
+                ? valor
+                : "—"
+        );
+    }
+
+    function seleccionarValor(id, valor) {
+        $("#" + id).val(
+            valor !== null && valor !== undefined
+                ? String(valor)
+                : ""
+        );
+    }
+
+    function operacionEnCurso() {
         return Boolean(
-            evento &&
-            evento.extendedProps &&
-            evento.extendedProps.es_bloqueo
+            window.AgendamientoOperaciones?.estaProcesando?.()
         );
     }
 
 
-    function colocarTexto(id, valor) {
-        const elemento = document.getElementById(id);
+    /* ================================================= */
+    /* TRANSICIONES ENTRE MODALES */
+    /* ================================================= */
 
-        if (!elemento) {
+    const $modales = $modalDetalle
+        .add($modalDetalleBloqueo)
+        .add($modalEditar)
+        .add($modalEditarBloqueo)
+        .add($modalConfirmarCancelacion)
+        .add($modalConfirmarDesbloqueo);
+
+    $modales.on("show.bs.modal", function (evento) {
+        if (!evento.isDefaultPrevented()) {
+            $(this).attr("data-abriendo-calendario", "1");
+        }
+    });
+
+    $modales.on("shown.bs.modal", function () {
+        $(this).removeAttr("data-abriendo-calendario");
+    });
+
+    $modales.on("hide.bs.modal", function (evento) {
+        if (!evento.isDefaultPrevented()) {
+            $(this).attr("data-cerrando-calendario", "1");
+        }
+    });
+
+    $modales.on("hidden.bs.modal", function () {
+        $(this).removeAttr(
+            "data-abriendo-calendario data-cerrando-calendario"
+        );
+    });
+
+    function mostrarModal($modal) {
+        if ($modal.length && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance($modal.get(0)).show();
+        }
+    }
+
+    function esperarCierreModal($modal) {
+        return new Promise(function (resolve) {
+            if (!$modal.length || !window.bootstrap) {
+                resolve();
+                return;
+            }
+
+            if ($modal.attr("data-cerrando-calendario") === "1") {
+                $modal.one("hidden.bs.modal", resolve);
+                return;
+            }
+
+            if (!$modal.hasClass("show")) {
+                resolve();
+                return;
+            }
+
+            $modal.one("hidden.bs.modal", resolve);
+
+            function cerrar() {
+                bootstrap.Modal.getOrCreateInstance($modal.get(0)).hide();
+            }
+
+            if ($modal.attr("data-abriendo-calendario") === "1") {
+                $modal.one("shown.bs.modal", cerrar);
+            } else {
+                cerrar();
+            }
+        });
+    }
+
+    async function cambiarModal($origen, $destino) {
+        if (
+            transicionModal ||
+            operacionEnCurso() ||
+            !$destino.length
+        ) {
             return;
         }
 
-        elemento.textContent =
-            valor !== null &&
-            valor !== undefined &&
-            valor !== ""
-                ? valor
-                : "—";
-    }
+        transicionModal = true;
 
-    function seleccionarValor(id, valor) {
-        const campo = document.getElementById(id);
+        try {
+            await esperarCierreModal($origen);
+            mostrarModal($destino);
 
-        if (!campo) {
-            return;
+        } finally {
+            transicionModal = false;
         }
-
-        campo.value =
-            valor !== null &&
-            valor !== undefined
-                ? String(valor)
-                : "";
     }
 
-    /* ===================================================== */
-    /* SERVICIOS DEL FORMULARIO EDITAR */
-    /* ===================================================== */
+
+    /* ================================================= */
+    /* FORMULARIOS DE EDICIÓN */
+    /* ================================================= */
 
     function seleccionarServicios(idsServicios) {
         const ids = Array.isArray(idsServicios)
             ? idsServicios.map(String)
             : [];
 
-
-        /*
-         * agendamiento.js controla ahora el selector
-         * personalizado de servicios.
-         */
         if (
-            window.AgendamientoServicios &&
-            typeof window.AgendamientoServicios
-                .seleccionarEditar === "function"
+            typeof window.AgendamientoServicios?.seleccionarEditar ===
+            "function"
         ) {
-            window.AgendamientoServicios
-                .seleccionarEditar(ids);
-
+            window.AgendamientoServicios.seleccionarEditar(ids);
             return;
         }
 
-
-        /*
-         * Respaldo por si la API de agendamiento.js
-         * todavía no estuviera disponible.
-         */
-        const contenedor = document.getElementById(
-            "editarServiciosAgendamiento"
-        );
-
-
-        if (!contenedor) {
-            return;
-        }
-
-
-        const checks = contenedor.querySelectorAll(
-            ".agendamiento-servicio-check"
-        );
-
-
-        checks.forEach(
-            function (check) {
-                check.checked = ids.includes(
-                    String(check.value)
+        $("#editarServiciosAgendamiento .agendamiento-servicio-check")
+            .each(function () {
+                $(this).prop(
+                    "checked",
+                    ids.includes(String($(this).val()))
                 );
-            }
-        );
+            });
     }
 
-
-    /* ===================================================== */
-    /* LLENAR FORMULARIO EDITAR */
-    /* ===================================================== */
-
     function llenarFormularioEditar(evento) {
-        const propiedades =
-            evento.extendedProps || {};
+        const propiedades = evento.extendedProps || {};
 
-
-        seleccionarValor(
-            "editarIdAgendamiento",
-            evento.id
-        );
-
-
-        seleccionarValor(
-            "editarClienteAgendamiento",
-            propiedades.id_cliente
-        );
-
-
-        seleccionarValor(
-            "editarUsuarioAsignado",
-            propiedades.id_usuario_asignado
-        );
-
-
-        seleccionarValor(
-            "editarTipoAgendamiento",
-            propiedades.id_tipo_agendamiento
-        );
-
-
-        seleccionarValor(
-            "editarEstadoAgendamiento",
-            propiedades.id_estado_agendamiento
-        );
-
+        seleccionarValor("editarIdAgendamiento", evento.id);
+        seleccionarValor("editarClienteAgendamiento", propiedades.id_cliente);
+        seleccionarValor("editarUsuarioAsignado", propiedades.id_usuario_asignado);
+        seleccionarValor("editarTipoAgendamiento", propiedades.id_tipo_agendamiento);
+        seleccionarValor("editarEstadoAgendamiento", propiedades.id_estado_agendamiento);
 
         seleccionarValor(
             "editarFechaAgendamiento",
-            evento.start
-                ? obtenerFechaLocal(evento.start)
-                : ""
+            evento.start ? obtenerFechaLocal(evento.start) : ""
         );
-
 
         seleccionarValor(
             "editarHoraAgendamiento",
-            evento.start
-                ? obtenerHoraLocal(evento.start)
-                : ""
+            evento.start ? obtenerHoraLocal(evento.start) : ""
         );
-
 
         seleccionarValor(
             "editarObservacionAgendamiento",
             propiedades.observacion_inicial
         );
 
-
-        seleccionarServicios(
-            obtenerIdsServicios(propiedades)
-        );
-
+        seleccionarServicios(obtenerIdsServicios(propiedades));
 
         seleccionarValor(
             "editarMontoTotal",
-            Number(
-                propiedades.monto_total || 0
-            ).toFixed(2)
+            Number(propiedades.monto_total || 0).toFixed(2)
         );
-
 
         seleccionarValor(
             "editarDuracionAgendamiento",
             calcularDuracionMinutos(evento)
         );
 
-
-        /*
-         * Después de colocar los datos, se informa
-         * a agendamiento.js para actualizar el selector
-         * personalizado de servicios y la duración.
-         */
-        if (
-            window.AgendamientoServicios &&
-            typeof window.AgendamientoServicios
-                .configurarEditar === "function"
-        ) {
-            window.AgendamientoServicios
-                .configurarEditar();
-        }
+        window.AgendamientoServicios?.configurarEditar?.();
     }
 
     function llenarFormularioEditarBloqueo(evento) {
-        const propiedades =
-            evento.extendedProps || {};
+        const propiedades = evento.extendedProps || {};
 
-        seleccionarValor(
-            "editarIdBloqueo",
-            propiedades.id_bloqueo
-        );
+        seleccionarValor("editarIdBloqueo", propiedades.id_bloqueo);
 
         seleccionarValor(
             "editarBloqueoUsuarioEspecialista",
@@ -581,37 +447,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
         seleccionarValor(
             "editarBloqueoFecha",
-            evento.start
-                ? obtenerFechaLocal(evento.start)
-                : ""
+            evento.start ? obtenerFechaLocal(evento.start) : ""
         );
 
         seleccionarValor(
             "editarBloqueoHoraInicio",
-            evento.start
-                ? obtenerHoraLocal(evento.start)
-                : ""
+            evento.start ? obtenerHoraLocal(evento.start) : ""
         );
 
         seleccionarValor(
             "editarBloqueoHoraFin",
-            evento.end
-                ? obtenerHoraLocal(evento.end)
-                : ""
+            evento.end ? obtenerHoraLocal(evento.end) : ""
         );
 
-        seleccionarValor(
-            "editarBloqueoMotivo",
-            propiedades.motivo
-        );
+        seleccionarValor("editarBloqueoMotivo", propiedades.motivo);
     }
 
 
+    /* ================================================= */
+    /* DETALLES DE BLOQUEOS Y AGENDAMIENTOS */
+    /* ================================================= */
+
     function mostrarDetalleBloqueo(evento) {
+        if (operacionEnCurso() || transicionModal) {
+            return;
+        }
+
         eventoSeleccionado = evento;
 
-        const propiedades =
-            evento.extendedProps || {};
+        const propiedades = evento.extendedProps || {};
 
         colocarTexto(
             "detalleEspecialistaBloqueo",
@@ -620,9 +484,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         colocarTexto(
             "detalleFechaBloqueo",
-            evento.start
-                ? formatearFecha(evento.start)
-                : "—"
+            formatearFecha(evento.start)
         );
 
         colocarTexto(
@@ -637,34 +499,22 @@ document.addEventListener("DOMContentLoaded", function () {
             propiedades.motivo || "Sin motivo registrado"
         );
 
-        const estadoBloqueo = document.getElementById(
-            "detalleEstadoBloqueo"
+        colocarTexto(
+            "detalleEstadoBloqueo",
+            propiedades.estado_bloqueo || "BLOQUEADO"
         );
 
-        if (estadoBloqueo) {
-            estadoBloqueo.textContent =
-                propiedades.estado_bloqueo ||
-                "BLOQUEADO";
-        }
-
-        if (desbloquearId) {
-            desbloquearId.value =
-                propiedades.id_bloqueo || "";
-        }
+        $desbloquearId.val(propiedades.id_bloqueo || "");
 
         llenarFormularioEditarBloqueo(evento);
-
-        if (modalDetalleBloqueoEl) {
-            bootstrap.Modal
-                .getOrCreateInstance(
-                    modalDetalleBloqueoEl
-                )
-                .show();
-        }
+        mostrarModal($modalDetalleBloqueo);
     }
 
-
     function mostrarDetalle(evento) {
+        if (operacionEnCurso() || transicionModal) {
+            return;
+        }
+
         if (esEventoBloqueo(evento)) {
             mostrarDetalleBloqueo(evento);
             return;
@@ -672,17 +522,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         eventoSeleccionado = evento;
 
-        const propiedades =
-            evento.extendedProps || {};
-
-        const cliente =
-            propiedades.cliente ||
-            evento.title ||
-            "Sin cliente";
+        const propiedades = evento.extendedProps || {};
 
         colocarTexto(
             "detalleClienteAgendamiento",
-            cliente
+            propiedades.cliente || evento.title || "Sin cliente"
         );
 
         colocarTexto(
@@ -704,8 +548,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         colocarTexto(
             "detalleTipoAgendamiento",
-            propiedades.tipo_agendamiento ||
-                propiedades.tipo
+            propiedades.tipo_agendamiento || propiedades.tipo
         );
 
         colocarTexto(
@@ -715,8 +558,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         colocarTexto(
             "detalleObservacionAgendamiento",
-            propiedades.observacion_inicial ||
-                propiedades.observacion
+            propiedades.observacion_inicial || propiedades.observacion
         );
 
         colocarTexto(
@@ -726,670 +568,632 @@ document.addEventListener("DOMContentLoaded", function () {
 
         colocarTexto(
             "detalleMontoAgendamiento",
-            Number(
-                propiedades.monto_total || 0
-            ).toFixed(2)
+            Number(propiedades.monto_total || 0).toFixed(2)
         );
 
-        const estado =
-            propiedades.estado || "AGENDADA";
+        const estado = propiedades.estado || "AGENDADA";
 
-        const detalleEstado = document.getElementById(
-            "detalleEstadoAgendamiento"
-        );
+        $("#detalleEstadoAgendamiento")
+            .attr("class", `badge ${obtenerClaseEstado(estado)}`)
+            .text(estado);
 
-        if (detalleEstado) {
-            detalleEstado.textContent = estado;
-
-            detalleEstado.className =
-                `badge ${obtenerClaseEstado(estado)}`;
-        }
-
-        if (cancelarId) {
-            cancelarId.value = evento.id;
-        }
+        $cancelarId.val(evento.id);
 
         llenarFormularioEditar(evento);
-
-        if (modalDetalleEl) {
-            bootstrap.Modal
-                .getOrCreateInstance(
-                    modalDetalleEl
-                )
-                .show();
-        }
+        mostrarModal($modalDetalle);
     }
 
+
+    /* ================================================= */
+    /* LISTA DE AGENDAMIENTOS DE HOY */
+    /* ================================================= */
+
     function obtenerEventosDeHoy() {
-        if (!calendar) {
-            return [];
-        }
+        const hoy = obtenerFechaLocal(new Date());
 
-        const hoy = obtenerFechaLocal(
-            new Date()
-        );
+        return calendario.getEvents().filter(function (evento) {
+            if (!evento.start || esEventoBloqueo(evento)) {
+                return false;
+            }
 
-        return calendar
-            .getEvents()
-            .filter(function (evento) {
-                if (
-                    !evento.start ||
-                    esEventoBloqueo(evento)
-                ) {
-                    return false;
-                }
+            const estado = String(
+                evento.extendedProps.estado || ""
+            ).trim().toUpperCase();
 
-                return (
-                    obtenerFechaLocal(evento.start) ===
-                    hoy
-                );
-            })
-            .sort(function (a, b) {
-                return a.start - b.start;
-            });
+            return estado !== "CANCELADA" &&
+                obtenerFechaLocal(evento.start) === hoy;
+
+        }).sort(function (a, b) {
+            return a.start - b.start;
+        });
     }
 
     function crearEstadoVacio() {
-        const itemVacio =
-            document.createElement("li");
+        return $("<li>", {
+            class: "list-group-item text-center agendamiento-loading-text"
+        }).append(
+            $("<i>", {
+                class: "bi bi-calendar-x me-2",
+                "aria-hidden": "true"
+            }),
 
-        itemVacio.className =
-            "list-group-item text-center agendamiento-loading-text";
-
-        const icono =
-            document.createElement("i");
-
-        icono.className =
-            "bi bi-calendar-x me-2";
-
-        itemVacio.appendChild(icono);
-
-        itemVacio.appendChild(
-            document.createTextNode(
-                "No hay agendamientos para mostrar."
-            )
+            $("<span>").text("No hay agendamientos para mostrar.")
         );
+    }
 
-        return itemVacio;
+    function crearBotonDetalle(evento) {
+        const $boton = $("<button>", {
+            type: "button",
+            class: "btn btn-sm btn-outline-secondary btnDetalleAgendamientoLista",
+            title: "Ver detalle",
+            "aria-label": "Ver detalle del agendamiento",
+            "data-id-agendamiento": String(evento.id)
+        });
+
+        const $plantilla = $("#plantillaIconoDetalleAgendamiento");
+
+        /* El dibujo del ícono se conserva en la vista */
+        if ($plantilla.length) {
+            $boton.append($plantilla.contents().clone());
+        } else {
+            $boton.text("Ver detalle");
+        }
+
+        return $boton;
     }
 
     function renderizarLista() {
-        if (!listaAgendamientos) {
+        if (!$lista.length || !calendario) {
             return;
         }
 
-        const filtro = inputBusqueda
-            ? inputBusqueda.value
-                  .trim()
-                  .toLowerCase()
-            : "";
+        const filtro = String(
+            $inputBusqueda.val() || ""
+        ).trim().toLowerCase();
 
         let eventos = obtenerEventosDeHoy();
 
-        if (filtro !== "") {
-            eventos = eventos.filter(
-                function (evento) {
-                    const propiedades =
-                        evento.extendedProps || {};
+        if (filtro) {
+            eventos = eventos.filter(function (evento) {
+                const propiedades = evento.extendedProps || {};
 
-                    const contenido = [
-                        evento.title,
-                        propiedades.cliente,
-                        propiedades.especialista,
-                        propiedades.estado,
-                        propiedades.tipo_agendamiento,
-                        propiedades.observacion_inicial,
-                        obtenerServiciosTexto(
-                            propiedades
-                        )
-                    ]
-                        .join(" ")
-                        .toLowerCase();
+                const contenido = [
+                    evento.title,
+                    propiedades.cliente,
+                    propiedades.especialista,
+                    propiedades.estado,
+                    propiedades.tipo_agendamiento,
+                    propiedades.observacion_inicial,
+                    obtenerServiciosTexto(propiedades)
+                ].join(" ").toLowerCase();
 
-                    return contenido.includes(
-                        filtro
-                    );
-                }
-            );
+                return contenido.includes(filtro);
+            });
         }
 
-        listaAgendamientos.innerHTML = "";
+        $lista.empty();
 
-        if (eventos.length === 0) {
-            listaAgendamientos.appendChild(
-                crearEstadoVacio()
-            );
-
-            actualizarHoraTexto();
-
+        if (!eventos.length) {
+            $lista.append(crearEstadoVacio());
             return;
         }
 
         eventos.forEach(function (evento) {
-            const propiedades =
-                evento.extendedProps || {};
+            const propiedades = evento.extendedProps || {};
+            const estado = propiedades.estado || "AGENDADA";
 
-            const item =
-                document.createElement("li");
+            const $informacion = $("<div>").append(
+                $("<h6>", {
+                    class: "mb-1"
+                }).text(
+                    `${formatearHora(evento.start)} - ${propiedades.cliente || evento.title}`
+                ),
 
-            item.className =
-                "list-group-item d-flex justify-content-between align-items-center gap-3";
+                $("<small>", {
+                    class: "d-block"
+                }).text(obtenerServiciosTexto(propiedades)),
 
-            const informacion =
-                document.createElement("div");
-
-            const titulo =
-                document.createElement("h6");
-
-            titulo.className = "mb-1";
-
-            titulo.textContent =
-                `${formatearHora(evento.start)} - ` +
-                `${propiedades.cliente || evento.title}`;
-
-            const servicios =
-                document.createElement("small");
-
-            servicios.className = "d-block";
-
-            servicios.textContent =
-                obtenerServiciosTexto(
-                    propiedades
-                );
-
-            const especialista =
-                document.createElement("small");
-
-            especialista.className = "d-block";
-
-            especialista.textContent =
-                propiedades.especialista || "";
-
-            informacion.appendChild(titulo);
-            informacion.appendChild(servicios);
-            informacion.appendChild(
-                especialista
+                $("<small>", {
+                    class: "d-block"
+                }).text(propiedades.especialista || "")
             );
 
-            const acciones =
-                document.createElement("div");
+            const $acciones = $("<div>", {
+                class: "d-flex align-items-center gap-2"
+            }).append(
+                $("<span>", {
+                    class: `badge ${obtenerClaseEstado(estado)}`
+                }).text(estado),
 
-            acciones.className =
-                "d-flex align-items-center gap-2";
-
-            const badge =
-                document.createElement("span");
-
-            const estado =
-                propiedades.estado || "AGENDADA";
-
-            badge.className =
-                `badge ${obtenerClaseEstado(estado)}`;
-
-            badge.textContent = estado;
-
-            const boton =
-                document.createElement("button");
-
-            boton.type = "button";
-
-            boton.className =
-                "btn btn-sm btn-outline-secondary";
-
-            boton.title = "Ver detalle";
-
-            boton.setAttribute(
-                "aria-label",
-                "Ver detalle del agendamiento"
+                crearBotonDetalle(evento)
             );
 
-            boton.innerHTML = `
-                <span
-                    class="agendamiento-detalle-icono"
-                    aria-hidden="true"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    >
-                        <path
-                            d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            fill="none"
-                        />
-
-                        <path
-                            d="M12 16C10 14.8 8.5 13.5 8.5 11.8C8.5 10.5 9.5 9.5 10.8 9.5C11.5 9.5 12 9.9 12 10.4C12 9.9 12.5 9.5 13.2 9.5C14.5 9.5 15.5 10.5 15.5 11.8C15.5 13.5 14 14.8 12 16Z"
-                            fill="currentColor"
-                        />
-                    </svg>
-                </span>
-            `;
-
-            boton.addEventListener(
-                "click",
-                function () {
-                    mostrarDetalle(evento);
-                }
-            );
-
-            acciones.appendChild(badge);
-            acciones.appendChild(boton);
-
-            item.appendChild(informacion);
-            item.appendChild(acciones);
-
-            listaAgendamientos.appendChild(
-                item
+            $lista.append(
+                $("<li>", {
+                    class: "list-group-item d-flex justify-content-between align-items-center gap-3"
+                }).append($informacion, $acciones)
             );
         });
-
-        actualizarHoraTexto();
     }
 
-    function enviarCambio(evento) {
+    $lista.on("click", ".btnDetalleAgendamientoLista", function () {
+        const evento = calendario.getEventById(
+            String($(this).attr("data-id-agendamiento"))
+        );
+
+        if (evento) {
+            mostrarDetalle(evento);
+        }
+    });
+
+
+    /* ================================================= */
+    /* CONSULTAR Y ACTUALIZAR EL CALENDARIO */
+    /* ================================================= */
+
+    function ocultarMensaje($contenedor) {
+        $contenedor.attr("class", "alert d-none mb-0").empty();
+    }
+
+    function mostrarError($contenedor, mensaje) {
+        $contenedor
+            .attr("class", "alert alert-danger mb-0")
+            .attr("role", "alert")
+            .text(mensaje);
+    }
+
+    function mostrarErrorCalendario(mensaje) {
+        if ($mensajeCalendario.length) {
+            mostrarError($mensajeCalendario, mensaje);
+        } else {
+            $ultimaActualizacion.text(mensaje);
+        }
+    }
+
+    async function actualizarCalendario() {
+        const operaciones = window.AgendamientoOperaciones;
+
         if (
-            !formMover ||
-            !moverId ||
-            !moverFecha ||
-            !moverHora ||
-            !moverDuracion ||
-            !evento.start
+            !calendario ||
+            typeof operaciones?.solicitar !== "function"
         ) {
+            mostrarErrorCalendario(
+                "No fue posible preparar la actualización del calendario. Recargue la página."
+            );
+
             return false;
         }
 
-        moverId.value = evento.id;
+        numeroConsulta += 1;
 
-        moverFecha.value = obtenerFechaLocal(
-            evento.start
-        );
+        const consultaActual = numeroConsulta;
 
-        moverHora.value = obtenerHoraLocal(
-            evento.start
-        );
+        if (peticionCalendario) {
+            peticionCalendario.cancelar();
+        }
 
-        moverDuracion.value =
-            calcularDuracionMinutos(evento);
-
-        formMover.submit();
-
-        return true;
-    }
-
-    calendar = new FullCalendar.Calendar(
-        calendarEl,
-        {
-            initialView: "dayGridMonth",
-
-            locale: "es",
-
-            timeZone: "local",
-
-            height: obtenerAlturaCalendario(),
-
-            expandRows: false,
-
-            fixedWeekCount: false,
-
-            showNonCurrentDates: false,
-
-            slotMinTime: "06:00:00",
-
-            slotMaxTime: "22:00:00",
-
-            slotDuration: "00:30:00",
-
-            /*
-             * Semana y Día se abren desde las 6:00 a. m.
-             * y conservan la posición al cambiar de fecha.
-             */
-            scrollTime: "06:00:00",
-
-            scrollTimeReset: false,
-
-            editable: false,
-
-            eventStartEditable: false,
-
-            eventDurationEditable: false,
-
-            events: eventosIniciales,
-
-            headerToolbar: obtenerToolbarCalendario(),
-
-            buttonText: {
-                today: "Hoy",
-                month: "Mes",
-                week: "Semana",
-                day: "Día"
-            },
-
-            eventTimeFormat: {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true
-            },
-
-            eventDidMount: function (info) {
-                if (esEventoBloqueo(info.event)) {
-                    info.el.classList.add(
-                        "evento-bloqueo-horario"
-                    );
-
-                    return;
+        try {
+            peticionCalendario = operaciones.solicitar(
+                "Index.php?url=agendamiento",
+                {
+                    method: "GET",
+                    data: {
+                        accion: "consultar_calendario"
+                    }
                 }
+            );
 
-                const color =
-                    obtenerColorEstado(
-                        info.event.extendedProps
-                            .estado
-                    );
+            const respuesta = await peticionCalendario;
 
-                info.el.style.backgroundColor =
-                    color;
+            if (consultaActual !== numeroConsulta) {
+                return false;
+            }
 
-                info.el.style.borderColor =
-                    color;
-            },
+            if (
+                !respuesta ||
+                respuesta.ok !== true ||
+                !Array.isArray(respuesta.eventos)
+            ) {
+                throw new Error(
+                    "La respuesta del calendario no es válida."
+                );
+            }
 
-            eventClick: function (info) {
-                mostrarDetalle(info.event);
-            },
+            const idSeleccionado = eventoSeleccionado
+                ? String(eventoSeleccionado.id)
+                : null;
 
-            eventsSet: function () {
-                renderizarLista();
+            /* Reemplazar una sola fuente para evitar eventos duplicados */
+            calendario.batchRendering(function () {
+                calendario.getEventSourceById(FUENTE_CALENDARIO)?.remove();
+
+                calendario.addEventSource({
+                    id: FUENTE_CALENDARIO,
+                    events: respuesta.eventos
+                });
+            });
+
+            eventoSeleccionado = idSeleccionado
+                ? calendario.getEventById(idSeleccionado)
+                : null;
+
+            ocultarMensaje($mensajeCalendario);
+            actualizarHoraTexto();
+
+            return true;
+
+        } catch (error) {
+            if (consultaActual !== numeroConsulta) {
+                return false;
+            }
+
+            if (error.status === 401) {
+                window.location.assign(
+                    "Index.php?url=login&sesion=expirada"
+                );
+
+                return false;
+            }
+
+            mostrarErrorCalendario(
+                error.responseJSON?.mensaje ||
+                "No fue posible actualizar el calendario. Se conservan los datos mostrados anteriormente."
+            );
+
+            return false;
+
+        } finally {
+            if (consultaActual === numeroConsulta) {
+                peticionCalendario = null;
             }
         }
-    );
+    }
 
-    calendar.render();
+    window.AgendamientoCalendario = {
+        actualizar: actualizarCalendario
+    };
+
+
+    /* ================================================= */
+    /* INICIALIZACIÓN DE FULLCALENDAR */
+    /* ================================================= */
+
+    calendario = new FullCalendar.Calendar($calendario.get(0), {
+        initialView: "dayGridMonth",
+        locale: "es",
+        timeZone: "local",
+        height: obtenerAlturaCalendario(),
+        expandRows: false,
+        fixedWeekCount: false,
+        showNonCurrentDates: false,
+
+        slotMinTime: "06:00:00",
+        slotMaxTime: "22:00:00",
+        slotDuration: "00:30:00",
+        scrollTime: "06:00:00",
+        scrollTimeReset: false,
+
+        editable: false,
+        eventStartEditable: false,
+        eventDurationEditable: false,
+
+        eventSources: [
+            {
+                id: FUENTE_CALENDARIO,
+                events: eventosIniciales
+            }
+        ],
+
+        headerToolbar: obtenerToolbarCalendario(),
+
+        buttonText: {
+            today: "Hoy",
+            month: "Mes",
+            week: "Semana",
+            day: "Día"
+        },
+
+        eventTimeFormat: {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+        },
+
+        eventDidMount: function (info) {
+            if (esEventoBloqueo(info.event)) {
+                $(info.el).addClass("evento-bloqueo-horario");
+            } else {
+                const color = obtenerColorEstado(
+                    info.event.extendedProps.estado
+                );
+
+                $(info.el).css({
+                    backgroundColor: color,
+                    borderColor: color
+                });
+            }
+        },
+
+        eventClick: function (info) {
+            mostrarDetalle(info.event);
+        },
+
+        eventsSet: renderizarLista
+    });
+
+    calendario.render();
+    renderizarLista();
+    actualizarHoraTexto();
+
+
+    /* ================================================= */
+    /* AJUSTE DE TAMAÑO Y BÚSQUEDA */
+    /* ================================================= */
 
     let temporizadorCalendario = null;
 
-    window.addEventListener(
-        "resize",
-        function () {
-            window.clearTimeout(
-                temporizadorCalendario
-            );
+    $(window).on("resize", function () {
+        window.clearTimeout(temporizadorCalendario);
 
-            temporizadorCalendario =
-                window.setTimeout(
-                    function () {
-                        const calendarioAhoraEsMovil =
-                            calendarioEsMovil();
+        temporizadorCalendario = window.setTimeout(function () {
+            const esMovil = calendarioEsMovil();
 
-                        calendar.setOption(
-                            "height",
-                            obtenerAlturaCalendario()
-                        );
+            calendario.setOption("height", obtenerAlturaCalendario());
 
-                        if (
-                            calendarioAhoraEsMovil !==
-                            calendarioEstabaEnMovil
-                        ) {
-                            calendarioEstabaEnMovil =
-                                calendarioAhoraEsMovil;
+            if (esMovil !== calendarioEstabaEnMovil) {
+                calendarioEstabaEnMovil = esMovil;
 
-                            calendar.setOption(
-                                "headerToolbar",
-                                obtenerToolbarCalendario()
-                            );
-                        }
-
-                        calendar.updateSize();
-                    },
-                    180
+                calendario.setOption(
+                    "headerToolbar",
+                    obtenerToolbarCalendario()
                 );
+            }
+
+            calendario.updateSize();
+        }, 180);
+    });
+
+    $btnBuscar.on("click", function () {
+        $contenedorBusqueda.toggleClass("d-none");
+
+        if (!$contenedorBusqueda.hasClass("d-none")) {
+            $inputBusqueda.trigger("focus");
         }
-    );
+    });
 
-    renderizarLista();
-
-    actualizarHoraTexto();
-
-    if (btnBuscar && contenedorBusqueda) {
-        btnBuscar.addEventListener(
-            "click",
-            function () {
-                contenedorBusqueda.classList.toggle(
-                    "d-none"
-                );
-
-                if (
-                    !contenedorBusqueda.classList.contains(
-                        "d-none"
-                    ) &&
-                    inputBusqueda
-                ) {
-                    inputBusqueda.focus();
-                }
-            }
-        );
-    }
-
-    if (inputBusqueda) {
-        inputBusqueda.addEventListener(
-            "input",
-            renderizarLista
-        );
-    }
-
-    if (btnEjecutarBusqueda) {
-        btnEjecutarBusqueda.addEventListener(
-            "click",
-            renderizarLista
-        );
-    }
-
-    if (btnEditar) {
-        btnEditar.addEventListener(
-            "click",
-            function () {
-                if (!eventoSeleccionado) {
-                    return;
-                }
-
-                llenarFormularioEditar(
-                    eventoSeleccionado
-                );
-
-                if (modalDetalleEl) {
-                    const instanciaDetalle =
-                        bootstrap.Modal.getInstance(
-                            modalDetalleEl
-                        );
-
-                    if (instanciaDetalle) {
-                        instanciaDetalle.hide();
-                    }
-                }
-
-                if (modalEditarEl) {
-                    bootstrap.Modal
-                        .getOrCreateInstance(
-                            modalEditarEl
-                        )
-                        .show();
-                }
-            }
-        );
-    }
-
-    if (btnEditarBloqueo) {
-        btnEditarBloqueo.addEventListener(
-            "click",
-            function () {
-                if (
-                    !eventoSeleccionado ||
-                    !esEventoBloqueo(
-                        eventoSeleccionado
-                    )
-                ) {
-                    return;
-                }
-
-                llenarFormularioEditarBloqueo(
-                    eventoSeleccionado
-                );
-
-                if (modalDetalleBloqueoEl) {
-                    const instanciaDetalleBloqueo =
-                        bootstrap.Modal.getInstance(
-                            modalDetalleBloqueoEl
-                        );
-
-                    if (instanciaDetalleBloqueo) {
-                        instanciaDetalleBloqueo.hide();
-                    }
-                }
-
-                if (modalEditarBloqueoEl) {
-                    bootstrap.Modal
-                        .getOrCreateInstance(
-                            modalEditarBloqueoEl
-                        )
-                        .show();
-                }
-            }
-        );
-    }
+    $inputBusqueda.on("input", renderizarLista);
+    $btnEjecutarBusqueda.on("click", renderizarLista);
 
 
-    if (
-        btnDesbloquear &&
-        formDesbloquear &&
-        desbloquearId
-    ) {
-        btnDesbloquear.addEventListener(
-            "click",
-            function () {
-                if (
-                    !eventoSeleccionado ||
-                    !esEventoBloqueo(
-                        eventoSeleccionado
-                    )
-                ) {
-                    return;
-                }
+    /* ================================================= */
+    /* ABRIR FORMULARIOS DE EDICIÓN */
+    /* ================================================= */
 
-                desbloquearId.value =
-                    eventoSeleccionado
-                        .extendedProps
-                        .id_bloqueo;
+    $btnEditar.on("click", function () {
+        if (
+            !eventoSeleccionado ||
+            esEventoBloqueo(eventoSeleccionado) ||
+            operacionEnCurso()
+        ) {
+            return;
+        }
 
+        llenarFormularioEditar(eventoSeleccionado);
 
-                if (
-                    !modalConfirmarDesbloqueoEl
-                ) {
-                    return;
-                }
+        cambiarModal($modalDetalle, $modalEditar);
+    });
 
+    $btnEditarBloqueo.on("click", function () {
+        if (
+            !esEventoBloqueo(eventoSeleccionado) ||
+            operacionEnCurso()
+        ) {
+            return;
+        }
 
-                const mostrarConfirmacion =
-                    function () {
-                        bootstrap.Modal
-                            .getOrCreateInstance(
-                                modalConfirmarDesbloqueoEl
-                            )
-                            .show();
-                    };
+        llenarFormularioEditarBloqueo(eventoSeleccionado);
+
+        cambiarModal($modalDetalleBloqueo, $modalEditarBloqueo);
+    });
 
 
-                const instanciaDetalleBloqueo =
-                    modalDetalleBloqueoEl
-                        ? bootstrap.Modal
-                            .getInstance(
-                                modalDetalleBloqueoEl
-                            )
-                        : null;
+    /* ================================================= */
+    /* CONFIRMACIÓN DE CANCELACIÓN */
+    /* ================================================= */
 
+    $btnCancelar.on("click", function () {
+        if (
+            !eventoSeleccionado ||
+            esEventoBloqueo(eventoSeleccionado) ||
+            operacionEnCurso() ||
+            transicionModal ||
+            !$modalConfirmarCancelacion.length
+        ) {
+            return;
+        }
 
-                if (
-                    modalDetalleBloqueoEl &&
-                    modalDetalleBloqueoEl
-                        .classList
-                        .contains("show") &&
-                    instanciaDetalleBloqueo
-                ) {
-                    modalDetalleBloqueoEl
-                        .addEventListener(
-                            "hidden.bs.modal",
-                            mostrarConfirmacion,
-                            {
-                                once: true
-                            }
-                        );
+        $cancelarId.val(eventoSeleccionado.id);
+        cancelacionEnviada = false;
 
+        $btnConfirmarCancelacion.prop("disabled", false);
 
-                    instanciaDetalleBloqueo.hide();
+        ocultarMensaje($mensajeCancelacion);
+        cambiarModal($modalDetalle, $modalConfirmarCancelacion);
+    });
 
+    async function confirmarCancelacion() {
+        const id = String($cancelarId.val() || "");
+        const operaciones = window.AgendamientoOperaciones;
 
-                    return;
-                }
+        if (!id || cancelacionEnviada || operacionEnCurso()) {
+            return;
+        }
 
-
-                mostrarConfirmacion();
-            }
-        );
-    }
-
-
-    if (
-        btnConfirmarDesbloqueo &&
-        formDesbloquear &&
-        desbloquearId
-    ) {
-        btnConfirmarDesbloqueo
-            .addEventListener(
-                "click",
-                function () {
-                    if (
-                        desbloquearId.value === ""
-                    ) {
-                        return;
-                    }
-
-
-                    btnConfirmarDesbloqueo.disabled =
-                        true;
-
-
-                    formDesbloquear.submit();
-                }
+        if (
+            !$formCancelar.length ||
+            typeof operaciones?.enviar !== "function"
+        ) {
+            mostrarError(
+                $mensajeCancelacion,
+                "No fue posible preparar la cancelación. Recargue la página."
             );
-    }
 
+            return;
+        }
 
-    if (
-        btnCancelar &&
-        formCancelar &&
-        cancelarId
-    ) {
-        btnCancelar.addEventListener(
-            "click",
-            function () {
-                if (!eventoSeleccionado) {
-                    return;
+        cancelacionEnviada = true;
+
+        try {
+            const correcto = await operaciones.enviar($formCancelar, {
+                modal: $modalConfirmarCancelacion,
+                contenedor: $mensajeCancelacion,
+                titulo: "Agendamiento cancelado"
+            });
+
+            if (correcto) {
+                /* Retirar la cita confirmada aunque falle la actualización general */
+                calendario.getEventById(id)?.remove();
+
+                if (String(eventoSeleccionado?.id || "") === id) {
+                    eventoSeleccionado = null;
                 }
 
-                const confirmar = window.confirm(
-                    "¿Desea cancelar este agendamiento?"
-                );
-
-                if (!confirmar) {
-                    return;
-                }
-
-                cancelarId.value =
-                    eventoSeleccionado.id;
-
-                formCancelar.submit();
+                $cancelarId.val("");
             }
-        );
+
+        } catch (error) {
+            mostrarError(
+                $mensajeCancelacion,
+                "No se recibió confirmación de la cancelación. Actualice el calendario antes de intentar nuevamente."
+            );
+
+        } finally {
+            cancelacionEnviada = false;
+        }
     }
+
+    $btnConfirmarCancelacion.on("click", confirmarCancelacion);
+
+    $formCancelar.on("submit", function (evento) {
+        evento.preventDefault();
+        confirmarCancelacion();
+    });
+
+    $modalConfirmarCancelacion.on("hidden.bs.modal", function () {
+        if (cancelacionEnviada) {
+            return;
+        }
+
+        $cancelarId.val("");
+        $btnConfirmarCancelacion.prop("disabled", false);
+
+        ocultarMensaje($mensajeCancelacion);
+
+        /* Volver al detalle cuando se cierra la confirmación */
+        if (
+            eventoSeleccionado &&
+            !esEventoBloqueo(eventoSeleccionado)
+        ) {
+            mostrarModal($modalDetalle);
+        }
+    });
+
+
+    /* ================================================= */
+    /* CONFIRMACIÓN DE DESBLOQUEO */
+    /* ================================================= */
+
+    $btnDesbloquear.on("click", function () {
+        if (
+            !esEventoBloqueo(eventoSeleccionado) ||
+            operacionEnCurso() ||
+            transicionModal ||
+            !$modalConfirmarDesbloqueo.length
+        ) {
+            return;
+        }
+
+        $desbloquearId.val(
+            eventoSeleccionado.extendedProps.id_bloqueo
+        );
+
+        desbloqueoEnviado = false;
+
+        $btnConfirmarDesbloqueo.prop("disabled", false);
+
+        ocultarMensaje($mensajeDesbloqueo);
+
+        cambiarModal(
+            $modalDetalleBloqueo,
+            $modalConfirmarDesbloqueo
+        );
+    });
+
+    async function confirmarDesbloqueo() {
+        const id = String($desbloquearId.val() || "");
+        const operaciones = window.AgendamientoOperaciones;
+
+        if (!id || desbloqueoEnviado || operacionEnCurso()) {
+            return;
+        }
+
+        if (
+            !$formDesbloquear.length ||
+            typeof operaciones?.enviar !== "function"
+        ) {
+            mostrarError(
+                $mensajeDesbloqueo,
+                "No fue posible preparar el desbloqueo. Recargue la página."
+            );
+
+            return;
+        }
+
+        desbloqueoEnviado = true;
+
+        try {
+            const correcto = await operaciones.enviar($formDesbloquear, {
+                modal: $modalConfirmarDesbloqueo,
+                contenedor: $mensajeDesbloqueo,
+                titulo: "Horario desbloqueado"
+            });
+
+            if (correcto) {
+                const idEvento = "bloqueo-" + id;
+
+                calendario.getEventById(idEvento)?.remove();
+
+                if (String(eventoSeleccionado?.id || "") === idEvento) {
+                    eventoSeleccionado = null;
+                }
+
+                $desbloquearId.val("");
+            }
+
+        } catch (error) {
+            mostrarError(
+                $mensajeDesbloqueo,
+                "No se recibió confirmación del desbloqueo. Actualice el calendario antes de intentar nuevamente."
+            );
+
+        } finally {
+            desbloqueoEnviado = false;
+        }
+    }
+
+    $btnConfirmarDesbloqueo.on("click", confirmarDesbloqueo);
+
+    $formDesbloquear.on("submit", function (evento) {
+        evento.preventDefault();
+        confirmarDesbloqueo();
+    });
+
+    $modalConfirmarDesbloqueo.on("hidden.bs.modal", function () {
+        if (!desbloqueoEnviado) {
+            $desbloquearId.val("");
+            $btnConfirmarDesbloqueo.prop("disabled", false);
+
+            ocultarMensaje($mensajeDesbloqueo);
+        }
+    });
 });

@@ -6,9 +6,17 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+/* ===================================================== */
+/* MODELO DE AGENDAMIENTO */
+/* ===================================================== */
+
 class AgendamientoM extends Database implements CrudInterface
 {
-    /* Conexión */
+    /* ================================================= */
+    /* ATRIBUTOS DEL MODELO */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla agendamientos */
@@ -28,7 +36,11 @@ class AgendamientoM extends Database implements CrudInterface
     private $servicios = [];
 
 
-    /* Setters */
+    /* ================================================= */
+    /* ASIGNACIÓN DE DATOS */
+    /* ================================================= */
+
+    /* Asignar los valores recibidos a los atributos privados */
     public function set_idAgendamiento($idAgendamiento) {$this->idAgendamiento = $idAgendamiento;}
     public function set_idCliente($idCliente) {$this->idCliente = $idCliente;}
     public function set_idUsuarioRegistra($idUsuarioRegistra) {$this->idUsuarioRegistra = $idUsuarioRegistra;}
@@ -41,6 +53,7 @@ class AgendamientoM extends Database implements CrudInterface
     public function set_observacionInicial($observacionInicial) {$this->observacionInicial = $observacionInicial;}
     public function set_montoTotal($montoTotal) {$this->montoTotal = $montoTotal;}
 
+    /* Conservar identificadores de servicios positivos y sin duplicados */
     public function set_servicios($servicios)
     {
         if (!is_array($servicios)) {
@@ -58,20 +71,26 @@ class AgendamientoM extends Database implements CrudInterface
             }
         }
 
-        $this->servicios = array_values(
-            array_unique($serviciosLimpios)
-        );
+        $this->servicios = array_values(array_unique($serviciosLimpios));
     }
 
 
-    /* Constructor */
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
+    /* Obtener la conexión heredada de Database */
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /*Consultar:obtiene los agendamientos con sus relaciones.*/
+    /* ================================================= */
+    /* CONSULTAR AGENDAMIENTOS */
+    /* ================================================= */
+
+    /* Obtener las citas con sus clientes, especialistas, estados y servicios */
     public function consultar()
     {
         $sql = "SELECT
@@ -87,37 +106,18 @@ class AgendamientoM extends Database implements CrudInterface
                     a.observacion_inicial,
                     a.monto_total,
 
-                    TRIM(
-                        CONCAT(
-                            pc.nombre,
-                            ' ',
-                            pc.apellido
-                        )
-                    ) AS cliente,
+                    TRIM(CONCAT(pc.nombre, ' ', pc.apellido)) AS cliente,
 
                     pc.cedula AS cedula_cliente,
                     pc.telefono AS telefono_cliente,
 
-                    TRIM(
-                        CONCAT(
-                            pe.nombre,
-                            ' ',
-                            pe.apellido
-                        )
-                    ) AS especialista,
+                    TRIM(CONCAT(pe.nombre, ' ', pe.apellido)) AS especialista,
 
-                    TRIM(
-                        CONCAT(
-                            pr.nombre,
-                            ' ',
-                            pr.apellido
-                        )
-                    ) AS usuario_registra,
+                    TRIM(CONCAT(pr.nombre, ' ', pr.apellido)) AS usuario_registra,
 
                     ea.nombre_estado AS estado,
 
-                    ta.nombre_tipo_agendamiento
-                        AS tipo_agendamiento,
+                    ta.nombre_tipo_agendamiento AS tipo_agendamiento,
 
                     (
                         SELECT GROUP_CONCAT(
@@ -128,8 +128,7 @@ class AgendamientoM extends Database implements CrudInterface
 
                         FROM detalles_agendamientos d
 
-                        WHERE d.id_agendamiento =
-                            a.id_agendamiento
+                        WHERE d.id_agendamiento = a.id_agendamiento
                     ) AS servicios_ids,
 
                     (
@@ -142,50 +141,38 @@ class AgendamientoM extends Database implements CrudInterface
                         FROM detalles_agendamientos d
 
                         INNER JOIN servicios s
-                            ON s.id_servicio =
-                                d.id_servicio
+                            ON s.id_servicio = d.id_servicio
 
-                        WHERE d.id_agendamiento =
-                            a.id_agendamiento
+                        WHERE d.id_agendamiento = a.id_agendamiento
                     ) AS servicios
 
                 FROM agendamientos a
 
                 LEFT JOIN clientes c
-                    ON c.id_cliente =
-                        a.id_cliente
+                    ON c.id_cliente = a.id_cliente
 
                 LEFT JOIN personas pc
-                    ON pc.id_persona =
-                        c.id_persona
+                    ON pc.id_persona = c.id_persona
 
                 INNER JOIN usuarios ue
-                    ON ue.id_usuario =
-                        a.id_usuario_asignado
+                    ON ue.id_usuario = a.id_usuario_asignado
 
                 INNER JOIN personas pe
-                    ON pe.id_persona =
-                        ue.id_persona
+                    ON pe.id_persona = ue.id_persona
 
                 INNER JOIN usuarios ur
-                    ON ur.id_usuario =
-                        a.id_usuario_registra
+                    ON ur.id_usuario = a.id_usuario_registra
 
                 INNER JOIN personas pr
-                    ON pr.id_persona =
-                        ur.id_persona
+                    ON pr.id_persona = ur.id_persona
 
                 INNER JOIN estados_agendamientos ea
-                    ON ea.id_estado_agendamiento =
-                        a.id_estado_agendamiento
+                    ON ea.id_estado_agendamiento = a.id_estado_agendamiento
 
                 INNER JOIN tipos_agendamientos ta
-                    ON ta.id_tipo_agendamiento =
-                        a.id_tipo_agendamiento
+                    ON ta.id_tipo_agendamiento = a.id_tipo_agendamiento
 
-                ORDER BY
-                    a.fecha ASC,
-                    a.hora ASC";
+                ORDER BY a.fecha ASC, a.hora ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
 
@@ -195,55 +182,47 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*Registrar: guarda el agendamiento y sus servicios.*/
+    /* ================================================= */
+    /* REGISTRAR AGENDAMIENTO */
+    /* ================================================= */
+
+    /* Guardar la cita y sus servicios dentro de una misma transacción */
     public function registrar()
     {
         try {
-
             $this->conexionMD->beginTransaction();
 
+            $sqlAgendamiento = "INSERT INTO agendamientos (
+                        id_cliente,
+                        id_usuario_registra,
+                        id_usuario_asignado,
+                        id_estado_agendamiento,
+                        id_tipo_agendamiento,
+                        fecha,
+                        hora,
+                        duracion_minutos,
+                        observacion_inicial,
+                        monto_total
+                    ) VALUES (
+                        :id_cliente,
+                        :id_usuario_registra,
+                        :id_usuario_asignado,
+                        :id_estado_agendamiento,
+                        :id_tipo_agendamiento,
+                        :fecha,
+                        :hora,
+                        :duracion_minutos,
+                        :observacion_inicial,
+                        :monto_total
+                    )";
 
-            $sqlAgendamiento =
-                "INSERT INTO agendamientos (
-                    id_cliente,
-                    id_usuario_registra,
-                    id_usuario_asignado,
-                    id_estado_agendamiento,
-                    id_tipo_agendamiento,
-                    fecha,
-                    hora,
-                    duracion_minutos,
-                    observacion_inicial,
-                    monto_total
-                ) VALUES (
-                    :id_cliente,
-                    :id_usuario_registra,
-                    :id_usuario_asignado,
-                    :id_estado_agendamiento,
-                    :id_tipo_agendamiento,
-                    :fecha,
-                    :hora,
-                    :duracion_minutos,
-                    :observacion_inicial,
-                    :monto_total
-                )";
+            $stmtAgendamiento = $this->conexionMD->prepare($sqlAgendamiento);
 
-
-            $stmtAgendamiento = $this->conexionMD->prepare(
-                $sqlAgendamiento
-            );
-
-
-            if (
-                $this->idCliente === null ||
-                $this->idCliente === ''
-            ) {
+            if ($this->idCliente === null || $this->idCliente === '') {
                 $stmtAgendamiento->bindValue(':id_cliente', null, PDO::PARAM_NULL);
-
             } else {
                 $stmtAgendamiento->bindParam(':id_cliente', $this->idCliente);
             }
-
 
             $stmtAgendamiento->bindParam(':id_usuario_registra', $this->idUsuarioRegistra);
             $stmtAgendamiento->bindParam(':id_usuario_asignado', $this->idUsuarioAsignado);
@@ -259,8 +238,7 @@ class AgendamientoM extends Database implements CrudInterface
 
             $idAgendamiento = $this->conexionMD->lastInsertId();
 
-
-            /*Guardar cada servicio seleccionado en detalles_agendamientos.*/
+            /* Guardar los servicios asociados a la nueva cita */
             $this->registrarServicios($idAgendamiento);
 
             $this->conexionMD->commit();
@@ -268,7 +246,6 @@ class AgendamientoM extends Database implements CrudInterface
             return true;
 
         } catch (\Exception $e) {
-
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -278,64 +255,35 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*Modificar: actualiza el agendamiento y reemplaza los servicios seleccionados.*/
+    /* ================================================= */
+    /* MODIFICAR AGENDAMIENTO */
+    /* ================================================= */
+
+    /* Actualizar la cita y reemplazar los servicios seleccionados */
     public function modificar()
     {
         try {
-
             $this->conexionMD->beginTransaction();
 
+            $sqlAgendamiento = "UPDATE agendamientos SET
+                        id_cliente = :id_cliente,
+                        id_usuario_asignado = :id_usuario_asignado,
+                        id_estado_agendamiento = :id_estado_agendamiento,
+                        id_tipo_agendamiento = :id_tipo_agendamiento,
+                        fecha = :fecha,
+                        hora = :hora,
+                        duracion_minutos = :duracion_minutos,
+                        observacion_inicial = :observacion_inicial,
+                        monto_total = :monto_total
+                    WHERE id_agendamiento = :id_agendamiento";
 
-            $sqlAgendamiento =
-                "UPDATE agendamientos
+            $stmtAgendamiento = $this->conexionMD->prepare($sqlAgendamiento);
 
-                 SET
-                    id_cliente =
-                        :id_cliente,
-
-                    id_usuario_asignado =
-                        :id_usuario_asignado,
-
-                    id_estado_agendamiento =
-                        :id_estado_agendamiento,
-
-                    id_tipo_agendamiento =
-                        :id_tipo_agendamiento,
-
-                    fecha =
-                        :fecha,
-
-                    hora =
-                        :hora,
-
-                    duracion_minutos =
-                        :duracion_minutos,
-
-                    observacion_inicial =
-                        :observacion_inicial,
-
-                    monto_total =
-                        :monto_total
-
-                 WHERE id_agendamiento =
-                    :id_agendamiento";
-
-
-            $stmtAgendamiento = $this->conexionMD->prepare(
-                $sqlAgendamiento
-            );
-
-
-            if (
-                $this->idCliente === null ||
-                $this->idCliente === ''
-            ) {
+            if ($this->idCliente === null || $this->idCliente === '') {
                 $stmtAgendamiento->bindValue(':id_cliente', null, PDO::PARAM_NULL);
-
             } else {
                 $stmtAgendamiento->bindParam(':id_cliente', $this->idCliente);
             }
-
 
             $stmtAgendamiento->bindParam(':id_usuario_asignado', $this->idUsuarioAsignado);
             $stmtAgendamiento->bindParam(':id_estado_agendamiento', $this->idEstadoAgendamiento);
@@ -349,26 +297,17 @@ class AgendamientoM extends Database implements CrudInterface
 
             $stmtAgendamiento->execute();
 
+            /* Retirar la selección anterior de servicios */
+            $sqlEliminarDetalles = "DELETE FROM detalles_agendamientos
+                    WHERE id_agendamiento = :id_agendamiento";
 
-            /*Eliminar los servicios anteriores.*/
-            $sqlEliminarDetalles =
-                "DELETE FROM
-                    detalles_agendamientos
-
-                 WHERE id_agendamiento =
-                    :id_agendamiento";
-
-
-            $stmtEliminarDetalles = $this->conexionMD->prepare(
-                $sqlEliminarDetalles
-            );
+            $stmtEliminarDetalles = $this->conexionMD->prepare($sqlEliminarDetalles);
 
             $stmtEliminarDetalles->bindParam(':id_agendamiento', $this->idAgendamiento);
 
             $stmtEliminarDetalles->execute();
 
-
-            /* Guardar la nueva selección de servicios.*/
+            /* Registrar la nueva selección de servicios */
             $this->registrarServicios($this->idAgendamiento);
 
             $this->conexionMD->commit();
@@ -376,7 +315,6 @@ class AgendamientoM extends Database implements CrudInterface
             return true;
 
         } catch (\Exception $e) {
-
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -386,25 +324,22 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*Eliminar lógico: no borra el agendamiento. Cambia su estado a CANCELADA.*/
+    /* ================================================= */
+    /* CANCELAR AGENDAMIENTO */
+    /* ================================================= */
+
+    /* Cambiar el estado a CANCELADA conservando el registro */
     public function eliminar()
     {
-        $sql =
-            "UPDATE agendamientos a
+        $sql = "UPDATE agendamientos a
 
-             INNER JOIN estados_agendamientos ea
-                ON ea.nombre_estado =
-                    'CANCELADA'
+                INNER JOIN estados_agendamientos ea
+                    ON ea.nombre_estado = 'CANCELADA'
+                    AND ea.estado_registro = 'ACTIVO'
 
-                AND ea.estado_registro =
-                    'ACTIVO'
+                SET a.id_estado_agendamiento = ea.id_estado_agendamiento
 
-             SET a.id_estado_agendamiento =
-                ea.id_estado_agendamiento
-
-             WHERE a.id_agendamiento =
-                :id_agendamiento";
-
+                WHERE a.id_agendamiento = :id_agendamiento";
 
         $stmt = $this->conexionMD->prepare($sql);
 
@@ -414,29 +349,76 @@ class AgendamientoM extends Database implements CrudInterface
     }
 
 
-    /*Método interno: registra los servicios relacionados con el agendamiento.*/
+    /* ================================================= */
+    /* COMPROBAR DISPONIBILIDAD */
+    /* ================================================= */
+
+    /* Detectar cruces de horario sin contar citas canceladas ni la cita excluida */
+    public function existeConflictoConAgendamiento(
+        $idUsuarioAsignado,
+        $fecha,
+        $horaInicio,
+        $horaFin,
+        $idExcluir = null
+    ): bool {
+        $sql = "SELECT COUNT(*)
+                FROM agendamientos a
+
+                INNER JOIN estados_agendamientos ea
+                    ON ea.id_estado_agendamiento = a.id_estado_agendamiento
+
+                WHERE a.id_usuario_asignado = :id_usuario_asignado
+                  AND a.fecha = :fecha
+                  AND UPPER(ea.nombre_estado) <> 'CANCELADA'
+                  AND a.hora < :hora_fin
+                  AND ADDTIME(
+                        a.hora,
+                        SEC_TO_TIME(a.duracion_minutos * 60)
+                      ) > :hora_inicio";
+
+        if ($idExcluir !== null) {
+            $sql .= " AND a.id_agendamiento <> :id_excluir";
+        }
+
+        $stmt = $this->conexionMD->prepare($sql);
+
+        $stmt->bindValue(':id_usuario_asignado', (int) $idUsuarioAsignado, PDO::PARAM_INT);
+        $stmt->bindValue(':fecha', $fecha);
+        $stmt->bindValue(':hora_inicio', $horaInicio);
+        $stmt->bindValue(':hora_fin', $horaFin);
+
+        if ($idExcluir !== null) {
+            $stmt->bindValue(':id_excluir', (int) $idExcluir, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+
+    /* ================================================= */
+    /* REGISTRAR SERVICIOS ASOCIADOS */
+    /* ================================================= */
+
+    /* Insertar cada servicio seleccionado en detalles_agendamientos */
     private function registrarServicios($idAgendamiento)
     {
         if (empty($this->servicios)) {
             return;
         }
 
-
-        $sql =
-            "INSERT INTO detalles_agendamientos (
-                id_agendamiento,
-                id_servicio
-             ) VALUES (
-                :id_agendamiento,
-                :id_servicio
-             )";
-
+        $sql = "INSERT INTO detalles_agendamientos (
+                    id_agendamiento,
+                    id_servicio
+                ) VALUES (
+                    :id_agendamiento,
+                    :id_servicio
+                )";
 
         $stmt = $this->conexionMD->prepare($sql);
 
-
         foreach ($this->servicios as $idServicio) {
-
             $stmt->bindValue(':id_agendamiento', $idAgendamiento);
             $stmt->bindValue(':id_servicio', $idServicio);
 

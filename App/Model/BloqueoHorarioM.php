@@ -6,9 +6,17 @@ use App\Config\Database;
 use App\Interfaces\CrudInterface;
 use PDO;
 
+/* ===================================================== */
+/* MODELO DE BLOQUEOS DE HORARIO */
+/* ===================================================== */
+
 class BloqueoHorarioM extends Database implements CrudInterface
 {
-    /* Conexión */
+    /* ================================================= */
+    /* ATRIBUTOS DEL MODELO */
+    /* ================================================= */
+
+    /* Conexión con la base de datos */
     private $conexionMD;
 
     /* Atributos de la tabla bloqueos_horarios */
@@ -21,7 +29,11 @@ class BloqueoHorarioM extends Database implements CrudInterface
     private $motivo;
 
 
-    /*Setters*/
+    /* ================================================= */
+    /* ASIGNACIÓN DE DATOS */
+    /* ================================================= */
+
+    /* Asignar los valores recibidos a los atributos privados */
     public function set_idBloqueo($idBloqueo) {$this->idBloqueo = $idBloqueo;}
     public function set_idUsuarioEspecialista($idUsuarioEspecialista) {$this->idUsuarioEspecialista = $idUsuarioEspecialista;}
     public function set_idUsuarioRegistra($idUsuarioRegistra) {$this->idUsuarioRegistra = $idUsuarioRegistra;}
@@ -31,14 +43,22 @@ class BloqueoHorarioM extends Database implements CrudInterface
     public function set_motivo($motivo) {$this->motivo = $motivo;}
 
 
-    /*Constructor*/
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
+    /* Obtener la conexión heredada de Database */
     public function __construct()
     {
         $this->conexionMD = $this->getConnection();
     }
 
 
-    /*Consultar:obtiene los bloqueos de horario bloqueados con sus relaciones.*/
+    /* ================================================= */
+    /* CONSULTAR BLOQUEOS DE HORARIO */
+    /* ================================================= */
+
+    /* Obtener los bloqueos activos con la especialista y el usuario que los registró */
     public function consultar()
     {
         $sql = "SELECT
@@ -51,45 +71,27 @@ class BloqueoHorarioM extends Database implements CrudInterface
                     b.motivo,
                     b.estado_bloqueo,
 
-                    TRIM(
-                        CONCAT(
-                            pe.nombre,
-                            ' ',
-                            pe.apellido
-                        )
-                    ) AS especialista,
+                    TRIM(CONCAT(pe.nombre, ' ', pe.apellido)) AS especialista,
 
-                    TRIM(
-                        CONCAT(
-                            pr.nombre,
-                            ' ',
-                            pr.apellido
-                        )
-                    ) AS usuario_registra
+                    TRIM(CONCAT(pr.nombre, ' ', pr.apellido)) AS usuario_registra
 
                 FROM bloqueos_horarios b
 
                 INNER JOIN usuarios ue
-                    ON ue.id_usuario =
-                        b.id_usuario_especialista
+                    ON ue.id_usuario = b.id_usuario_especialista
 
                 INNER JOIN personas pe
-                    ON pe.id_persona =
-                        ue.id_persona
+                    ON pe.id_persona = ue.id_persona
 
                 INNER JOIN usuarios ur
-                    ON ur.id_usuario =
-                        b.id_usuario_registra
+                    ON ur.id_usuario = b.id_usuario_registra
 
                 INNER JOIN personas pr
-                    ON pr.id_persona =
-                        ur.id_persona
+                    ON pr.id_persona = ur.id_persona
 
                 WHERE b.estado_bloqueo = 'BLOQUEADO'
 
-                ORDER BY
-                    b.fecha ASC,
-                    b.hora_inicio ASC";
+                ORDER BY b.fecha ASC, b.hora_inicio ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
 
@@ -99,7 +101,11 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /* Registrar un bloqueo de horario */
+    /* ================================================= */
+    /* REGISTRAR BLOQUEO DE HORARIO */
+    /* ================================================= */
+
+    /* Guardar un nuevo período con estado BLOQUEADO */
     public function registrar()
     {
         $sql = "INSERT INTO bloqueos_horarios (
@@ -122,16 +128,8 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':id_usuario_especialista',
-            $this->idUsuarioEspecialista
-        );
-
-        $stmt->bindParam(
-            ':id_usuario_registra',
-            $this->idUsuarioRegistra
-        );
-
+        $stmt->bindParam(':id_usuario_especialista', $this->idUsuarioEspecialista);
+        $stmt->bindParam(':id_usuario_registra', $this->idUsuarioRegistra);
         $stmt->bindParam(':fecha', $this->fecha);
         $stmt->bindParam(':hora_inicio', $this->horaInicio);
         $stmt->bindParam(':hora_fin', $this->horaFin);
@@ -141,11 +139,14 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /* Modificar un bloqueo de horario */
+    /* ================================================= */
+    /* MODIFICAR BLOQUEO DE HORARIO */
+    /* ================================================= */
+
+    /* Actualizar los datos de un bloqueo que todavía se encuentre activo */
     public function modificar()
     {
-        $sql = "UPDATE bloqueos_horarios
-                SET
+        $sql = "UPDATE bloqueos_horarios SET
                     id_usuario_especialista = :id_usuario_especialista,
                     fecha = :fecha,
                     hora_inicio = :hora_inicio,
@@ -156,11 +157,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':id_usuario_especialista',
-            $this->idUsuarioEspecialista
-        );
-
+        $stmt->bindParam(':id_usuario_especialista', $this->idUsuarioEspecialista);
         $stmt->bindParam(':fecha', $this->fecha);
         $stmt->bindParam(':hora_inicio', $this->horaInicio);
         $stmt->bindParam(':hora_fin', $this->horaFin);
@@ -171,7 +168,11 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /*Eliminar: realiza un desbloqueo lógico para conservar el historial.*/
+    /* ================================================= */
+    /* DESBLOQUEAR HORARIO */
+    /* ================================================= */
+
+    /* Cambiar el estado a DESBLOQUEADO conservando el historial */
     public function eliminar()
     {
         $sql = "UPDATE bloqueos_horarios
@@ -180,16 +181,17 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':id_bloqueo',
-            $this->idBloqueo
-        );
+        $stmt->bindParam(':id_bloqueo', $this->idBloqueo);
 
         return $stmt->execute();
     }
 
 
-    /* Verifica si el nuevo bloqueo se cruza con otro horario bloqueado */
+    /* ================================================= */
+    /* COMPROBAR CONFLICTOS ENTRE BLOQUEOS */
+    /* ================================================= */
+
+    /* Detectar cruces con otros bloqueos y excluir el propio al editar */
     public function existeConflictoConBloqueo($idExcluir = null)
     {
         $sql = "SELECT COUNT(*)
@@ -206,21 +208,13 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':id_usuario_especialista',
-            $this->idUsuarioEspecialista
-        );
-
+        $stmt->bindParam(':id_usuario_especialista', $this->idUsuarioEspecialista);
         $stmt->bindParam(':fecha', $this->fecha);
         $stmt->bindParam(':hora_inicio', $this->horaInicio);
         $stmt->bindParam(':hora_fin', $this->horaFin);
 
         if ($idExcluir !== null) {
-            $stmt->bindValue(
-                ':id_excluir',
-                (int) $idExcluir,
-                PDO::PARAM_INT
-            );
+            $stmt->bindValue(':id_excluir', (int) $idExcluir, PDO::PARAM_INT);
         }
 
         $stmt->execute();
@@ -229,15 +223,18 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /* Verifica si el bloqueo se cruza con una cita existente */
+    /* ================================================= */
+    /* COMPROBAR BLOQUEOS CONTRA CITAS */
+    /* ================================================= */
+
+    /* Detectar citas que coincidan con el bloqueo sin contar las canceladas */
     public function existeConflictoConAgendamiento()
     {
         $sql = "SELECT COUNT(*)
                 FROM agendamientos a
 
                 INNER JOIN estados_agendamientos ea
-                    ON ea.id_estado_agendamiento =
-                        a.id_estado_agendamiento
+                    ON ea.id_estado_agendamiento = a.id_estado_agendamiento
 
                 WHERE a.id_usuario_asignado = :id_usuario_especialista
                   AND a.fecha = :fecha
@@ -250,11 +247,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(
-            ':id_usuario_especialista',
-            $this->idUsuarioEspecialista
-        );
-
+        $stmt->bindParam(':id_usuario_especialista', $this->idUsuarioEspecialista);
         $stmt->bindParam(':fecha', $this->fecha);
         $stmt->bindParam(':hora_inicio', $this->horaInicio);
         $stmt->bindParam(':hora_fin', $this->horaFin);
@@ -265,7 +258,11 @@ class BloqueoHorarioM extends Database implements CrudInterface
     }
 
 
-    /* Verifica si una cita cae dentro de un horario bloqueado */
+    /* ================================================= */
+    /* COMPROBAR CITAS CONTRA BLOQUEOS */
+    /* ================================================= */
+
+    /* Verificar si el horario de una cita coincide con un bloqueo activo */
     public function existeBloqueoParaAgendamiento(
         $idUsuarioEspecialista,
         $fecha,
@@ -282,12 +279,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindValue(
-            ':id_usuario_especialista',
-            (int) $idUsuarioEspecialista,
-            PDO::PARAM_INT
-        );
-
+        $stmt->bindValue(':id_usuario_especialista', (int) $idUsuarioEspecialista, PDO::PARAM_INT);
         $stmt->bindValue(':fecha', $fecha);
         $stmt->bindValue(':hora_inicio', $horaInicio);
         $stmt->bindValue(':hora_fin', $horaFin);
