@@ -225,6 +225,16 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
+                <!-- Aviso de disponibilidad siempre visible sobre el formulario -->
+                <div class="px-4 pt-2">
+                    <div
+                        id="mensajeDisponibilidadNuevoAgendamiento"
+                        class="alert d-none mb-0"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
                 <div class="modal-body">
 
                     <!-- Campos del formulario -->
@@ -589,15 +599,6 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         </div>
 
-                        <!-- Aviso de disponibilidad del horario seleccionado -->
-                        <div class="col-12">
-                            <div
-                                id="mensajeDisponibilidadNuevoAgendamiento"
-                                class="alert d-none mb-0"
-                                role="status"
-                                aria-live="polite"
-                            ></div>
-                        </div>
 
                     </div>
 
@@ -707,6 +708,16 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
+                <!-- Aviso de disponibilidad siempre visible sobre el formulario -->
+                <div class="px-4 pt-2">
+                    <div
+                        id="mensajeDisponibilidadNuevoBloqueo"
+                        class="alert d-none mb-0"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
                 <div class="modal-body">
 
                     <!-- Campos del formulario -->
@@ -814,15 +825,6 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         </div>
 
-                        <!-- Aviso de disponibilidad del horario seleccionado -->
-                        <div class="col-12">
-                            <div
-                                id="mensajeDisponibilidadNuevoBloqueo"
-                                class="alert d-none mb-0"
-                                role="status"
-                                aria-live="polite"
-                            ></div>
-                        </div>
 
                     </div>
 
@@ -933,6 +935,16 @@ require_once __DIR__ . '/Layout/Header.php';
 
                 </div>
 
+                <!-- Aviso de disponibilidad siempre visible sobre el formulario -->
+                <div class="px-4 pt-2">
+                    <div
+                        id="mensajeDisponibilidadEditarBloqueo"
+                        class="alert d-none mb-0"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
                 <div class="modal-body">
 
                     <!-- Campos del formulario -->
@@ -1037,15 +1049,6 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         </div>
 
-                        <!-- Aviso de disponibilidad del horario seleccionado -->
-                        <div class="col-12">
-                            <div
-                                id="mensajeDisponibilidadEditarBloqueo"
-                                class="alert d-none mb-0"
-                                role="status"
-                                aria-live="polite"
-                            ></div>
-                        </div>
 
                     </div>
 
@@ -1222,6 +1225,8 @@ require_once __DIR__ . '/Layout/Header.php';
 <div
     class="modal fade"
     id="modalConfirmarDesbloqueoHorario"
+    data-alerta-confirmacion
+    data-alerta-aceptar="#btnConfirmarDesbloqueoHorario"
     tabindex="-1"
     aria-labelledby="modalConfirmarDesbloqueoHorarioLabel"
     aria-hidden="true"
@@ -1332,6 +1337,8 @@ require_once __DIR__ . '/Layout/Header.php';
 <div
     class="modal fade"
     id="modalConfirmarCancelacionAgendamiento"
+    data-alerta-confirmacion
+    data-alerta-aceptar="#btnConfirmarCancelacionAgendamiento"
     tabindex="-1"
     aria-labelledby="modalConfirmarCancelacionAgendamientoLabel"
     aria-describedby="modalConfirmarCancelacionAgendamientoTexto"
@@ -1478,6 +1485,16 @@ require_once __DIR__ . '/Layout/Header.php';
                         aria-label="Cerrar"
                     ></button>
 
+                </div>
+
+                <!-- Aviso de disponibilidad siempre visible sobre el formulario -->
+                <div class="px-4 pt-2">
+                    <div
+                        id="mensajeDisponibilidadEditarAgendamiento"
+                        class="alert d-none mb-0"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
                 </div>
 
                 <div class="modal-body">
@@ -1843,15 +1860,6 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         </div>
 
-                        <!-- Aviso de disponibilidad del horario seleccionado -->
-                        <div class="col-12">
-                            <div
-                                id="mensajeDisponibilidadEditarAgendamiento"
-                                class="alert d-none mb-0"
-                                role="status"
-                                aria-live="polite"
-                            ></div>
-                        </div>
 
                     </div>
 
@@ -2384,5 +2392,3 @@ $scriptsVista = [
 ];
 
 require_once __DIR__ . '/Layout/Footer.php';
-
-?>

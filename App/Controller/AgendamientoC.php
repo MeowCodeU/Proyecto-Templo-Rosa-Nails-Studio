@@ -1,6 +1,6 @@
 <?php
 
-use App\Controller\Components\Session;
+use App\Components\Session;
 use App\Model\AgendamientoM;
 use App\Model\BloqueoHorarioM;
 use App\Model\ClientesM;
@@ -9,46 +9,42 @@ use App\Model\ServicioM;
 use App\Model\EstadoAgendamientoM;
 use App\Model\TipoAgendamientoM;
 
+
 /* ===================================================== */
 /* GESTIÓN DE AGENDAMIENTO */
 /* ===================================================== */
 
-/* Identificar el método y el formato de la solicitud */
+
+/* ================================================= */
+/* IDENTIFICAR LA SOLICITUD */
+/* ================================================= */
+
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-$esPeticionAjax = strtolower(
-    (string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')
-) === 'xmlhttprequest';
-
+$esPeticionAjax = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
 $tipoContenido = (string) ($_SERVER['CONTENT_TYPE'] ?? '');
-
-$esCuerpoJson = strtolower(
-    trim(explode(';', $tipoContenido)[0])
-) === 'application/json';
-
+$esCuerpoJson = strtolower(trim(explode(';', $tipoContenido)[0])) === 'application/json';
 $datosSolicitud = $_POST;
+$modeloOperacion = null;
+$codigoNoDisponible = 'cita_no_disponible';
 
 
-/* ===================================================== */
+/* ================================================= */
 /* RESPUESTAS Y DATOS DE LA SOLICITUD */
-/* ===================================================== */
+/* ================================================= */
 
-/* Enviar los datos al navegador y finalizar la solicitud */
 $responderJson = static function (array $datos, int $codigo = 200): void {
     http_response_code($codigo);
 
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
 
-    echo json_encode(
-        $datos,
-        JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-    );
+    echo json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
     exit;
 };
 
-/* Recibir los datos enviados como JSON */
+
+/* Recibir el formato de transporte antes de ejecutar la operación */
 if ($metodo === 'POST' && $esCuerpoJson) {
     try {
         $datosSolicitud = json_decode(
@@ -58,10 +54,7 @@ if ($metodo === 'POST' && $esCuerpoJson) {
             JSON_THROW_ON_ERROR
         );
 
-        if (
-            !is_array($datosSolicitud) ||
-            !is_string($datosSolicitud['accion'] ?? null)
-        ) {
+        if (!is_array($datosSolicitud) || !is_string($datosSolicitud['accion'] ?? null)) {
             $responderJson([
                 'ok' => false,
                 'codigo' => 'solicitud_invalida',
@@ -78,111 +71,90 @@ if ($metodo === 'POST' && $esCuerpoJson) {
     }
 }
 
-/* Identificar la operación recibida */
-$accion = $metodo === 'POST'
-    ? ($datosSolicitud['accion'] ?? '')
-    : ($_GET['accion'] ?? '');
-
+$accion = $metodo === 'POST' ? ($datosSolicitud['accion'] ?? '') : ($_GET['accion'] ?? '');
 $accion = is_string($accion) ? $accion : '';
-
-$accionesDisponibilidad = [
-    'validar_disponibilidad_agendamiento',
-    'validar_bloqueo_horario'
-];
 
 $requiereRespuestaJson = $esPeticionAjax ||
     ($metodo === 'POST' && $esCuerpoJson) ||
     ($metodo === 'GET' && $accion === 'consultar_calendario') ||
-    ($metodo === 'POST' && in_array($accion, $accionesDisponibilidad, true));
+    (
+        $metodo === 'POST' &&
+        in_array($accion, ['validar_disponibilidad_agendamiento', 'validar_bloqueo_horario'], true)
+    );
 
-/* Responder a las peticiones o redirigir los formularios normales */
+
+/* Responder a AJAX o conservar la redirección del formulario normal */
 $finalizarOperacion = static function (
     bool $correcto,
     string $codigo,
     string $mensaje,
-    int $estadoHttp = 200
+    int $estadoHttp = 200,
+    array $errores = []
 ) use ($requiereRespuestaJson, $responderJson): void {
-    if ($requiereRespuestaJson) {
-        $responderJson([
-            'ok' => $correcto,
-            'codigo' => $codigo,
-            'mensaje' => $mensaje
-        ], $estadoHttp);
-    }
-
-    $_SESSION['mensaje_agendamiento'] = [
+    $respuesta = [
         'ok' => $correcto,
         'codigo' => $codigo,
         'mensaje' => $mensaje
     ];
 
-    header(
-        'Location: Index.php?url=agendamiento&mensaje=' .
-        urlencode($codigo)
-    );
+    if ($errores !== []) {
+        $respuesta['campo'] = array_key_first($errores);
+        $respuesta['errores'] = $errores;
+    }
+
+    if ($requiereRespuestaJson) $responderJson($respuesta, $estadoHttp);
+
+    $_SESSION['mensaje_agendamiento'] = $respuesta;
+
+    header('Location: Index.php?url=agendamiento&mensaje=' . urlencode($codigo));
 
     exit;
 };
 
-/* Leer campos de texto sin aceptar arreglos en su lugar */
-$leerTexto = static function (string $campo) use ($datosSolicitud): string {
-    $valor = $datosSolicitud[$campo] ?? '';
 
-    return is_string($valor) ? trim($valor) : '';
-};
-
-/* Obtener identificadores y cantidades enteras */
-$leerEntero = static function (string $campo) use ($datosSolicitud): int {
-    $valor = $datosSolicitud[$campo] ?? '';
-
-    if (!is_string($valor) && !is_int($valor)) {
-        return 0;
-    }
-
-    $numero = filter_var($valor, FILTER_VALIDATE_INT);
-
-    return $numero === false ? 0 : $numero;
-};
-
-/* Comprobar fechas y horas antes de calcular la disponibilidad */
-$obtenerInicio = static function (
-    string $fecha,
-    string $hora
-): ?DateTimeImmutable {
+/* Convertir las fechas consultadas al formato que presenta el calendario */
+$obtenerInicio = static function (string $fecha, string $hora): ?DateTimeImmutable {
     foreach (['Y-m-d H:i', 'Y-m-d H:i:s'] as $formato) {
-        $inicio = DateTimeImmutable::createFromFormat(
-            '!' . $formato,
-            $fecha . ' ' . $hora
-        );
+        $inicio = DateTimeImmutable::createFromFormat('!' . $formato, $fecha . ' ' . $hora);
 
-        if (
-            $inicio !== false &&
-            $inicio->format($formato) === $fecha . ' ' . $hora
-        ) {
-            return $inicio;
-        }
+        if ($inicio !== false && $inicio->format($formato) === $fecha . ' ' . $hora) return $inicio;
     }
 
     return null;
 };
 
-/* Localizar el registro que se desea modificar o retirar del calendario */
-$buscarRegistro = static function (
-    array $registros,
-    string $campo,
-    int $id
-): ?array {
-    foreach ($registros as $registro) {
-        if ((int) ($registro[$campo] ?? 0) === $id) {
-            return $registro;
-        }
-    }
 
-    return null;
+/* Traducir el resultado del modelo a los códigos que utiliza la interfaz */
+$responderDisponibilidadRechazada = static function (
+    array $disponibilidad,
+    bool $esBloqueo
+) use ($finalizarOperacion): void {
+    if ($disponibilidad['disponible']) return;
+
+    $codigos = $esBloqueo
+        ? [
+            'bloqueo' => 'bloqueo_conflicto_bloqueo',
+            'cita' => 'bloqueo_conflicto_cita',
+            'datos_invalidos' => 'bloqueo_datos_invalidos'
+        ]
+        : [
+            'bloqueo' => 'horario_bloqueado',
+            'cita' => 'horario_ocupado',
+            'datos_invalidos' => 'datos_incompletos'
+        ];
+
+    $finalizarOperacion(
+        false,
+        $codigos[$disponibilidad['tipo']],
+        $disponibilidad['mensaje'],
+        $disponibilidad['tipo'] === 'datos_invalidos' ? 422 : 409,
+        $disponibilidad['errores'] ?? []
+    );
 };
 
 
 try {
+
     /* ================================================= */
     /* MODELOS Y USUARIO AUTENTICADO */
     /* ================================================= */
@@ -190,145 +162,8 @@ try {
     $modeloAgendamiento = new AgendamientoM();
     $modeloBloqueoHorario = new BloqueoHorarioM();
 
-    $usuarioSesion = Session::obtenerUsuario();
-
-    $idUsuarioRegistra = (int) (
-        $usuarioSesion['id_usuario'] ?? 0
-    );
-
-
-    /* ================================================= */
-    /* DISPONIBILIDAD DE CITAS */
-    /* ================================================= */
-
-    /* Usar la misma comprobación al consultar y al guardar */
-    $comprobarDisponibilidadCita = static function (
-        int $idEspecialista,
-        string $fecha,
-        string $hora,
-        int $duracion,
-        ?int $idExcluir = null
-    ) use (
-        $modeloAgendamiento,
-        $modeloBloqueoHorario,
-        $obtenerInicio
-    ): array {
-        $inicio = $obtenerInicio($fecha, $hora);
-
-        if (
-            $idEspecialista <= 0 ||
-            $inicio === null ||
-            $duracion <= 0
-        ) {
-            return [
-                'disponible' => false,
-                'tipo' => 'datos_invalidos',
-                'mensaje' =>
-                    'Seleccione la especialista, una fecha y hora válidas y al menos un servicio.'
-            ];
-        }
-
-        $horaFin = $inicio
-            ->modify('+' . $duracion . ' minutes')
-            ->format('H:i:s');
-
-        if ($modeloBloqueoHorario->existeBloqueoParaAgendamiento(
-            $idEspecialista,
-            $fecha,
-            $hora,
-            $horaFin
-        )) {
-            return [
-                'disponible' => false,
-                'tipo' => 'bloqueo',
-                'mensaje' =>
-                    'La especialista posee un bloqueo dentro del horario seleccionado.'
-            ];
-        }
-
-        if ($modeloAgendamiento->existeConflictoConAgendamiento(
-            $idEspecialista,
-            $fecha,
-            $hora,
-            $horaFin,
-            $idExcluir
-        )) {
-            return [
-                'disponible' => false,
-                'tipo' => 'cita',
-                'mensaje' =>
-                    'La especialista ya tiene otra cita que coincide con el horario seleccionado. Elija otro horario u otra especialista.'
-            ];
-        }
-
-        return [
-            'disponible' => true,
-            'tipo' => 'disponible',
-            'mensaje' =>
-                'La especialista se encuentra disponible en el horario seleccionado.'
-        ];
-    };
-
-
-    /* ================================================= */
-    /* DISPONIBILIDAD DE BLOQUEOS */
-    /* ================================================= */
-
-    /* Excluir el propio bloqueo cuando se comprueba una edición */
-    $comprobarDisponibilidadBloqueo = static function (
-        int $idEspecialista,
-        string $fecha,
-        string $horaInicio,
-        string $horaFin,
-        ?int $idExcluir = null
-    ) use ($modeloBloqueoHorario, $obtenerInicio): array {
-        $inicio = $obtenerInicio($fecha, $horaInicio);
-        $fin = $obtenerInicio($fecha, $horaFin);
-
-        if (
-            $idEspecialista <= 0 ||
-            $inicio === null ||
-            $fin === null ||
-            $fin <= $inicio
-        ) {
-            return [
-                'disponible' => false,
-                'tipo' => 'datos_invalidos',
-                'mensaje' =>
-                    'Verifique la especialista, la fecha y las horas. La hora final debe ser posterior a la inicial.'
-            ];
-        }
-
-        $modeloBloqueoHorario->set_idUsuarioEspecialista($idEspecialista);
-        $modeloBloqueoHorario->set_fecha($fecha);
-        $modeloBloqueoHorario->set_horaInicio($horaInicio);
-        $modeloBloqueoHorario->set_horaFin($horaFin);
-
-        if ($modeloBloqueoHorario->existeConflictoConBloqueo($idExcluir)) {
-            return [
-                'disponible' => false,
-                'tipo' => 'bloqueo',
-                'mensaje' =>
-                    'La especialista ya posee otro bloqueo dentro del horario seleccionado.'
-            ];
-        }
-
-        if ($modeloBloqueoHorario->existeConflictoConAgendamiento()) {
-            return [
-                'disponible' => false,
-                'tipo' => 'cita',
-                'mensaje' =>
-                    'No es posible bloquear este período porque la especialista posee una cita dentro del horario seleccionado.'
-            ];
-        }
-
-        return [
-            'disponible' => true,
-            'tipo' => 'disponible',
-            'mensaje' =>
-                'El horario se encuentra disponible para realizar el bloqueo.'
-        ];
-    };
+    $usuarioSesion = Session\obtenerUsuario();
+    $idUsuarioRegistra = (int) ($usuarioSesion['id_usuario'] ?? 0);
 
 
     /* ================================================= */
@@ -345,31 +180,18 @@ try {
             );
         }
 
-        /* Consultar disponibilidad de una cita */
-        if ($accion === 'validar_disponibilidad_agendamiento') {
-            $idExcluir = $leerEntero('id_agendamiento');
 
-            $disponibilidad = $comprobarDisponibilidadCita(
-                $leerEntero('id_usuario_asignado'),
-                $leerTexto('fecha'),
-                $leerTexto('hora'),
-                $leerEntero('duracion_minutos'),
-                $idExcluir > 0 ? $idExcluir : null
-            );
+        /* Consultar la disponibilidad sin transformar los datos recibidos */
+        if ($accion === 'validar_disponibilidad_agendamiento' || $accion === 'validar_bloqueo_horario') {
+            $esBloqueo = $accion === 'validar_bloqueo_horario';
+            $modeloOperacion = $esBloqueo ? $modeloBloqueoHorario : $modeloAgendamiento;
+            $codigoNoDisponible = $esBloqueo ? 'bloqueo_no_disponible' : 'cita_no_disponible';
 
-            $responderJson(['ok' => true] + $disponibilidad);
-        }
-
-        /* Consultar disponibilidad de un bloqueo */
-        if ($accion === 'validar_bloqueo_horario') {
-            $idExcluir = $leerEntero('id_bloqueo');
-
-            $disponibilidad = $comprobarDisponibilidadBloqueo(
-                $leerEntero('id_usuario_especialista'),
-                $leerTexto('fecha'),
-                $leerTexto('hora_inicio'),
-                $leerTexto('hora_fin'),
-                $idExcluir > 0 ? $idExcluir : null
+            $disponibilidad = $modeloOperacion->comprobarDisponibilidadAgenda(
+                $datosSolicitud,
+                $modeloAgendamiento,
+                $modeloBloqueoHorario,
+                $esBloqueo
             );
 
             $responderJson(['ok' => true] + $disponibilidad);
@@ -377,184 +199,56 @@ try {
 
 
         /* ============================================= */
-        /* DATOS Y DISPONIBILIDAD DEL AGENDAMIENTO */
+        /* REGISTRAR O MODIFICAR AGENDAMIENTO */
         /* ============================================= */
 
         if ($accion === 'registrar' || $accion === 'modificar') {
-            $idAgendamiento = $leerEntero('id_agendamiento');
-            $idCliente = $leerEntero('id_cliente');
-            $idEspecialista = $leerEntero('id_usuario_asignado');
-            $idEstado = $leerEntero('id_estado_agendamiento');
-            $idTipo = $leerEntero('id_tipo_agendamiento');
-            $fecha = $leerTexto('fecha');
-            $hora = $leerTexto('hora');
-            $duracion = $leerEntero('duracion_minutos');
-            $observacion = $leerTexto('observacion_inicial');
-            $montoRecibido = $leerTexto('monto_total');
-            $serviciosRecibidos = $datosSolicitud['servicios'] ?? [];
+            $modeloOperacion = $modeloAgendamiento;
+            $esModificacion = $accion === 'modificar';
 
-            if (
-                $idCliente <= 0 ||
-                $idEspecialista <= 0 ||
-                $idEstado <= 0 ||
-                $idTipo <= 0 ||
-                $duracion <= 0 ||
-                !is_numeric($montoRecibido) ||
-                !is_finite((float) $montoRecibido) ||
-                (float) $montoRecibido < 0 ||
-                !is_array($serviciosRecibidos) ||
-                $serviciosRecibidos === []
-            ) {
-                $finalizarOperacion(
-                    false,
-                    'datos_incompletos',
-                    'Complete correctamente los datos obligatorios y seleccione al menos un servicio.',
-                    422
-                );
+            if ($esModificacion) {
+                $modeloAgendamiento->comprobarGestionAgenda($datosSolicitud['id_agendamiento'] ?? null);
             }
 
-            /* Comprobar los identificadores de los servicios seleccionados */
-            $serviciosSeleccionados = [];
+            $datosDisponibilidad = $datosSolicitud;
+            $datosDisponibilidad['id_agendamiento'] = $esModificacion
+                ? ($datosSolicitud['id_agendamiento'] ?? null)
+                : null;
 
-            foreach ($serviciosRecibidos as $idServicio) {
-                if (!is_string($idServicio) && !is_int($idServicio)) {
-                    $finalizarOperacion(
-                        false,
-                        'servicios_invalidos',
-                        'La selección de servicios no es válida.',
-                        422
-                    );
-                }
-
-                $idServicio = filter_var(
-                    $idServicio,
-                    FILTER_VALIDATE_INT
-                );
-
-                if ($idServicio === false || $idServicio <= 0) {
-                    $finalizarOperacion(
-                        false,
-                        'servicios_invalidos',
-                        'La selección de servicios no es válida.',
-                        422
-                    );
-                }
-
-                $serviciosSeleccionados[] = $idServicio;
-            }
-
-            $serviciosSeleccionados = array_values(
-                array_unique($serviciosSeleccionados)
+            $disponibilidad = $modeloAgendamiento->comprobarDisponibilidadAgenda(
+                $datosDisponibilidad,
+                $modeloAgendamiento,
+                $modeloBloqueoHorario
             );
 
-            $montoTotal = (float) $montoRecibido;
+            $responderDisponibilidadRechazada($disponibilidad, false);
 
-            /* Comprobar que la cita que se edita todavía exista */
-            if ($accion === 'modificar') {
-                $registro = $idAgendamiento > 0
-                    ? $buscarRegistro(
-                        $modeloAgendamiento->consultar(),
-                        'id_agendamiento',
-                        $idAgendamiento
-                    )
-                    : null;
-
-                if ($registro === null) {
-                    $finalizarOperacion(
-                        false,
-                        'cita_no_disponible',
-                        'El agendamiento que intenta modificar no se encuentra disponible.',
-                        404
-                    );
-                }
-            }
-
-            /* Repetir la comprobación inmediatamente antes de guardar */
-            $disponibilidad = $comprobarDisponibilidadCita(
-                $idEspecialista,
-                $fecha,
-                $hora,
-                $duracion,
-                $accion === 'modificar' ? $idAgendamiento : null
-            );
-
-            if (!$disponibilidad['disponible']) {
-                $codigos = [
-                    'bloqueo' => 'horario_bloqueado',
-                    'cita' => 'horario_ocupado',
-                    'datos_invalidos' => 'datos_incompletos'
-                ];
-
-                $finalizarOperacion(
-                    false,
-                    $codigos[$disponibilidad['tipo']],
-                    $disponibilidad['mensaje'],
-                    $disponibilidad['tipo'] === 'datos_invalidos'
-                        ? 422
-                        : 409
-                );
-            }
-        }
-
-
-        /* ============================================= */
-        /* REGISTRAR AGENDAMIENTO */
-        /* ============================================= */
-
-        if ($accion === 'registrar') {
-            $modeloAgendamiento->set_idCliente($idCliente);
+            $modeloAgendamiento->set_idAgendamiento($datosSolicitud['id_agendamiento'] ?? null);
+            $modeloAgendamiento->set_idCliente($datosSolicitud['id_cliente'] ?? null);
             $modeloAgendamiento->set_idUsuarioRegistra($idUsuarioRegistra);
-            $modeloAgendamiento->set_idUsuarioAsignado($idEspecialista);
-            $modeloAgendamiento->set_idEstadoAgendamiento($idEstado);
-            $modeloAgendamiento->set_idTipoAgendamiento($idTipo);
-            $modeloAgendamiento->set_fecha($fecha);
-            $modeloAgendamiento->set_hora($hora);
-            $modeloAgendamiento->set_duracionMinutos($duracion);
-            $modeloAgendamiento->set_observacionInicial($observacion);
-            $modeloAgendamiento->set_montoTotal($montoTotal);
-            $modeloAgendamiento->set_servicios($serviciosSeleccionados);
+            $modeloAgendamiento->set_idUsuarioAsignado($datosSolicitud['id_usuario_asignado'] ?? null);
+            $modeloAgendamiento->set_idEstadoAgendamiento($datosSolicitud['id_estado_agendamiento'] ?? null);
+            $modeloAgendamiento->set_idTipoAgendamiento($datosSolicitud['id_tipo_agendamiento'] ?? null);
+            $modeloAgendamiento->set_fecha($datosSolicitud['fecha'] ?? null);
+            $modeloAgendamiento->set_hora($datosSolicitud['hora'] ?? null);
+            $modeloAgendamiento->set_duracionMinutos($datosSolicitud['duracion_minutos'] ?? null);
+            $modeloAgendamiento->set_observacionInicial($datosSolicitud['observacion_inicial'] ?? '');
+            $modeloAgendamiento->set_montoTotal($datosSolicitud['monto_total'] ?? null);
+            $modeloAgendamiento->set_servicios($datosSolicitud['servicios'] ?? []);
 
-            if (!$modeloAgendamiento->registrar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo registrar el agendamiento.'
-                );
-            }
+            /* El modelo conserva las transacciones y la protección de la atención */
+            $correcto = $esModificacion
+                ? $modeloAgendamiento->modificar()
+                : $modeloAgendamiento->registrar();
 
-            $finalizarOperacion(
-                true,
-                'agendamiento_registrado',
-                'El agendamiento fue registrado correctamente.'
-            );
-        }
-
-
-        /* ============================================= */
-        /* MODIFICAR AGENDAMIENTO */
-        /* ============================================= */
-
-        if ($accion === 'modificar') {
-            $modeloAgendamiento->set_idAgendamiento($idAgendamiento);
-            $modeloAgendamiento->set_idCliente($idCliente);
-            $modeloAgendamiento->set_idUsuarioAsignado($idEspecialista);
-            $modeloAgendamiento->set_idEstadoAgendamiento($idEstado);
-            $modeloAgendamiento->set_idTipoAgendamiento($idTipo);
-            $modeloAgendamiento->set_fecha($fecha);
-            $modeloAgendamiento->set_hora($hora);
-            $modeloAgendamiento->set_duracionMinutos($duracion);
-            $modeloAgendamiento->set_observacionInicial($observacion);
-            $modeloAgendamiento->set_montoTotal($montoTotal);
-            $modeloAgendamiento->set_servicios($serviciosSeleccionados);
-
-            if (!$modeloAgendamiento->modificar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo modificar el agendamiento.'
-                );
-            }
+            if (!$correcto) throw new RuntimeException('El modelo no pudo guardar el agendamiento.');
 
             $finalizarOperacion(
                 true,
-                'agendamiento_modificado',
-                'El agendamiento fue modificado correctamente.'
+                $esModificacion ? 'agendamiento_modificado' : 'agendamiento_registrado',
+                $esModificacion
+                    ? 'El agendamiento fue modificado correctamente.'
+                    : 'El agendamiento fue registrado correctamente.'
             );
         }
 
@@ -564,47 +258,14 @@ try {
         /* ============================================= */
 
         if ($accion === 'cancelar') {
-            $idAgendamiento = $leerEntero('id_agendamiento');
+            $modeloOperacion = $modeloAgendamiento;
+            $idAgendamiento = $datosSolicitud['id_agendamiento'] ?? null;
 
-            $registro = $idAgendamiento > 0
-                ? $buscarRegistro(
-                    $modeloAgendamiento->consultar(),
-                    'id_agendamiento',
-                    $idAgendamiento
-                )
-                : null;
-
-            if ($registro === null) {
-                $finalizarOperacion(
-                    false,
-                    'cita_no_disponible',
-                    'El agendamiento que intenta cancelar no se encuentra disponible.',
-                    404
-                );
-            }
-
+            $modeloAgendamiento->comprobarGestionAgenda($idAgendamiento);
             $modeloAgendamiento->set_idAgendamiento($idAgendamiento);
 
             if (!$modeloAgendamiento->eliminar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo cancelar el agendamiento.'
-                );
-            }
-
-            /* Confirmar que la cita haya cambiado realmente a CANCELADA */
-            $registro = $buscarRegistro(
-                $modeloAgendamiento->consultar(),
-                'id_agendamiento',
-                $idAgendamiento
-            );
-
-            if (
-                $registro === null ||
-                strtoupper(trim($registro['estado'] ?? '')) !== 'CANCELADA'
-            ) {
-                throw new RuntimeException(
-                    'No se pudo confirmar el estado CANCELADA del agendamiento.'
-                );
+                throw new RuntimeException('El modelo no pudo cancelar el agendamiento.');
             }
 
             $finalizarOperacion(
@@ -616,115 +277,52 @@ try {
 
 
         /* ============================================= */
-        /* DATOS Y DISPONIBILIDAD DEL BLOQUEO */
+        /* REGISTRAR O MODIFICAR BLOQUEO */
         /* ============================================= */
 
-        if (
-            $accion === 'registrar_bloqueo' ||
-            $accion === 'modificar_bloqueo'
-        ) {
-            $idBloqueo = $leerEntero('id_bloqueo');
-            $idEspecialista = $leerEntero('id_usuario_especialista');
-            $fecha = $leerTexto('fecha');
-            $horaInicio = $leerTexto('hora_inicio');
-            $horaFin = $leerTexto('hora_fin');
-            $motivo = $leerTexto('motivo');
+        if ($accion === 'registrar_bloqueo' || $accion === 'modificar_bloqueo') {
+            $modeloOperacion = $modeloBloqueoHorario;
+            $codigoNoDisponible = 'bloqueo_no_disponible';
+            $esModificacion = $accion === 'modificar_bloqueo';
 
-            /* Comprobar que el bloqueo todavía se encuentre activo */
-            if ($accion === 'modificar_bloqueo') {
-                $registro = $idBloqueo > 0
-                    ? $buscarRegistro(
-                        $modeloBloqueoHorario->consultar(),
-                        'id_bloqueo',
-                        $idBloqueo
-                    )
-                    : null;
-
-                if ($registro === null) {
-                    $finalizarOperacion(
-                        false,
-                        'bloqueo_no_disponible',
-                        'El bloqueo que intenta modificar ya no se encuentra activo.',
-                        404
-                    );
-                }
+            if ($esModificacion) {
+                $modeloBloqueoHorario->comprobarGestionAgenda($datosSolicitud['id_bloqueo'] ?? null, true);
             }
 
-            $disponibilidad = $comprobarDisponibilidadBloqueo(
-                $idEspecialista,
-                $fecha,
-                $horaInicio,
-                $horaFin,
-                $accion === 'modificar_bloqueo' ? $idBloqueo : null
+            $datosDisponibilidad = $datosSolicitud;
+            $datosDisponibilidad['id_bloqueo'] = $esModificacion
+                ? ($datosSolicitud['id_bloqueo'] ?? null)
+                : null;
+
+            $disponibilidad = $modeloBloqueoHorario->comprobarDisponibilidadAgenda(
+                $datosDisponibilidad,
+                $modeloAgendamiento,
+                $modeloBloqueoHorario,
+                true
             );
 
-            if (!$disponibilidad['disponible']) {
-                $codigos = [
-                    'bloqueo' => 'bloqueo_conflicto_bloqueo',
-                    'cita' => 'bloqueo_conflicto_cita',
-                    'datos_invalidos' => 'bloqueo_datos_invalidos'
-                ];
+            $responderDisponibilidadRechazada($disponibilidad, true);
 
-                $finalizarOperacion(
-                    false,
-                    $codigos[$disponibilidad['tipo']],
-                    $disponibilidad['mensaje'],
-                    $disponibilidad['tipo'] === 'datos_invalidos'
-                        ? 422
-                        : 409
-                );
-            }
-        }
-
-
-        /* ============================================= */
-        /* REGISTRAR BLOQUEO DE HORARIO */
-        /* ============================================= */
-
-        if ($accion === 'registrar_bloqueo') {
-            $modeloBloqueoHorario->set_idUsuarioEspecialista($idEspecialista);
+            $modeloBloqueoHorario->set_idBloqueo($datosSolicitud['id_bloqueo'] ?? null);
+            $modeloBloqueoHorario->set_idUsuarioEspecialista($datosSolicitud['id_usuario_especialista'] ?? null);
             $modeloBloqueoHorario->set_idUsuarioRegistra($idUsuarioRegistra);
-            $modeloBloqueoHorario->set_fecha($fecha);
-            $modeloBloqueoHorario->set_horaInicio($horaInicio);
-            $modeloBloqueoHorario->set_horaFin($horaFin);
-            $modeloBloqueoHorario->set_motivo($motivo);
+            $modeloBloqueoHorario->set_fecha($datosSolicitud['fecha'] ?? null);
+            $modeloBloqueoHorario->set_horaInicio($datosSolicitud['hora_inicio'] ?? null);
+            $modeloBloqueoHorario->set_horaFin($datosSolicitud['hora_fin'] ?? null);
+            $modeloBloqueoHorario->set_motivo($datosSolicitud['motivo'] ?? '');
 
-            if (!$modeloBloqueoHorario->registrar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo registrar el bloqueo.'
-                );
-            }
+            $correcto = $esModificacion
+                ? $modeloBloqueoHorario->modificar()
+                : $modeloBloqueoHorario->registrar();
 
-            $finalizarOperacion(
-                true,
-                'bloqueo_registrado',
-                'El bloqueo de horario fue registrado correctamente.'
-            );
-        }
-
-
-        /* ============================================= */
-        /* MODIFICAR BLOQUEO DE HORARIO */
-        /* ============================================= */
-
-        if ($accion === 'modificar_bloqueo') {
-            $modeloBloqueoHorario->set_idBloqueo($idBloqueo);
-            $modeloBloqueoHorario->set_idUsuarioEspecialista($idEspecialista);
-            $modeloBloqueoHorario->set_fecha($fecha);
-            $modeloBloqueoHorario->set_horaInicio($horaInicio);
-            $modeloBloqueoHorario->set_horaFin($horaFin);
-            $modeloBloqueoHorario->set_motivo($motivo);
-
-            if (!$modeloBloqueoHorario->modificar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo modificar el bloqueo.'
-                );
-            }
+            if (!$correcto) throw new RuntimeException('El modelo no pudo guardar el bloqueo.');
 
             $finalizarOperacion(
                 true,
-                'bloqueo_modificado',
-                'El bloqueo de horario fue modificado correctamente.'
+                $esModificacion ? 'bloqueo_modificado' : 'bloqueo_registrado',
+                $esModificacion
+                    ? 'El bloqueo de horario fue modificado correctamente.'
+                    : 'El bloqueo de horario fue registrado correctamente.'
             );
         }
 
@@ -734,31 +332,15 @@ try {
         /* ============================================= */
 
         if ($accion === 'desbloquear_horario') {
-            $idBloqueo = $leerEntero('id_bloqueo');
+            $modeloOperacion = $modeloBloqueoHorario;
+            $codigoNoDisponible = 'bloqueo_no_disponible';
+            $idBloqueo = $datosSolicitud['id_bloqueo'] ?? null;
 
-            $registro = $idBloqueo > 0
-                ? $buscarRegistro(
-                    $modeloBloqueoHorario->consultar(),
-                    'id_bloqueo',
-                    $idBloqueo
-                )
-                : null;
-
-            if ($registro === null) {
-                $finalizarOperacion(
-                    false,
-                    'bloqueo_no_disponible',
-                    'El bloqueo ya no se encuentra activo. Actualice el calendario.',
-                    404
-                );
-            }
-
+            $modeloBloqueoHorario->comprobarGestionAgenda($idBloqueo, true);
             $modeloBloqueoHorario->set_idBloqueo($idBloqueo);
 
             if (!$modeloBloqueoHorario->eliminar()) {
-                throw new RuntimeException(
-                    'El modelo no pudo desbloquear el horario.'
-                );
+                throw new RuntimeException('El modelo no pudo desbloquear el horario.');
             }
 
             $finalizarOperacion(
@@ -768,7 +350,6 @@ try {
             );
         }
 
-        /* Rechazar operaciones que no pertenecen al módulo */
         $finalizarOperacion(
             false,
             'solicitud_invalida',
@@ -777,7 +358,7 @@ try {
         );
     }
 
-    /* El módulo admite lectura y operaciones mediante GET y POST */
+
     if ($metodo !== 'GET') {
         header('Allow: GET, POST');
 
@@ -792,50 +373,45 @@ try {
     /* DATOS PARA LA LISTA Y EL CALENDARIO */
     /* ================================================= */
 
+    /* Actualizar las citas demoradas del día antes de consultar los eventos */
+    $modeloAgendamiento->actualizarDemorasDelDia();
+
     $agendamientos = $modeloAgendamiento->consultar();
     $bloqueosHorario = $modeloBloqueoHorario->consultar();
 
     $agendamientosCalendario = [];
 
-    /* Las citas canceladas no ocupan la lista ni el calendario */
+    /* Excluir las citas canceladas y realizadas del calendario y la lista derecha */
     foreach ($agendamientos as $agendamiento) {
         if (
-            strtoupper(trim($agendamiento['estado'] ?? '')) ===
-            'CANCELADA'
+            in_array(
+                strtoupper(trim((string) ($agendamiento['estado'] ?? ''))),
+                ['CANCELADA', 'REALIZADA'],
+                true
+            )
         ) {
             continue;
         }
 
         $fecha = trim($agendamiento['fecha'] ?? '');
         $hora = trim($agendamiento['hora'] ?? '');
-
         $fechaInicio = $obtenerInicio($fecha, $hora);
 
-        if ($fechaInicio === null) {
-            continue;
-        }
+        if ($fechaInicio === null) continue;
 
-        $duracionMinutos = max(
-            1,
-            (int) ($agendamiento['duracion_minutos'] ?? 0)
-        );
+        $duracionMinutos = max(1, (int) ($agendamiento['duracion_minutos'] ?? 0));
+        $fechaFin = $fechaInicio->modify('+' . $duracionMinutos . ' minutes');
 
-        $fechaFin = $fechaInicio->modify(
-            '+' . $duracionMinutos . ' minutes'
-        );
-
-        /* Conservar los servicios necesarios para editar y mostrar detalles */
         $serviciosIds = !empty($agendamiento['servicios_ids'])
-            ? array_map(
-                'intval',
-                explode(',', $agendamiento['servicios_ids'])
-            )
+            ? array_map('intval', explode(',', $agendamiento['servicios_ids']))
             : [];
 
         $nombresServicios = !empty($agendamiento['servicios'])
             ? explode('||', $agendamiento['servicios'])
             : [];
 
+
+        /* Compartir la protección con las acciones de la lista y del calendario */
         $agendamientosCalendario[] = [
             'id' => (int) $agendamiento['id_agendamiento'],
             'title' => $agendamiento['cliente'] ?? 'Agendamiento',
@@ -844,6 +420,9 @@ try {
 
             'extendedProps' => [
                 'es_bloqueo' => false,
+                'gestion_permitida' => $agendamiento['gestion_permitida'],
+                'tiene_registro_servicio' => $agendamiento['tiene_registro_servicio'],
+                'motivo_bloqueo' => $agendamiento['motivo_bloqueo'],
                 'id_cliente' => $agendamiento['id_cliente'],
                 'id_usuario_asignado' => $agendamiento['id_usuario_asignado'],
                 'id_estado_agendamiento' => $agendamiento['id_estado_agendamiento'],
@@ -864,15 +443,14 @@ try {
         ];
     }
 
+
     /* Representar los bloqueos como eventos independientes */
     foreach ($bloqueosHorario as $bloqueo) {
         $fecha = trim($bloqueo['fecha'] ?? '');
         $horaInicio = trim($bloqueo['hora_inicio'] ?? '');
         $horaFin = trim($bloqueo['hora_fin'] ?? '');
 
-        if ($fecha === '' || $horaInicio === '' || $horaFin === '') {
-            continue;
-        }
+        if ($fecha === '' || $horaInicio === '' || $horaFin === '') continue;
 
         $agendamientosCalendario[] = [
             'id' => 'bloqueo-' . (int) $bloqueo['id_bloqueo'],
@@ -892,7 +470,7 @@ try {
         ];
     }
 
-    /* Entregar los eventos actualizados sin volver a cargar la vista */
+
     if ($accion === 'consultar_calendario') {
         $responderJson([
             'ok' => true,
@@ -902,7 +480,7 @@ try {
 
 
     /* ================================================= */
-    /* CONSULTAS PARA LLENAR LOS FORMULARIOS */
+    /* DATOS PARA LOS FORMULARIOS */
     /* ================================================= */
 
     $modeloCliente = new ClientesM();
@@ -913,25 +491,61 @@ try {
 
     $clientes = $modeloCliente->consultar();
     $servicios = $modeloServicio->consultar();
-    $estadosAgendamientos = $modeloEstadoAgendamiento->consultar();
     $tiposAgendamientos = $modeloTipoAgendamiento->consultar();
     $usuariosActivos = $modeloSeguridad->consultar();
 
+
+    /* Ofrecer los estados previos al inicio de la atención */
+    $estadosAgendamientos = array_values(
+        array_filter(
+            $modeloEstadoAgendamiento->consultar(),
+            static function (array $estado): bool {
+                return in_array(
+                    strtoupper(trim((string) ($estado['nombre_estado'] ?? ''))),
+                    ['AGENDADA', 'CONFIRMADA', 'EN ESPERA', 'DEMORADA'],
+                    true
+                );
+            }
+        )
+    );
+
+
+    /* Conservar la lista de especialistas utilizada por los formularios */
     $usuarios = [];
 
-    /* Conservar la lista de especialistas que utiliza el formulario */
     foreach ($usuariosActivos as $usuario) {
-        $nombreRol = strtoupper(
-            trim($usuario['nombre_rol'] ?? '')
-        );
+        $nombreRol = strtoupper(trim($usuario['nombre_rol'] ?? ''));
 
         if ($nombreRol === 'ESPECIALISTA EN MANICURA') {
             $usuarios[] = $usuario;
         }
     }
 
+} catch (DomainException $error) {
+    $estadoHttp = $error->getCode() === 404 ? 404 : 409;
+
+    $finalizarOperacion(
+        false,
+        $estadoHttp === 404 ? $codigoNoDisponible : 'agendamiento_no_gestionable',
+        $error->getMessage(),
+        $estadoHttp
+    );
+
+} catch (InvalidArgumentException $error) {
+    $finalizarOperacion(
+        false,
+        'datos_invalidos',
+        $error->getMessage(),
+        422,
+        $modeloOperacion ? $modeloOperacion->obtenerErroresValidacion() : []
+    );
+
 } catch (Throwable $error) {
-    /* Registrar el detalle técnico sin exponerlo al navegador */
+
+    /* ================================================= */
+    /* ERRORES DE LA OPERACIÓN */
+    /* ================================================= */
+
     error_log('Agendamiento: ' . $error->getMessage());
 
     if ($metodo === 'POST') {
@@ -946,12 +560,11 @@ try {
     if ($requiereRespuestaJson) {
         $responderJson([
             'ok' => false,
-            'mensaje' =>
-                'No fue posible actualizar el calendario. Intente nuevamente.'
+            'mensaje' => 'No fue posible actualizar el calendario. Intente nuevamente.'
         ], 500);
     }
 
-    /* No presentar un calendario vacío como si la consulta hubiera sido correcta */
+    /* Evitar presentar un calendario vacío cuando falló la consulta */
     http_response_code(500);
 
     echo 'No fue posible abrir el módulo de agendamiento. Intente nuevamente.';

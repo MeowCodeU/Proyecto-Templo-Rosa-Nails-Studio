@@ -2,7 +2,9 @@
 /* CALENDARIO DE AGENDAMIENTO */
 /* ===================================================== */
 
-$(document).ready(function () {
+$(function () {
+    "use strict";
+
     const $calendario = $("#calendar");
     const $lista = $("#agendamientos-list");
     const $btnBuscar = $("#btnBuscarAgendamientos");
@@ -46,13 +48,17 @@ $(document).ready(function () {
     let peticionCalendario = null;
     let numeroConsulta = 0;
 
-    if (!$calendario.length || typeof FullCalendar === "undefined") {
-        return;
-    }
+    if (!$calendario.length || typeof FullCalendar === "undefined") return;
 
     const eventosIniciales = Array.isArray(window.agendamientosCalendario)
         ? window.agendamientosCalendario
         : [];
+
+    const $avisoProteccion = $("<div>", {
+        class: "alert alert-warning mb-3",
+        role: "status",
+        hidden: true
+    }).prependTo($modalDetalle.find(".modal-body").first());
 
 
     /* ================================================= */
@@ -78,9 +84,7 @@ $(document).ready(function () {
     }
 
     function obtenerAlturaCalendario() {
-        if (calendarioEsMovil()) {
-            return 350;
-        }
+        if (calendarioEsMovil()) return 350;
 
         return window.innerWidth <= LIMITE_CALENDARIO_TABLET ? 440 : 470;
     }
@@ -280,6 +284,46 @@ $(document).ready(function () {
 
 
     /* ================================================= */
+    /* ACCIONES PERMITIDAS PARA LA CITA */
+    /* ================================================= */
+
+    function actualizarAccionesCita() {
+        const gestion = window.AgendamientoOperaciones
+            ?.evaluarGestion?.(eventoSeleccionado);
+
+        const permitida = gestion?.permitida === true;
+
+        const mensaje = gestion?.mensaje ||
+            "No fue posible confirmar que la cita pueda modificarse. Actualice el calendario.";
+
+        $btnEditar.add($btnCancelar)
+            .prop("disabled", !permitida)
+            .attr("aria-disabled", String(!permitida));
+
+        $btnEditar.attr(
+            "title",
+            permitida ? "Editar agendamiento" : mensaje
+        );
+
+        $btnCancelar.attr(
+            "title",
+            permitida ? "Cancelar agendamiento" : mensaje
+        );
+
+        $avisoProteccion
+            .text(permitida ? "" : mensaje)
+            .prop("hidden", permitida);
+
+        if (!permitida && $modalConfirmarCancelacion.hasClass("show")) {
+            $btnConfirmarCancelacion.prop("disabled", true);
+            mostrarError($mensajeCancelacion, mensaje);
+        }
+
+        return permitida;
+    }
+
+
+    /* ================================================= */
     /* TRANSICIONES ENTRE MODALES */
     /* ================================================= */
 
@@ -469,9 +513,7 @@ $(document).ready(function () {
     /* ================================================= */
 
     function mostrarDetalleBloqueo(evento) {
-        if (operacionEnCurso() || transicionModal) {
-            return;
-        }
+        if (operacionEnCurso() || transicionModal) return;
 
         eventoSeleccionado = evento;
 
@@ -511,9 +553,7 @@ $(document).ready(function () {
     }
 
     function mostrarDetalle(evento) {
-        if (operacionEnCurso() || transicionModal) {
-            return;
-        }
+        if (operacionEnCurso() || transicionModal) return;
 
         if (esEventoBloqueo(evento)) {
             mostrarDetalleBloqueo(evento);
@@ -579,7 +619,11 @@ $(document).ready(function () {
 
         $cancelarId.val(evento.id);
 
-        llenarFormularioEditar(evento);
+        /* Preparar la edición únicamente cuando la cita permite gestionarla */
+        if (actualizarAccionesCita()) {
+            llenarFormularioEditar(evento);
+        }
+
         mostrarModal($modalDetalle);
     }
 
@@ -632,7 +676,7 @@ $(document).ready(function () {
 
         const $plantilla = $("#plantillaIconoDetalleAgendamiento");
 
-        /* El dibujo del ícono se conserva en la vista */
+        /* Reutilizar el dibujo del ícono definido en la vista */
         if ($plantilla.length) {
             $boton.append($plantilla.contents().clone());
         } else {
@@ -643,9 +687,7 @@ $(document).ready(function () {
     }
 
     function renderizarLista() {
-        if (!$lista.length || !calendario) {
-            return;
-        }
+        if (!$lista.length || !calendario) return;
 
         const filtro = String(
             $inputBusqueda.val() || ""
@@ -736,6 +778,14 @@ $(document).ready(function () {
     }
 
     function mostrarError($contenedor, mensaje) {
+        const $confirmacion = $contenedor.closest("[data-alerta-confirmacion]");
+
+        /* Evitar que el rechazo quede dentro de una confirmación oculta */
+        if ($confirmacion.length && !$confirmacion.hasClass("show") && window.Alertas?.disponible()) {
+            window.Alertas.notificar(mensaje, "error");
+            return;
+        }
+
         $contenedor
             .attr("class", "alert alert-danger mb-0")
             .attr("role", "alert")
@@ -785,9 +835,7 @@ $(document).ready(function () {
 
             const respuesta = await peticionCalendario;
 
-            if (consultaActual !== numeroConsulta) {
-                return false;
-            }
+            if (consultaActual !== numeroConsulta) return false;
 
             if (
                 !respuesta ||
@@ -817,15 +865,14 @@ $(document).ready(function () {
                 ? calendario.getEventById(idSeleccionado)
                 : null;
 
+            actualizarAccionesCita();
             ocultarMensaje($mensajeCalendario);
             actualizarHoraTexto();
 
             return true;
 
         } catch (error) {
-            if (consultaActual !== numeroConsulta) {
-                return false;
-            }
+            if (consultaActual !== numeroConsulta) return false;
 
             if (error.status === 401) {
                 window.location.assign(
@@ -850,7 +897,11 @@ $(document).ready(function () {
     }
 
     window.AgendamientoCalendario = {
-        actualizar: actualizarCalendario
+        actualizar: actualizarCalendario,
+
+        obtenerEvento: function (id) {
+            return calendario?.getEventById(String(id)) || null;
+        }
     };
 
 
@@ -902,6 +953,7 @@ $(document).ready(function () {
         eventDidMount: function (info) {
             if (esEventoBloqueo(info.event)) {
                 $(info.el).addClass("evento-bloqueo-horario");
+
             } else {
                 const color = obtenerColorEstado(
                     info.event.extendedProps.estado
@@ -973,7 +1025,8 @@ $(document).ready(function () {
         if (
             !eventoSeleccionado ||
             esEventoBloqueo(eventoSeleccionado) ||
-            operacionEnCurso()
+            operacionEnCurso() ||
+            !actualizarAccionesCita()
         ) {
             return;
         }
@@ -1007,7 +1060,8 @@ $(document).ready(function () {
             esEventoBloqueo(eventoSeleccionado) ||
             operacionEnCurso() ||
             transicionModal ||
-            !$modalConfirmarCancelacion.length
+            !$modalConfirmarCancelacion.length ||
+            !actualizarAccionesCita()
         ) {
             return;
         }
@@ -1018,6 +1072,7 @@ $(document).ready(function () {
         $btnConfirmarCancelacion.prop("disabled", false);
 
         ocultarMensaje($mensajeCancelacion);
+
         cambiarModal($modalDetalle, $modalConfirmarCancelacion);
     });
 
@@ -1025,9 +1080,7 @@ $(document).ready(function () {
         const id = String($cancelarId.val() || "");
         const operaciones = window.AgendamientoOperaciones;
 
-        if (!id || cancelacionEnviada || operacionEnCurso()) {
-            return;
-        }
+        if (!id || cancelacionEnviada || operacionEnCurso()) return;
 
         if (
             !$formCancelar.length ||
@@ -1036,6 +1089,23 @@ $(document).ready(function () {
             mostrarError(
                 $mensajeCancelacion,
                 "No fue posible preparar la cancelación. Recargue la página."
+            );
+
+            return;
+        }
+
+        /* Consultar la protección del evento vigente antes de confirmar */
+        const gestion = operaciones.evaluarGestion?.(
+            calendario.getEventById(id)
+        );
+
+        if (gestion?.permitida !== true) {
+            $btnConfirmarCancelacion.prop("disabled", true);
+
+            mostrarError(
+                $mensajeCancelacion,
+                gestion?.mensaje ||
+                    "No fue posible confirmar que la cita pueda cancelarse. Actualice el calendario."
             );
 
             return;
@@ -1059,6 +1129,9 @@ $(document).ready(function () {
                 }
 
                 $cancelarId.val("");
+
+            } else {
+                actualizarAccionesCita();
             }
 
         } catch (error) {
@@ -1080,21 +1153,19 @@ $(document).ready(function () {
     });
 
     $modalConfirmarCancelacion.on("hidden.bs.modal", function () {
-        if (cancelacionEnviada) {
-            return;
-        }
+        if (cancelacionEnviada) return;
 
         $cancelarId.val("");
         $btnConfirmarCancelacion.prop("disabled", false);
 
         ocultarMensaje($mensajeCancelacion);
 
-        /* Volver al detalle cuando se cierra la confirmación */
+        /* Recuperar el detalle y sus acciones al cerrar la confirmación */
         if (
             eventoSeleccionado &&
             !esEventoBloqueo(eventoSeleccionado)
         ) {
-            mostrarModal($modalDetalle);
+            mostrarDetalle(eventoSeleccionado);
         }
     });
 
@@ -1133,9 +1204,7 @@ $(document).ready(function () {
         const id = String($desbloquearId.val() || "");
         const operaciones = window.AgendamientoOperaciones;
 
-        if (!id || desbloqueoEnviado || operacionEnCurso()) {
-            return;
-        }
+        if (!id || desbloqueoEnviado || operacionEnCurso()) return;
 
         if (
             !$formDesbloquear.length ||

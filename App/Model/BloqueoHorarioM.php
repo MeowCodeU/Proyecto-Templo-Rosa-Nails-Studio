@@ -4,14 +4,20 @@ namespace App\Model;
 
 use App\Config\Database;
 use App\Interfaces\CrudInterface;
+use App\Interfaces\DisponibilidadInterface;
+use App\Traits\ValidacionAtencionTrait;
 use PDO;
+
 
 /* ===================================================== */
 /* MODELO DE BLOQUEOS DE HORARIO */
 /* ===================================================== */
 
-class BloqueoHorarioM extends Database implements CrudInterface
+class BloqueoHorarioM extends Database implements CrudInterface, DisponibilidadInterface
 {
+    use ValidacionAtencionTrait;
+
+
     /* ================================================= */
     /* ATRIBUTOS DEL MODELO */
     /* ================================================= */
@@ -59,7 +65,7 @@ class BloqueoHorarioM extends Database implements CrudInterface
     /* ================================================= */
 
     /* Obtener los bloqueos activos con la especialista y el usuario que los registró */
-    public function consultar()
+    public function consultar(): array
     {
         $sql = "SELECT
                     b.id_bloqueo,
@@ -106,8 +112,12 @@ class BloqueoHorarioM extends Database implements CrudInterface
     /* ================================================= */
 
     /* Guardar un nuevo período con estado BLOQUEADO */
-    public function registrar()
+    public function registrar(): bool
     {
+        if (!$this->validarDatosBloqueo(false)) {
+            throw new \InvalidArgumentException(implode(' ', $this->erroresValidacion));
+        }
+
         $sql = "INSERT INTO bloqueos_horarios (
                     id_usuario_especialista,
                     id_usuario_registra,
@@ -144,8 +154,12 @@ class BloqueoHorarioM extends Database implements CrudInterface
     /* ================================================= */
 
     /* Actualizar los datos de un bloqueo que todavía se encuentre activo */
-    public function modificar()
+    public function modificar(): bool
     {
+        if (!$this->validarDatosBloqueo(true)) {
+            throw new \InvalidArgumentException(implode(' ', $this->erroresValidacion));
+        }
+
         $sql = "UPDATE bloqueos_horarios SET
                     id_usuario_especialista = :id_usuario_especialista,
                     fecha = :fecha,
@@ -173,8 +187,12 @@ class BloqueoHorarioM extends Database implements CrudInterface
     /* ================================================= */
 
     /* Cambiar el estado a DESBLOQUEADO conservando el historial */
-    public function eliminar()
+    public function eliminar(): bool
     {
+        if (!$this->validarIdBloqueoAgenda()) {
+            throw new \InvalidArgumentException(implode(' ', $this->erroresValidacion));
+        }
+
         $sql = "UPDATE bloqueos_horarios
                 SET estado_bloqueo = 'DESBLOQUEADO'
                 WHERE id_bloqueo = :id_bloqueo";
@@ -194,32 +212,13 @@ class BloqueoHorarioM extends Database implements CrudInterface
     /* Detectar cruces con otros bloqueos y excluir el propio al editar */
     public function existeConflictoConBloqueo($idExcluir = null)
     {
-        $sql = "SELECT COUNT(*)
-                FROM bloqueos_horarios
-                WHERE id_usuario_especialista = :id_usuario_especialista
-                  AND fecha = :fecha
-                  AND estado_bloqueo = 'BLOQUEADO'
-                  AND hora_inicio < :hora_fin
-                  AND hora_fin > :hora_inicio";
-
-        if ($idExcluir !== null) {
-            $sql .= " AND id_bloqueo <> :id_excluir";
-        }
-
-        $stmt = $this->conexionMD->prepare($sql);
-
-        $stmt->bindParam(':id_usuario_especialista', $this->idUsuarioEspecialista);
-        $stmt->bindParam(':fecha', $this->fecha);
-        $stmt->bindParam(':hora_inicio', $this->horaInicio);
-        $stmt->bindParam(':hora_fin', $this->horaFin);
-
-        if ($idExcluir !== null) {
-            $stmt->bindValue(':id_excluir', (int) $idExcluir, PDO::PARAM_INT);
-        }
-
-        $stmt->execute();
-
-        return (int) $stmt->fetchColumn() > 0;
+        return $this->existeConflictoHorario(
+            (int) $this->idUsuarioEspecialista,
+            (string) $this->fecha,
+            (string) $this->horaInicio,
+            (string) $this->horaFin,
+            $idExcluir !== null ? (int) $idExcluir : null
+        );
     }
 
 
@@ -259,16 +258,17 @@ class BloqueoHorarioM extends Database implements CrudInterface
 
 
     /* ================================================= */
-    /* COMPROBAR CITAS CONTRA BLOQUEOS */
+    /* COMPROBAR DISPONIBILIDAD DE HORARIOS */
     /* ================================================= */
 
-    /* Verificar si el horario de una cita coincide con un bloqueo activo */
-    public function existeBloqueoParaAgendamiento(
-        $idUsuarioEspecialista,
-        $fecha,
-        $horaInicio,
-        $horaFin
-    ) {
+    /* Implementar el contrato común para comprobar bloqueos activos */
+    public function existeConflictoHorario(
+        int $idEspecialista,
+        string $fecha,
+        string $horaInicio,
+        string $horaFin,
+        ?int $idExcluir = null
+    ): bool {
         $sql = "SELECT COUNT(*)
                 FROM bloqueos_horarios
                 WHERE id_usuario_especialista = :id_usuario_especialista
@@ -277,15 +277,43 @@ class BloqueoHorarioM extends Database implements CrudInterface
                   AND hora_inicio < :hora_fin
                   AND hora_fin > :hora_inicio";
 
+        if ($idExcluir !== null) {
+            $sql .= " AND id_bloqueo <> :id_excluir";
+        }
+
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindValue(':id_usuario_especialista', (int) $idUsuarioEspecialista, PDO::PARAM_INT);
+        $stmt->bindValue(':id_usuario_especialista', $idEspecialista, PDO::PARAM_INT);
         $stmt->bindValue(':fecha', $fecha);
         $stmt->bindValue(':hora_inicio', $horaInicio);
         $stmt->bindValue(':hora_fin', $horaFin);
 
+        if ($idExcluir !== null) {
+            $stmt->bindValue(':id_excluir', $idExcluir, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
 
         return (int) $stmt->fetchColumn() > 0;
+    }
+
+
+    /* ================================================= */
+    /* COMPROBAR CITAS CONTRA BLOQUEOS */
+    /* ================================================= */
+
+    /* Conservar la comprobación utilizada por Agendamiento */
+    public function existeBloqueoParaAgendamiento(
+        $idUsuarioEspecialista,
+        $fecha,
+        $horaInicio,
+        $horaFin
+    ) {
+        return $this->existeConflictoHorario(
+            (int) $idUsuarioEspecialista,
+            (string) $fecha,
+            (string) $horaInicio,
+            (string) $horaFin
+        );
     }
 }

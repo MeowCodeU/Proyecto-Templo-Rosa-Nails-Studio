@@ -2,7 +2,9 @@
 /* GESTIÓN DE AGENDAMIENTO */
 /* ===================================================== */
 
-$(document).ready(function () {
+$(function () {
+    "use strict";
+
     /* Formularios de citas */
     const $formNuevo = $("#formNuevoAgendamiento");
     const $formEditar = $("#formEditarAgendamiento");
@@ -34,9 +36,28 @@ $(document).ready(function () {
 
     const urlAgendamiento = "Index.php?url=agendamiento";
     const $modalMensaje = $("#modalMensajeAgendamiento");
+    const citasProtegidas = new Map();
+    const reglasFormularios = new WeakMap();
 
     let operacionEnCurso = false;
     let modalPermitidoCerrar = null;
+    let redirigiendo = false;
+    let validacionesAgenda = null;
+
+    /* Cargar las reglas compartidas conservando los scripts actuales de la vista */
+    const cargaValidaciones = import("./validaciones/validaciones.js")
+        .then(function (modulo) {
+            validacionesAgenda = modulo.Validaciones;
+
+            $formNuevo.add($formEditar).add($formNuevoBloqueo).add($formEditarBloqueo).each(function () {
+                validacionesAgenda.activar(this, obtenerReglasFormulario($(this)));
+            });
+
+            return validacionesAgenda;
+        })
+        .catch(function () {
+            return null;
+        });
 
 
     /* ================================================= */
@@ -44,13 +65,22 @@ $(document).ready(function () {
     /* ================================================= */
 
     function ocultarAviso(contenedor) {
-        $(contenedor).attr("class", "alert d-none mb-0").empty();
+        $(contenedor).attr("class", "alert agendamiento-aviso d-none mb-0").empty();
     }
 
     function mostrarAviso(contenedor, tipo, mensaje, icono) {
         const $contenedor = $(contenedor);
 
-        if (!$contenedor.length) {
+        if (!$contenedor.length) return;
+
+        /* Mostrar los rechazos de una confirmación que SweetAlert2 sustituyó */
+        const $confirmacion = $contenedor.closest("[data-alerta-confirmacion]");
+
+        if ($confirmacion.length && !$confirmacion.hasClass("show") && window.Alertas?.disponible()) {
+            if (tipo !== "info") {
+                window.Alertas.notificar(mensaje, tipo, { titulo: "No se pudo completar la operación" });
+            }
+
             return;
         }
 
@@ -62,7 +92,7 @@ $(document).ready(function () {
         const $texto = $("<span>").text(mensaje);
 
         $contenedor
-            .attr("class", `alert alert-${tipo} d-flex align-items-center mb-0`)
+            .attr("class", `alert agendamiento-aviso alert-${tipo} d-flex align-items-center mb-0`)
             .attr("role", "status")
             .empty()
             .append($icono, $texto);
@@ -71,23 +101,35 @@ $(document).ready(function () {
     function enfocarAviso(contenedor) {
         const $contenedor = $(contenedor);
 
-        if ($contenedor.length) {
-            $contenedor.attr("tabindex", "-1");
+        if (!$contenedor.length) return;
+        if ($contenedor.closest("[data-alerta-confirmacion]:not(.show)").length) return;
 
-            /* Utilizar las opciones de enfoque y desplazamiento del navegador */
-            $contenedor.get(0).focus({ preventScroll: true });
+        $contenedor.attr("tabindex", "-1");
 
-            $contenedor.get(0).scrollIntoView({
-                behavior: "smooth",
-                block: "nearest"
-            });
-        }
+        $contenedor.get(0).focus({
+            preventScroll: true
+        });
+
+        $contenedor.get(0).scrollIntoView({
+            behavior: "smooth",
+            block: "nearest"
+        });
+    }
+
+    function redirigirAlAcceso() {
+        if (redirigiendo) return;
+
+        redirigiendo = true;
+        window.location.assign("Index.php?url=login&sesion=expirada");
     }
 
     function mostrarResultado(titulo, mensaje, tipo = "success") {
-        if (!$modalMensaje.length || !window.bootstrap) {
+        if (window.Alertas?.disponible()) {
+            window.Alertas.notificar(mensaje, tipo, { titulo });
             return;
         }
+
+        if (!$modalMensaje.length || !window.bootstrap) return;
 
         $modalMensaje.find(".modal-title").text(titulo);
         $modalMensaje.find(".modal-body p").text(mensaje);
@@ -106,11 +148,7 @@ $(document).ready(function () {
         const $modal = $(modal);
 
         return new Promise(function (resolver) {
-            if (
-                !$modal.length ||
-                !window.bootstrap ||
-                !$modal.hasClass("show")
-            ) {
+            if (!$modal.length || !window.bootstrap || !$modal.hasClass("show")) {
                 resolver();
                 return;
             }
@@ -132,6 +170,110 @@ $(document).ready(function () {
 
 
     /* ================================================= */
+    /* PROTECCIÓN DE LAS ATENCIONES */
+    /* ================================================= */
+
+    function evaluarGestionCita(evento) {
+        const id = String(evento?.id || "");
+        const propiedades = evento?.extendedProps || {};
+
+        if (citasProtegidas.has(id)) {
+            return {
+                permitida: false,
+                mensaje: citasProtegidas.get(id)
+            };
+        }
+
+        const permitida = Boolean(id) &&
+            !propiedades.es_bloqueo &&
+            propiedades.gestion_permitida === true &&
+            propiedades.tiene_registro_servicio !== true;
+
+        return {
+            permitida: permitida,
+            mensaje: permitida
+                ? ""
+                : propiedades.motivo_bloqueo ||
+                    "La cita no permite modificaciones ni cancelaciones. Actualice el calendario."
+        };
+    }
+
+    function obtenerGestionCita(idAgendamiento) {
+        const id = String(idAgendamiento || "");
+        let evento = null;
+
+        if (typeof window.AgendamientoCalendario?.obtenerEvento === "function") {
+            evento = window.AgendamientoCalendario.obtenerEvento(id);
+
+        } else if (Array.isArray(window.agendamientosCalendario)) {
+            evento = window.agendamientosCalendario.find(function (cita) {
+                return String(cita.id) === id;
+            });
+        }
+
+        /* Conservar el rechazo confirmado aunque la información visible sea anterior */
+        if (citasProtegidas.has(id)) {
+            return {
+                permitida: false,
+                mensaje: citasProtegidas.get(id)
+            };
+        }
+
+        return evaluarGestionCita(evento);
+    }
+
+    function comprobarGestionFormulario($formulario, contenedor) {
+        const accion = $formulario.find('[name="accion"]').val();
+
+        if (!["modificar", "cancelar"].includes(accion)) return true;
+
+        const id = $formulario.find('[name="id_agendamiento"]').val();
+        const gestion = obtenerGestionCita(id);
+
+        if (gestion.permitida) {
+            $formulario.removeAttr("data-cita-protegida data-motivo-proteccion");
+            return true;
+        }
+
+        $formulario.attr({
+            "data-cita-protegida": "1",
+            "data-motivo-proteccion": gestion.mensaje
+        });
+
+        $formulario.find('[type="submit"]').prop("disabled", true);
+
+        if (accion === "cancelar") {
+            $("#btnConfirmarCancelacionAgendamiento").prop("disabled", true);
+        }
+
+        mostrarAviso(contenedor, "warning", gestion.mensaje, "bi-shield-lock");
+        enfocarAviso(contenedor);
+
+        return false;
+    }
+
+    function esRechazoDeGestion(respuesta) {
+        return [
+            "agendamiento_no_gestionable",
+            "cita_no_disponible"
+        ].includes(respuesta?.codigo);
+    }
+
+    function registrarProteccion($formulario, mensaje) {
+        const id = String($formulario.find('[name="id_agendamiento"]').val() || "");
+
+        if (!id) return;
+
+        citasProtegidas.set(id, mensaje);
+
+        $formulario.attr({
+            "data-cita-protegida": "1",
+            "data-motivo-proteccion": mensaje
+        });
+    }
+
+
+    /* ================================================= */
     /* ENVÍO Y RESULTADO DE LAS OPERACIONES */
     /* ================================================= */
 
@@ -148,6 +290,7 @@ $(document).ready(function () {
                 }
 
                 datos[nombre].push(campo.value);
+
             } else {
                 datos[campo.name] = campo.value;
             }
@@ -156,7 +299,6 @@ $(document).ready(function () {
         return datos;
     }
 
-    /* Resolver o rechazar una promesa según el resultado de la petición */
     function solicitarDatos(url, opciones = {}) {
         let peticion = null;
 
@@ -179,6 +321,7 @@ $(document).ready(function () {
                     : "application/json; charset=UTF-8",
 
                 processData: esLectura,
+                timeout: 30000,
 
                 headers: {
                     "X-Requested-With": "XMLHttpRequest"
@@ -198,11 +341,9 @@ $(document).ready(function () {
             });
         });
 
-        /* Agregar cancelación para las consultas de disponibilidad reemplazadas */
+        /* Cancelar las consultas de disponibilidad reemplazadas */
         promesa.cancelar = function () {
-            if (peticion) {
-                peticion.abort();
-            }
+            if (peticion) peticion.abort();
         };
 
         return promesa;
@@ -215,6 +356,7 @@ $(document).ready(function () {
 
         try {
             return await window.AgendamientoCalendario.actualizar() === true;
+
         } catch (error) {
             return false;
         }
@@ -227,15 +369,24 @@ $(document).ready(function () {
         if (
             !$formulario.length ||
             operacionEnCurso ||
+            redirigiendo ||
             $formulario.attr("data-enviando") === "1"
         ) {
             return false;
         }
 
-        if (
-            configuracion.validador &&
-            !configuracion.validador.permiteEnviar()
-        ) {
+        if (!comprobarGestionFormulario($formulario, configuracion.contenedor)) {
+            return false;
+        }
+
+        if (configuracion.validar && !await configuracion.validar()) return false;
+
+        /* Comprobar nuevamente el estado después de cargar las validaciones */
+        if (operacionEnCurso || redirigiendo || $formulario.attr("data-enviando") === "1") {
+            return false;
+        }
+
+        if (configuracion.validador && !configuracion.validador.permiteEnviar()) {
             return false;
         }
 
@@ -278,6 +429,7 @@ $(document).ready(function () {
         let respuesta;
         let operacionConfirmada = false;
         let calendarioActualizado = false;
+        let campoRechazado = null;
 
         try {
             respuesta = await solicitarDatos(
@@ -296,7 +448,7 @@ $(document).ready(function () {
 
             operacionConfirmada = true;
 
-            /* El guardado confirmado no depende de la actualización visual */
+            /* Separar la confirmación del guardado de la actualización visual */
             calendarioActualizado = await actualizarCalendario();
 
             await cerrarModal($modal);
@@ -304,25 +456,36 @@ $(document).ready(function () {
         } catch (error) {
             if (!operacionConfirmada) {
                 if (error.status === 401) {
-                    window.location.assign(
-                        "Index.php?url=login&sesion=expirada"
-                    );
-
+                    redirigirAlAcceso();
                     return false;
                 }
 
-                const mensaje = error.responseJSON?.mensaje ||
-                    "No se recibió una confirmación válida. Actualice el calendario antes de intentar guardar de nuevo.";
+                const mensaje = typeof error.responseJSON?.mensaje === "string"
+                    ? error.responseJSON.mensaje
+                    : "No se recibió una confirmación válida. Actualice el calendario antes de intentar guardar de nuevo.";
+
+                if (esRechazoDeGestion(error.responseJSON)) {
+                    registrarProteccion($formulario, mensaje);
+                }
+
+                campoRechazado = mostrarErroresFormulario($formulario, error.responseJSON);
+
+                const tipoError = !error.responseJSON && (
+                    !error.status || error.statusText === "timeout" || error.statusText === "parsererror"
+                ) ? "warning" : "danger";
 
                 if (configuracion.validador) {
-                    configuracion.validador.rechazar(
-                        mensaje,
-                        error.status === 409
-                    );
+                    configuracion.validador.rechazar(mensaje, error.status === 409);
+
+                    /* Conservar los errores de campos y los conflictos junto al formulario */
+                    if (!campoRechazado && error.status !== 409 && !esRechazoDeGestion(error.responseJSON) && window.Alertas?.disponible()) {
+                        window.Alertas.notificar(mensaje, tipoError, { origen: $formulario });
+                    }
+
                 } else {
                     mostrarAviso(
                         configuracion.contenedor,
-                        "danger",
+                        tipoError,
                         mensaje,
                         "bi-heartbreak-fill"
                     );
@@ -337,11 +500,10 @@ $(document).ready(function () {
 
         } finally {
             estados.forEach(function (estado) {
-                $(estado.elemento).prop(
-                    "disabled",
-                    estado.deshabilitado
-                );
+                $(estado.elemento).prop("disabled", estado.deshabilitado);
             });
+
+            if (campoRechazado && !redirigiendo) campoRechazado.focus();
 
             $formulario.removeAttr("data-enviando aria-busy");
 
@@ -351,10 +513,18 @@ $(document).ready(function () {
             if (configuracion.validador) {
                 configuracion.validador.actualizarBoton();
             }
+
+            /* Conservar el bloqueo cuando el servidor rechaza la gestión de la cita */
+            if (!operacionConfirmada && $formulario.attr("data-cita-protegida") === "1") {
+                $formulario.find('[type="submit"]').prop("disabled", true);
+
+                if (datos.accion === "cancelar") {
+                    $("#btnConfirmarCancelacionAgendamiento").prop("disabled", true);
+                }
+            }
         }
 
-        const mensaje = respuesta.mensaje ||
-            "La operación se completó correctamente.";
+        const mensaje = respuesta.mensaje || "La operación se completó correctamente.";
 
         mostrarResultado(
             configuracion.titulo || "Operación completada",
@@ -371,11 +541,14 @@ $(document).ready(function () {
     window.AgendamientoOperaciones = {
         solicitar: solicitarDatos,
         enviar: enviarFormulario,
+        evaluarGestion: evaluarGestionCita,
+        obtenerGestion: obtenerGestionCita,
 
         estaProcesando: function () {
             return operacionEnCurso;
         }
     };
+
 
     /* Impedir cambios de modal mientras se guarda una operación */
     const $modalesOperaciones = $modalNuevo
@@ -404,13 +577,15 @@ $(document).ready(function () {
         }
     });
 
-    /* Mostrar únicamente los mensajes iniciales indicados por la vista */
+
+    /* Mostrar los mensajes iniciales preparados por la vista */
     if (
         $modalMensaje.length &&
         $modalMensaje.attr("data-mostrar-inicial") !== "0" &&
         window.bootstrap
     ) {
-        bootstrap.Modal.getOrCreateInstance($modalMensaje.get(0)).show();
+        if (window.Alertas?.disponible()) window.Alertas.desdeModal($modalMensaje);
+        else bootstrap.Modal.getOrCreateInstance($modalMensaje.get(0)).show();
     }
 
 
@@ -453,12 +628,7 @@ $(document).ready(function () {
         const $resumen = $("#" + configuracion.resumenId);
         const $feedback = $("#" + configuracion.feedbackId);
 
-        if (
-            !$contenedor.length ||
-            !$toggle.length ||
-            !$panel.length ||
-            !$lista.length
-        ) {
+        if (!$contenedor.length || !$toggle.length || !$panel.length || !$lista.length) {
             return null;
         }
 
@@ -486,23 +656,13 @@ $(document).ready(function () {
         }
 
         function abrir() {
-            if (deshabilitado) {
-                return;
-            }
+            if (deshabilitado) return;
 
-            const $otros = $(".agendamiento-servicios-selector").not(
-                $contenedor
-            );
+            const $otros = $(".agendamiento-servicios-selector").not($contenedor);
 
             $otros.removeClass("is-open");
-
-            $otros
-                .find(".agendamiento-servicios-panel")
-                .prop("hidden", true);
-
-            $otros
-                .find(".agendamiento-servicios-toggle")
-                .attr("aria-expanded", "false");
+            $otros.find(".agendamiento-servicios-panel").prop("hidden", true);
+            $otros.find(".agendamiento-servicios-toggle").attr("aria-expanded", "false");
 
             $panel.prop("hidden", false);
             $toggle.attr("aria-expanded", "true");
@@ -521,14 +681,24 @@ $(document).ready(function () {
             }
         }
 
-        function mostrarError() {
-            $contenedor.add($toggle).addClass("is-invalid");
-            $feedback.css("display", "block");
+        function mostrarError(mensaje = "Seleccione al menos un servicio y utilice una selección válida.") {
+            $contenedor.add($toggle).removeClass("is-invalid").attr("aria-invalid", "true");
+
+            $feedback
+                .removeClass("invalid-feedback")
+                .addClass("templo-validacion-feedback is-invalid")
+                .text(mensaje)
+                .css("display", "block");
         }
 
         function quitarError() {
-            $contenedor.add($toggle).removeClass("is-invalid");
-            $feedback.css("display", "");
+            $contenedor.add($toggle).removeClass("is-invalid").removeAttr("aria-invalid");
+
+            $feedback
+                .removeClass("templo-validacion-feedback is-invalid")
+                .addClass("invalid-feedback")
+                .text("Seleccione al menos un servicio.")
+                .css("display", "");
         }
 
         function actualizarTexto() {
@@ -538,22 +708,15 @@ $(document).ready(function () {
                 $texto.text("Seleccionar servicios...");
 
             } else if ($seleccionados.length === 1) {
-                $texto.text(
-                    $seleccionados.attr("data-nombre") ||
-                    "1 servicio seleccionado"
-                );
+                $texto.text($seleccionados.attr("data-nombre") || "1 servicio seleccionado");
 
             } else {
-                $texto.text(
-                    `${$seleccionados.length} servicios seleccionados`
-                );
+                $texto.text(`${$seleccionados.length} servicios seleccionados`);
             }
         }
 
         function actualizarResumen() {
-            if (!$resumen.length) {
-                return;
-            }
+            if (!$resumen.length) return;
 
             const $seleccionados = obtenerSeleccionados();
 
@@ -572,18 +735,9 @@ $(document).ready(function () {
             /* Mostrar nombre, duración y precio de cada servicio */
             $seleccionados.each(function () {
                 const $check = $(this);
-
-                const nombreServicio = $check.attr("data-nombre") ||
-                    "Servicio";
-
-                const duracionServicio = parseInt(
-                    $check.attr("data-duracion") || "0",
-                    10
-                );
-
-                const precioServicio = parseFloat(
-                    $check.attr("data-precio") || "0"
-                );
+                const nombreServicio = $check.attr("data-nombre") || "Servicio";
+                const duracionServicio = parseInt($check.attr("data-duracion") || "0", 10);
+                const precioServicio = parseFloat($check.attr("data-precio") || "0");
 
                 const $nombre = $("<span>", {
                     class: "agendamiento-servicio-resumen-nombre"
@@ -591,18 +745,12 @@ $(document).ready(function () {
 
                 const $duracion = $("<span>", {
                     class: "agendamiento-servicio-resumen-duracion"
-                }).text(
-                    `${Number.isNaN(duracionServicio) ? 0 : duracionServicio} min`
-                );
+                }).text(`${Number.isNaN(duracionServicio) ? 0 : duracionServicio} min`);
 
                 const $precio = $("<span>", {
                     class: "agendamiento-servicio-resumen-precio"
                 }).text(
-                    (
-                        Number.isNaN(precioServicio)
-                            ? 0
-                            : precioServicio
-                    ).toLocaleString("es-VE", {
+                    (Number.isNaN(precioServicio) ? 0 : precioServicio).toLocaleString("es-VE", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     })
@@ -621,64 +769,40 @@ $(document).ready(function () {
             let duracionTotal = 0;
 
             obtenerSeleccionados().each(function () {
-                const precio = parseFloat(
-                    $(this).attr("data-precio") || "0"
-                );
+                const precio = parseFloat($(this).attr("data-precio") || "0");
+                const duracion = parseInt($(this).attr("data-duracion") || "0", 10);
 
-                const duracion = parseInt(
-                    $(this).attr("data-duracion") || "0",
-                    10
-                );
-
-                if (!Number.isNaN(precio)) {
-                    montoTotal += precio;
-                }
-
-                if (!Number.isNaN(duracion)) {
-                    duracionTotal += duracion;
-                }
+                if (!Number.isNaN(precio)) montoTotal += precio;
+                if (!Number.isNaN(duracion)) duracionTotal += duracion;
             });
 
             $(configuracion.inputMonto).val(montoTotal.toFixed(2));
+            $(configuracion.inputDuracion).val(duracionTotal > 0 ? String(duracionTotal) : "0");
 
-            $(configuracion.inputDuracion).val(
-                duracionTotal > 0 ? String(duracionTotal) : "0"
-            );
+            notificarCambio($(configuracion.inputMonto));
+            notificarCambio($(configuracion.inputDuracion));
         }
 
         function actualizar(calcular = true) {
             actualizarTexto();
             actualizarResumen();
 
-            if (calcular) {
-                calcularTotales();
-            }
-
-            if (obtenerSeleccionados().length) {
-                quitarError();
-            }
+            if (calcular) calcularTotales();
+            if (obtenerSeleccionados().length) quitarError();
         }
 
         function filtrar() {
             const termino = normalizarTexto($buscador.val());
-
             let visibles = 0;
 
             $opciones.each(function () {
                 const $opcion = $(this);
-
-                const nombre = normalizarTexto(
-                    $opcion.attr("data-servicio-nombre") ||
-                    $opcion.text()
-                );
-
+                const nombre = normalizarTexto($opcion.attr("data-servicio-nombre") || $opcion.text());
                 const coincide = termino === "" || nombre.includes(termino);
 
                 $opcion.prop("hidden", !coincide);
 
-                if (coincide) {
-                    visibles += 1;
-                }
+                if (coincide) visibles += 1;
             });
 
             $sinResultados.toggleClass("d-none", visibles > 0);
@@ -697,15 +821,10 @@ $(document).ready(function () {
         }
 
         function seleccionar(idsServicios) {
-            const ids = Array.isArray(idsServicios)
-                ? idsServicios.map(String)
-                : [];
+            const ids = Array.isArray(idsServicios) ? idsServicios.map(String) : [];
 
             $checks.each(function () {
-                $(this).prop(
-                    "checked",
-                    ids.includes(String($(this).val()))
-                );
+                $(this).prop("checked", ids.includes(String($(this).val())));
             });
 
             actualizar();
@@ -725,9 +844,7 @@ $(document).ready(function () {
                 cerrar();
                 quitarError();
 
-                if (limpiar) {
-                    limpiarSeleccion();
-                }
+                if (limpiar) limpiarSeleccion();
             }
         }
 
@@ -737,7 +854,11 @@ $(document).ready(function () {
                 return true;
             }
 
-            const valido = obtenerSeleccionados().length > 0;
+            const ids = obtenerSeleccionados().map(function () {
+                return $(this).val();
+            }).get();
+
+            const valido = validacionesAgenda && validacionesAgenda.validarServicios(ids);
 
             if (valido) {
                 quitarError();
@@ -782,6 +903,7 @@ $(document).ready(function () {
             establecerDeshabilitado: establecerDeshabilitado,
             obtenerSeleccionados: obtenerSeleccionados,
             validar: validar,
+            mostrarError: mostrarError,
             quitarError: quitarError,
 
             enfocar: function () {
@@ -823,131 +945,189 @@ $(document).ready(function () {
     /* VALIDACIONES DE LOS FORMULARIOS */
     /* ================================================= */
 
-    function validarObligatorios($formulario) {
-        let valido = true;
+    /* Notificar los cambios calculados a los validadores nativos del formulario */
+    function notificarCambio($campos, tipo = "input") {
+        $campos.each(function () {
+            this.dispatchEvent(new Event(tipo, { bubbles: true }));
+        });
+    }
 
-        $formulario
-            .find("input[required], select[required], textarea[required]")
-            .each(function () {
-                const $campo = $(this);
+    function obtenerSelectorFormulario($formulario) {
+        if ($formulario.is($formNuevo)) return selectorServiciosNuevo;
+        if ($formulario.is($formEditar)) return selectorServiciosEditar;
 
-                const vacio = !$campo.prop("disabled") &&
-                    String($campo.val() || "").trim() === "";
+        return null;
+    }
 
-                $campo.toggleClass("is-invalid", vacio);
+    function obtenerReglasFormulario($formulario) {
+        const formulario = $formulario.get(0);
 
-                if (vacio) {
-                    valido = false;
+        if (!formulario || !validacionesAgenda) return null;
+        if (reglasFormularios.has(formulario)) return reglasFormularios.get(formulario);
+
+        const v = validacionesAgenda;
+        const esBloqueo = $formulario.is($formNuevoBloqueo.add($formEditarBloqueo));
+        const esEdicion = $formulario.is($formEditar.add($formEditarBloqueo));
+
+        const base = esBloqueo
+            ? (esEdicion ? v.reglasEditarBloqueoHorario : v.reglasBloqueosHorario)
+            : (esEdicion ? v.reglasEditarAgendamiento : v.reglasAgendamientos);
+
+        const reglas = {
+            ...base,
+            fecha: {
+                comprobar: function (valor) {
+                    const mensaje = base.fecha.comprobar(valor);
+
+                    if (mensaje) return mensaje;
+
+                    const minima = $formulario.find('[name="fecha"]').attr("min") || obtenerFechaActual();
+
+                    return valor >= minima
+                        ? null : "Seleccione una fecha igual o posterior a la fecha actual.";
                 }
-            });
-
-        return valido;
-    }
-
-    function validarDuracion($campo) {
-        if (!$campo.length) {
-            return true;
-        }
-
-        const duracion = parseInt($campo.val(), 10);
-        const valido = !Number.isNaN(duracion) && duracion > 0;
-
-        $campo.toggleClass("is-invalid", !valido);
-
-        return valido;
-    }
-
-    function validarFecha($campo) {
-        if (!$campo.length || !$campo.val()) {
-            return true;
-        }
-
-        const valido = $campo.val() >= (
-            $campo.attr("min") || obtenerFechaActual()
-        );
-
-        $campo.toggleClass("is-invalid", !valido);
-
-        return valido;
-    }
-
-    function validarFormulario(
-        $formulario,
-        $cliente,
-        selector,
-        $duracion,
-        $fecha
-    ) {
-        let valido = validarObligatorios($formulario);
-
-        if ($cliente.length && !$cliente.val()) {
-            $cliente.addClass("is-invalid");
-            valido = false;
-        }
-
-        if (selector && !selector.validar()) {
-            valido = false;
-        }
-
-        if (!validarDuracion($duracion)) {
-            valido = false;
-        }
-
-        if (!validarFecha($fecha)) {
-            valido = false;
-        }
-
-        if (!valido) {
-            const $primero = $formulario.find(".is-invalid").first();
-
-            if (
-                $primero.hasClass("agendamiento-servicios-selector") &&
-                selector
-            ) {
-                selector.enfocar();
-            } else {
-                $primero.trigger("focus");
             }
+        };
+
+        if (esBloqueo) {
+            reglas.hora_fin = {
+                comprobar: function (valor) {
+                    const mensaje = base.hora_fin.comprobar(valor);
+                    const inicio = $formulario.find('[name="hora_inicio"]').val();
+
+                    if (mensaje) return mensaje;
+
+                    return !v.validarHora(inicio) || v.validarIntervaloHoras(inicio, valor)
+                        ? null : "La hora final debe ser posterior a la hora inicial.";
+                }
+            };
+
+        } else {
+            reglas.duracion_minutos = {
+                comprobar: function (valor) {
+                    const mensaje = base.duracion_minutos.comprobar(valor);
+                    const hora = $formulario.find('[name="hora"]').val();
+
+                    if (mensaje) return mensaje;
+
+                    return !v.validarHora(hora) || v.validarHorarioAgenda(hora, valor)
+                        ? null : "La atención debe finalizar dentro de la fecha seleccionada.";
+                }
+            };
         }
 
-        return valido;
+        reglasFormularios.set(formulario, Object.freeze(reglas));
+
+        return reglasFormularios.get(formulario);
     }
 
-    function validarFormularioBloqueo(
-        $formulario,
-        $fecha,
-        $inicio,
-        $fin
-    ) {
-        let valido = validarObligatorios($formulario);
+    function mostrarErroresFormulario($formulario, respuesta) {
+        if (!validacionesAgenda || !respuesta) return null;
 
-        if (!validarFecha($fecha)) {
-            valido = false;
+        const errores = $.isPlainObject(respuesta.errores)
+            ? { ...respuesta.errores }
+            : {};
+
+        if (
+            typeof respuesta.campo === "string" &&
+            typeof respuesta.mensaje === "string" &&
+            !errores[respuesta.campo]
+        ) {
+            errores[respuesta.campo] = respuesta.mensaje;
         }
 
-        const horarioInvalido = Boolean(
-            $inicio.val() &&
-            $fin.val() &&
-            $fin.val() <= $inicio.val()
+        const selector = obtenerSelectorFormulario($formulario);
+
+        if (typeof errores.servicios === "string" && selector) {
+            selector.mostrarError(errores.servicios);
+        }
+
+        const primero = validacionesAgenda.mostrarErrores($formulario.get(0), errores);
+
+        return primero || (errores.servicios && selector ? selector.toggle.get(0) : null);
+    }
+
+    async function validarFormularioAgenda($formulario) {
+        const v = await cargaValidaciones;
+
+        if (!v) {
+            const $aviso = $formulario.find('[id^="mensajeDisponibilidad"]').first();
+
+            mostrarAviso(
+                $aviso,
+                "danger",
+                "No fue posible cargar las validaciones. Recargue la página antes de guardar.",
+                "bi-exclamation-triangle-fill"
+            );
+
+            enfocarAviso($aviso);
+
+            return false;
+        }
+
+        const resultado = v.validarFormulario(
+            $formulario.get(0),
+            obtenerReglasFormulario($formulario)
         );
 
-        $fin.toggleClass("is-invalid", horarioInvalido);
+        const selector = obtenerSelectorFormulario($formulario);
+        const serviciosValidos = !selector || selector.validar();
 
-        if (horarioInvalido) {
-            valido = false;
+        if (!resultado.valido || !serviciosValidos) {
+            if (resultado.primerCampo && resultado.primerCampo.type !== "hidden") {
+                resultado.primerCampo.focus();
+
+            } else if (resultado.primerCampo?.type === "hidden") {
+                const $aviso = $formulario.find('[id^="mensajeDisponibilidad"]').first();
+
+                mostrarAviso(
+                    $aviso,
+                    "danger",
+                    resultado.errores[resultado.primerCampo.name],
+                    "bi-exclamation-triangle-fill"
+                );
+
+                enfocarAviso($aviso);
+
+            } else if (!serviciosValidos && selector) {
+                selector.enfocar();
+            }
+
+            return false;
         }
 
-        if (!valido) {
-            $formulario.find(".is-invalid").first().trigger("focus");
-        }
-
-        return valido;
+        return true;
     }
 
     function limpiarValidaciones($formulario) {
+        /* Conservar el elemento de aviso que pertenece al selector de servicios */
+        obtenerSelectorFormulario($formulario)?.quitarError();
+        validacionesAgenda?.limpiarFormulario($formulario.get(0));
+
         $formulario.find(".is-invalid").removeClass("is-invalid");
+        $formulario.find("[aria-invalid]").removeAttr("aria-invalid");
         $formulario.find(".invalid-feedback").css("display", "");
     }
+
+    /* Volver a comprobar los campos calculados o dependientes que ya muestran un mensaje */
+    $formNuevo.add($formEditar).add($formNuevoBloqueo).add($formEditarBloqueo)
+        .on("input change", '[name="hora"], [name="hora_inicio"]', function () {
+            if (!validacionesAgenda) return;
+
+            const $formulario = $(this.form);
+            const nombre = this.name === "hora_inicio" ? "hora_fin" : "duracion_minutos";
+            const campo = $formulario.find('[name="' + nombre + '"]').get(0);
+
+            if (!campo || !campo.nextElementSibling?.classList.contains("templo-validacion-feedback")) {
+                return;
+            }
+
+            const reglas = obtenerReglasFormulario($formulario);
+
+            validacionesAgenda.validarFormulario(this.form, {
+                [nombre]: reglas[nombre]
+            });
+        });
 
 
     /* ================================================= */
@@ -955,11 +1135,8 @@ $(document).ready(function () {
     /* ================================================= */
 
     function limpiarFormularioNuevo() {
-        if (!$formNuevo.length) {
-            return;
-        }
+        if (!$formNuevo.length) return;
 
-        /* Restablecer los valores originales mediante la API del formulario */
         $formNuevo.get(0).reset();
 
         limpiarValidaciones($formNuevo);
@@ -992,29 +1169,26 @@ $(document).ready(function () {
 
     function seleccionarEstadoNuevo(nombreEstado) {
         const $opcion = $estadoNuevo.find("option").filter(function () {
-            return $(this).text().trim().toUpperCase() ===
-                nombreEstado.toUpperCase();
+            return $(this).text().trim().toUpperCase() === nombreEstado.toUpperCase();
         }).first();
 
         if ($opcion.length) {
             $estadoNuevo.val($opcion.val()).removeClass("is-invalid");
+            notificarCambio($estadoNuevo, "change");
         }
     }
 
     function establecerEstadoInicialNuevo() {
         $estadoNuevo.val("").removeClass("is-invalid");
+        notificarCambio($estadoNuevo, "change");
     }
 
     function actualizarEstadoSegunTipoNuevo() {
         const $opcion = $tipoNuevo.find("option:selected");
 
         const nombreTipo = String(
-            $opcion.attr("data-nombre") ||
-            $opcion.text() ||
-            ""
-        )
-            .trim()
-            .toUpperCase();
+            $opcion.attr("data-nombre") || $opcion.text() || ""
+        ).trim().toUpperCase();
 
         if (nombreTipo === "CITA INMEDIATA") {
             seleccionarEstadoNuevo("EN ESPERA");
@@ -1037,12 +1211,9 @@ $(document).ready(function () {
         actualizarEstadoSegunTipoNuevo();
     });
 
-    $tipoEditar
-        .add($clienteNuevo)
-        .add($clienteEditar)
-        .on("change", function () {
-            $(this).removeClass("is-invalid");
-        });
+    $tipoEditar.add($clienteNuevo).add($clienteEditar).on("change", function () {
+        $(this).removeClass("is-invalid");
+    });
 
     $(".templo-input, .form-select")
         .not(".agendamiento-servicios-toggle")
@@ -1060,9 +1231,16 @@ $(document).ready(function () {
     $modalEditar.on("shown.bs.modal", function () {
         establecerFechaMinima();
         prepararFormularioEditar();
+
+        comprobarGestionFormulario(
+            $formEditar,
+            $("#mensajeDisponibilidadEditarAgendamiento")
+        );
     });
 
     $modalEditar.on("hidden.bs.modal", function () {
+        $formEditar.removeAttr("data-cita-protegida data-motivo-proteccion");
+
         limpiarValidaciones($formEditar);
 
         if (selectorServiciosEditar) {
@@ -1071,9 +1249,7 @@ $(document).ready(function () {
         }
     });
 
-    $modalNuevoBloqueo
-        .add($modalEditarBloqueo)
-        .on("shown.bs.modal", establecerFechaMinima);
+    $modalNuevoBloqueo.add($modalEditarBloqueo).on("shown.bs.modal", establecerFechaMinima);
 
     $modalNuevoBloqueo.on("hidden.bs.modal", function () {
         if ($formNuevoBloqueo.length) {
@@ -1086,26 +1262,18 @@ $(document).ready(function () {
         limpiarValidaciones($formEditarBloqueo);
     });
 
+
     /* Cerrar los selectores al pulsar fuera de ellos */
     $(document).on("click", function (evento) {
         $(".agendamiento-servicios-selector").each(function () {
             const $selector = $(this);
 
-            if (
-                $selector.is(evento.target) ||
-                $selector.has(evento.target).length
-            ) {
+            if ($selector.is(evento.target) || $selector.has(evento.target).length) {
                 return;
             }
 
-            $selector
-                .find(".agendamiento-servicios-panel")
-                .prop("hidden", true);
-
-            $selector
-                .find(".agendamiento-servicios-toggle")
-                .attr("aria-expanded", "false");
-
+            $selector.find(".agendamiento-servicios-panel").prop("hidden", true);
+            $selector.find(".agendamiento-servicios-toggle").attr("aria-expanded", "false");
             $selector.removeClass("is-open");
         });
     });
@@ -1156,9 +1324,7 @@ $(document).ready(function () {
         const $contenedor = $(configuracion.contenedor);
         const $boton = $formulario.find('button[type="submit"]').first();
 
-        if (!$formulario.length || !$contenedor.length) {
-            return null;
-        }
+        if (!$formulario.length || !$contenedor.length) return null;
 
         let temporizador = null;
         let numeroSolicitud = 0;
@@ -1167,8 +1333,11 @@ $(document).ready(function () {
         let disponible = null;
 
         function actualizarBoton() {
-            const deshabilitado = $formulario.attr("data-enviando") === "1" ||
-                pendiente || disponible === false;
+            const deshabilitado =
+                $formulario.attr("data-enviando") === "1" ||
+                $formulario.attr("data-cita-protegida") === "1" ||
+                pendiente ||
+                disponible === false;
 
             $boton
                 .prop("disabled", deshabilitado)
@@ -1196,16 +1365,9 @@ $(document).ready(function () {
         }
 
         function rechazar(mensaje, bloquear = false) {
-            if (bloquear) {
-                disponible = false;
-            }
+            if (bloquear) disponible = false;
 
-            mostrarAviso(
-                $contenedor,
-                "danger",
-                mensaje,
-                "bi-heartbreak-fill"
-            );
+            mostrarAviso($contenedor, "danger", mensaje, "bi-heartbreak-fill");
 
             actualizarBoton();
             enfocarAviso($contenedor);
@@ -1221,21 +1383,16 @@ $(document).ready(function () {
                 const resultado = await peticion;
 
                 /* Descartar respuestas de un horario que ya fue cambiado */
-                if (solicitudActual !== numeroSolicitud) {
-                    return;
-                }
+                if (solicitudActual !== numeroSolicitud) return;
 
-                if (
-                    !resultado ||
-                    typeof resultado.disponible !== "boolean"
-                ) {
-                    throw new Error(
-                        "La respuesta de disponibilidad no es válida."
-                    );
+                if (!resultado || typeof resultado.disponible !== "boolean") {
+                    throw new Error("La respuesta de disponibilidad no es válida.");
                 }
 
                 pendiente = false;
                 disponible = resultado.disponible;
+
+                if (!disponible) mostrarErroresFormulario($formulario, resultado);
 
                 mostrarAviso(
                     $contenedor,
@@ -1245,31 +1402,45 @@ $(document).ready(function () {
                             ? "El horario se encuentra disponible."
                             : "El horario seleccionado no se encuentra disponible."
                     ),
-                    disponible
-                        ? "bi-check-circle-fill"
-                        : "bi-heartbreak-fill"
+                    disponible ? "bi-check-circle-fill" : "bi-heartbreak-fill"
                 );
 
             } catch (error) {
-                if (solicitudActual !== numeroSolicitud) {
-                    return;
-                }
+                if (solicitudActual !== numeroSolicitud) return;
 
                 pendiente = false;
                 disponible = null;
 
                 if (error.status === 401) {
-                    window.location.assign(
-                        "Index.php?url=login&sesion=expirada"
-                    );
+                    redirigirAlAcceso();
+                    return;
+                }
+
+                /* Conservar la protección detectada mientras el formulario estaba abierto */
+                if (esRechazoDeGestion(error.responseJSON)) {
+                    const mensaje = typeof error.responseJSON.mensaje === "string"
+                        ? error.responseJSON.mensaje
+                        : "La cita ya no permite modificaciones ni cancelaciones.";
+
+                    registrarProteccion($formulario, mensaje);
+                    disponible = false;
+
+                    mostrarAviso($contenedor, "danger", mensaje, "bi-shield-lock");
 
                     return;
+                }
+
+                mostrarErroresFormulario($formulario, error.responseJSON);
+
+                if (error.responseJSON?.codigo === "bloqueo_no_disponible") {
+                    disponible = false;
                 }
 
                 mostrarAviso(
                     $contenedor,
                     "warning",
-                    "No fue posible comprobar el horario en este momento. La validación se realizará nuevamente al guardar.",
+                    error.responseJSON?.mensaje ||
+                        "No fue posible comprobar el horario en este momento. La validación se realizará nuevamente al guardar.",
                     "bi-exclamation-triangle-fill"
                 );
 
@@ -1282,11 +1453,19 @@ $(document).ready(function () {
         }
 
         function programar() {
-            if ($formulario.attr("data-enviando") === "1") {
-                return;
-            }
+            if (redirigiendo || $formulario.attr("data-enviando") === "1") return;
 
             detener();
+
+            if ($formulario.attr("data-cita-protegida") === "1") {
+                rechazar(
+                    $formulario.attr("data-motivo-proteccion") ||
+                        "La cita ya no permite modificaciones ni cancelaciones.",
+                    true
+                );
+
+                return;
+            }
 
             const solicitudActual = numeroSolicitud;
             const datos = configuracion.obtenerDatos();
@@ -1315,11 +1494,16 @@ $(document).ready(function () {
         }
 
         function permiteEnviar() {
-            if (!pendiente && disponible !== false) {
+            if (
+                $formulario.attr("data-cita-protegida") !== "1" &&
+                !pendiente &&
+                disponible !== false
+            ) {
                 return true;
             }
 
             enfocarAviso($contenedor);
+
             return false;
         }
 
@@ -1340,21 +1524,25 @@ $(document).ready(function () {
     }
 
     function datosCitaValidos(datos) {
-        return (
-            datos.id_usuario_asignado !== "" &&
-            datos.fecha !== "" &&
-            datos.hora !== "" &&
-            Number(datos.duracion_minutos) > 0
+        const v = validacionesAgenda;
+
+        return Boolean(
+            v &&
+            v.validarIdentificador(datos.id_usuario_asignado) &&
+            v.validarFechaAgenda(datos.fecha) &&
+            v.validarHora(datos.hora) &&
+            v.validarHorarioAgenda(datos.hora, datos.duracion_minutos)
         );
     }
 
     function datosBloqueoValidos(datos) {
-        return (
-            datos.id_usuario_especialista !== "" &&
-            datos.fecha !== "" &&
-            datos.hora_inicio !== "" &&
-            datos.hora_fin !== "" &&
-            datos.hora_fin > datos.hora_inicio
+        const v = validacionesAgenda;
+
+        return Boolean(
+            v &&
+            v.validarIdentificador(datos.id_usuario_especialista) &&
+            v.validarFechaAgenda(datos.fecha) &&
+            v.validarIntervaloHoras(datos.hora_inicio, datos.hora_fin)
         );
     }
 
@@ -1453,19 +1641,8 @@ $(document).ready(function () {
     /* ================================================= */
 
     function conectarFormulario($formulario, configuracion) {
-        $formulario.on("submit", function (evento) {
+        $formulario.prop("noValidate", true).on("submit", function (evento) {
             evento.preventDefault();
-
-            if (operacionEnCurso || !configuracion.validar()) {
-                return;
-            }
-
-            /* Conservar las restricciones HTML del formulario */
-            if (!this.checkValidity()) {
-                this.reportValidity();
-                return;
-            }
-
             enviarFormulario($formulario, configuracion);
         });
     }
@@ -1477,13 +1654,7 @@ $(document).ready(function () {
         titulo: "Agendamiento registrado",
 
         validar: function () {
-            return validarFormulario(
-                $formNuevo,
-                $clienteNuevo,
-                selectorServiciosNuevo,
-                $duracionNueva,
-                $fechaNueva
-            );
+            return validarFormularioAgenda($formNuevo);
         }
     });
 
@@ -1494,13 +1665,7 @@ $(document).ready(function () {
         titulo: "Agendamiento actualizado",
 
         validar: function () {
-            return validarFormulario(
-                $formEditar,
-                $clienteEditar,
-                selectorServiciosEditar,
-                $duracionEditar,
-                $fechaEditar
-            );
+            return validarFormularioAgenda($formEditar);
         }
     });
 
@@ -1511,12 +1676,7 @@ $(document).ready(function () {
         titulo: "Horario bloqueado",
 
         validar: function () {
-            return validarFormularioBloqueo(
-                $formNuevoBloqueo,
-                $fechaNuevoBloqueo,
-                $horaInicioNuevoBloqueo,
-                $horaFinNuevoBloqueo
-            );
+            return validarFormularioAgenda($formNuevoBloqueo);
         }
     });
 
@@ -1527,20 +1687,14 @@ $(document).ready(function () {
         titulo: "Bloqueo actualizado",
 
         validar: function () {
-            return validarFormularioBloqueo(
-                $formEditarBloqueo,
-                $fechaEditarBloqueo,
-                $horaInicioEditarBloqueo,
-                $horaFinEditarBloqueo
-            );
+            return validarFormularioAgenda($formEditarBloqueo);
         }
     });
 
-    /* Preparar y limpiar la comprobación al abrir o cerrar cada modal */
+
+    /* Preparar y limpiar la disponibilidad al abrir o cerrar cada modal */
     function conectarValidadorConModal($modal, validador) {
-        if (!validador) {
-            return;
-        }
+        if (!validador) return;
 
         $modal.on("shown.bs.modal", validador.programar);
         $modal.on("hidden.bs.modal", validador.limpiar);
@@ -1550,6 +1704,19 @@ $(document).ready(function () {
     conectarValidadorConModal($modalEditar, validadorEditarCita);
     conectarValidadorConModal($modalNuevoBloqueo, validadorNuevoBloqueo);
     conectarValidadorConModal($modalEditarBloqueo, validadorEditarBloqueo);
+
+    cargaValidaciones.then(function (v) {
+        if (!v) return;
+
+        [
+            [$modalNuevo, validadorNuevaCita],
+            [$modalEditar, validadorEditarCita],
+            [$modalNuevoBloqueo, validadorNuevoBloqueo],
+            [$modalEditarBloqueo, validadorEditarBloqueo]
+        ].forEach(function ([$modal, validador]) {
+            if ($modal.hasClass("show")) validador?.programar();
+        });
+    });
 
 
     /* ================================================= */
