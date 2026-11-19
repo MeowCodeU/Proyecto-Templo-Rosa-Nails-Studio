@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 24-09-2026 a las 05:25:06
+-- Tiempo de generación: 15-11-2026 a las 18:48:30
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -37,6 +37,8 @@ CREATE TABLE `agendamientos` (
   `fecha` date NOT NULL,
   `hora` time NOT NULL,
   `duracion_minutos` smallint(5) UNSIGNED NOT NULL,
+  `inicio_atencion` datetime DEFAULT NULL,
+  `fin_atencion` datetime DEFAULT NULL,
   `observacion_inicial` text DEFAULT NULL,
   `monto_total` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -81,7 +83,8 @@ CREATE TABLE `consumos_insumos` (
   `id_consumo` int(10) UNSIGNED NOT NULL,
   `id_agendamiento` int(10) UNSIGNED NOT NULL,
   `id_insumo` int(10) UNSIGNED NOT NULL,
-  `cantidad_usada` decimal(10,2) UNSIGNED NOT NULL
+  `id_lote` int(10) UNSIGNED DEFAULT NULL,
+  `cantidad_usada` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -94,6 +97,7 @@ CREATE TABLE `detalles_agendamientos` (
   `id_detalle_agendamiento` int(10) UNSIGNED NOT NULL,
   `id_agendamiento` int(10) UNSIGNED NOT NULL,
   `id_servicio` int(10) UNSIGNED NOT NULL,
+  `precio_aplicado` decimal(10,2) UNSIGNED DEFAULT NULL,
   `nota_tecnica` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -150,8 +154,42 @@ CREATE TABLE `insumos` (
   `tipo_control` enum('UNITARIO','POR_ENVASE') NOT NULL DEFAULT 'UNITARIO',
   `stock_actual` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `stock_minimo` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `fecha_vencimiento` date DEFAULT NULL,
   `estado_insumo` enum('ACTIVO','INACTIVO') NOT NULL DEFAULT 'ACTIVO'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `lotes_insumos`
+--
+
+CREATE TABLE `lotes_insumos` (
+  `id_lote` int(10) UNSIGNED NOT NULL,
+  `id_insumo` int(10) UNSIGNED NOT NULL,
+  `cantidad_inicial` int(10) UNSIGNED NOT NULL,
+  `cantidad_disponible` int(10) UNSIGNED NOT NULL,
+  `fecha_vencimiento` date DEFAULT NULL,
+  `fecha_ingreso` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `movimientos_insumos`
+--
+
+CREATE TABLE `movimientos_insumos` (
+  `id_movimiento` int(10) UNSIGNED NOT NULL,
+  `id_insumo` int(10) UNSIGNED NOT NULL,
+  `id_lote` int(10) UNSIGNED DEFAULT NULL,
+  `id_proveedor` int(10) UNSIGNED DEFAULT NULL,
+  `id_usuario` int(10) UNSIGNED NOT NULL,
+  `tipo_movimiento` enum('INCREMENTO','DECREMENTO') NOT NULL,
+  `cantidad` int(10) UNSIGNED NOT NULL,
+  `stock_anterior` int(10) UNSIGNED NOT NULL,
+  `stock_resultante` int(10) UNSIGNED NOT NULL,
+  `motivo` varchar(255) NOT NULL,
+  `fecha_movimiento` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -325,7 +363,8 @@ ALTER TABLE `clientes`
 ALTER TABLE `consumos_insumos`
   ADD PRIMARY KEY (`id_consumo`),
   ADD KEY `idx_consumos_agendamiento` (`id_agendamiento`),
-  ADD KEY `idx_consumos_insumo` (`id_insumo`);
+  ADD KEY `idx_consumos_insumo` (`id_insumo`),
+  ADD KEY `idx_consumos_lote` (`id_lote`);
 
 --
 -- Indices de la tabla `detalles_agendamientos`
@@ -354,6 +393,24 @@ ALTER TABLE `fotos_servicios`
 --
 ALTER TABLE `insumos`
   ADD PRIMARY KEY (`id_insumo`);
+
+--
+-- Indices de la tabla `lotes_insumos`
+--
+ALTER TABLE `lotes_insumos`
+  ADD PRIMARY KEY (`id_lote`),
+  ADD KEY `idx_lotes_insumo` (`id_insumo`),
+  ADD KEY `idx_lotes_vencimiento` (`fecha_vencimiento`);
+
+--
+-- Indices de la tabla `movimientos_insumos`
+--
+ALTER TABLE `movimientos_insumos`
+  ADD PRIMARY KEY (`id_movimiento`),
+  ADD KEY `idx_movimientos_insumo` (`id_insumo`),
+  ADD KEY `idx_movimientos_usuario` (`id_usuario`),
+  ADD KEY `idx_movimientos_proveedor` (`id_proveedor`),
+  ADD KEY `idx_movimientos_lote` (`id_lote`);
 
 --
 -- Indices de la tabla `personas`
@@ -462,6 +519,18 @@ ALTER TABLE `insumos`
   MODIFY `id_insumo` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `lotes_insumos`
+--
+ALTER TABLE `lotes_insumos`
+  MODIFY `id_lote` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `movimientos_insumos`
+--
+ALTER TABLE `movimientos_insumos`
+  MODIFY `id_movimiento` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `personas`
 --
 ALTER TABLE `personas`
@@ -535,7 +604,8 @@ ALTER TABLE `clientes`
 --
 ALTER TABLE `consumos_insumos`
   ADD CONSTRAINT `fk_consumos_insumos_agendamientos` FOREIGN KEY (`id_agendamiento`) REFERENCES `agendamientos` (`id_agendamiento`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_consumos_insumos_insumos` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_consumos_insumos_insumos` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_consumos_lote` FOREIGN KEY (`id_lote`) REFERENCES `lotes_insumos` (`id_lote`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `detalles_agendamientos`
@@ -549,6 +619,21 @@ ALTER TABLE `detalles_agendamientos`
 --
 ALTER TABLE `fotos_servicios`
   ADD CONSTRAINT `fk_fotos_servicios_detalles` FOREIGN KEY (`id_detalle_agendamiento`) REFERENCES `detalles_agendamientos` (`id_detalle_agendamiento`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `lotes_insumos`
+--
+ALTER TABLE `lotes_insumos`
+  ADD CONSTRAINT `fk_lotes_insumos_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `movimientos_insumos`
+--
+ALTER TABLE `movimientos_insumos`
+  ADD CONSTRAINT `fk_movimientos_insumos_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_movimientos_insumos_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_movimientos_lote` FOREIGN KEY (`id_lote`) REFERENCES `lotes_insumos` (`id_lote`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_movimientos_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `proveedores`
