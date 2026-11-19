@@ -11,12 +11,12 @@ class ReportePDF extends DocumentoReporte
 {
     /* Dimensiones utilizadas para distribuir la tabla */
     private array $anchos = [];
-    private float $inicioPagina = 0;
     private float $altoCabecera = 0;
 
     /* Medidas para las líneas y los saltos de página */
     private const ALTO_LINEA = 4.2;
-    private const LIMITE_INFERIOR = 190;
+    private const INICIO_TABLA = 58.5;
+    private const LIMITE_INFERIOR = 198;
 
 
     /* ================================================= */
@@ -25,60 +25,44 @@ class ReportePDF extends DocumentoReporte
 
     protected function dibujarContenido(): void
     {
-        $this->inicioPagina = $this->GetY();
+        $columnas = $this->reporte['columnas'] ?? [];
+        $this->anchos = [];
 
-
-        /* Distribuir el ancho disponible según el peso de cada columna */
-        $pesoTotal = array_sum(array_column($this->reporte['columnas'], 'ancho'));
-
-        foreach ($this->reporte['columnas'] as $columna) {
-            $this->anchos[] = 269 * $columna['ancho'] / $pesoTotal;
+        if (empty($columnas)) {
+            return;
         }
 
 
-        /* Mostrar los filtros aplicados */
-        $this->SetFont('Helvetica', '', 9);
+        /* Distribuir el ancho de la hoja carta según el peso de cada columna */
+        $pesoTotal = array_sum(array_column($columnas, 'ancho'));
 
-        foreach ($this->reporte['filtros_aplicados'] as $filtro) {
-            $this->MultiCell(269, 5, $this->textoParaPDF($filtro));
+        if ($pesoTotal <= 0) {
+            throw new \InvalidArgumentException('Los anchos de las columnas del reporte son inválidos.');
+        }
+
+        foreach ($columnas as $columna) {
+            $this->anchos[] = self::ANCHO_UTIL * $columna['ancho'] / $pesoTotal;
         }
 
 
-        /* Mostrar la nota correspondiente al reporte */
-        $this->Ln(2);
-        $this->SetFont('Helvetica', 'I', 8);
-
-        $this->MultiCell(269, 4.5, $this->textoParaPDF($this->reporte['nota']));
-
-
-        /* Mostrar los indicadores del resumen */
-        $this->Ln(3);
-        $this->SetFont('Helvetica', 'B', 9);
-
-        foreach ($this->reporte['resumen'] as $indicador) {
-            $this->MultiCell(
-                269,
-                5,
-                $this->textoParaPDF($indicador['titulo'] . ': ' . $indicador['valor'])
-            );
-        }
+        /* Mostrar los indicadores antes de la tabla */
+        $this->mostrarResumen();
 
 
         /* Preparar la cabecera de la tabla */
-        $this->Ln(3);
         $this->cabeceraTabla();
 
 
         /* Ajustar los valores de cada fila al ancho de sus columnas */
-        foreach ($this->reporte['filas'] as $indice => $fila) {
+        foreach (($this->reporte['filas'] ?? []) as $indice => $fila) {
             $lineas = [];
 
             $this->SetFont('Helvetica', '', 8);
 
-            foreach ($this->reporte['columnas'] as $n => $columna) {
+            foreach ($columnas as $n => $columna) {
                 $valor = $this->formatearValor(
                     $fila[$columna['clave']] ?? null,
-                    $columna['formato']
+                    $columna['formato'] ?? 'texto'
                 );
 
                 $lineas[] = $this->envolverTexto(
@@ -89,6 +73,43 @@ class ReportePDF extends DocumentoReporte
 
             $this->filaTabla($lineas, $indice % 2 === 0);
         }
+
+
+        /* Conservar los filtros y las notas después de la tabla */
+        $this->mostrarNotas();
+    }
+
+
+    /* ================================================= */
+    /* INDICADORES DEL REPORTE */
+    /* ================================================= */
+
+    private function mostrarResumen(): void
+    {
+        $this->SetFont('Helvetica', 'B', 9);
+        $this->SetTextColor(74, 60, 49);
+
+        $x = self::MARGEN;
+        $y = 48.4;
+
+
+        /* Distribuir los indicadores sin superar el margen derecho */
+        foreach (($this->reporte['resumen'] ?? []) as $indicador) {
+            $texto = $this->textoParaPDF($indicador['titulo'] . ': ' . $indicador['valor']);
+            $ancho = $this->GetStringWidth($texto) + 8;
+
+            if ($x > self::MARGEN && $x + $ancho > self::PAPEL_ANCHO - self::MARGEN) {
+                $x = self::MARGEN;
+                $y += 5.1;
+            }
+
+            $this->SetXY($x, $y);
+            $this->Cell($ancho, 5.1, $texto);
+
+            $x += $ancho;
+        }
+
+        $this->SetY(max(self::INICIO_TABLA, $y + 10.1));
     }
 
 
@@ -192,18 +213,19 @@ class ReportePDF extends DocumentoReporte
         }
 
         $cantidad = max(array_map('count', $lineas));
-
         $this->altoCabecera = $cantidad * self::ALTO_LINEA + 3;
 
 
-        /* Crear una página cuando la cabecera no quepa */
+        /* Crear otra página cuando la cabecera no quepa */
         if ($this->GetY() + $this->altoCabecera > self::LIMITE_INFERIOR) {
             $this->AddPage();
+            $this->SetY(self::INICIO_TABLA);
         }
 
 
-        /* Dibujar la cabecera con los colores del sistema */
-        $this->SetFillColor(232, 206, 216);
+        /* Dibujar la cabecera rosa con los bordes dorados */
+        $this->SetFont('Helvetica', 'B', 8);
+        $this->SetFillColor(...self::ROSA);
         $this->SetTextColor(74, 60, 49);
 
         $this->dibujarFragmento($lineas, $cantidad);
@@ -220,8 +242,7 @@ class ReportePDF extends DocumentoReporte
     {
         $pendientes = max(array_map('count', $lineas));
         $altoTotal = $pendientes * self::ALTO_LINEA + 3;
-
-        $espacioPaginaNueva = self::LIMITE_INFERIOR - $this->inicioPagina - $this->altoCabecera;
+        $espacioPaginaNueva = self::LIMITE_INFERIOR - self::INICIO_TABLA - $this->altoCabecera;
 
 
         /* Mantener la fila completa cuando pueda caber en una página nueva */
@@ -230,6 +251,7 @@ class ReportePDF extends DocumentoReporte
             $altoTotal <= $espacioPaginaNueva
         ) {
             $this->AddPage();
+            $this->SetY(self::INICIO_TABLA);
             $this->cabeceraTabla();
         }
 
@@ -244,6 +266,7 @@ class ReportePDF extends DocumentoReporte
 
             if ($disponibles < 1) {
                 $this->AddPage();
+                $this->SetY(self::INICIO_TABLA);
                 $this->cabeceraTabla();
 
                 continue;
@@ -261,12 +284,15 @@ class ReportePDF extends DocumentoReporte
             );
 
 
-            /* Alternar el fondo de las filas */
+            /* Alternar el fondo suave de las filas */
             $this->SetFillColor(
-                $sombreada ? 253 : 255,
-                $sombreada ? 245 : 255,
-                $sombreada ? 247 : 255
+                $sombreada ? 252 : 255,
+                $sombreada ? 244 : 249,
+                $sombreada ? 247 : 251
             );
+
+            $this->SetFont('Helvetica', '', 8);
+            $this->SetTextColor(74, 60, 49);
 
             $this->dibujarFragmento($fragmento, $cantidad);
 
@@ -282,12 +308,14 @@ class ReportePDF extends DocumentoReporte
 
     private function dibujarFragmento(array $lineas, int $cantidad): void
     {
-        $x = 14;
+        $x = self::MARGEN;
         $y = $this->GetY();
-
         $alto = $cantidad * self::ALTO_LINEA + 3;
 
-        $this->SetDrawColor(238, 224, 227);
+
+        /* Utilizar el dorado aprobado en todos los bordes */
+        $this->SetDrawColor(...self::ORO);
+        $this->SetLineWidth(0.20);
 
 
         /* Dibujar todas las celdas del fragmento con la misma altura */
@@ -305,6 +333,56 @@ class ReportePDF extends DocumentoReporte
 
 
         /* Situar el cursor al inicio de la siguiente fila */
-        $this->SetXY(14, $y + $alto);
+        $this->SetXY(self::MARGEN, $y + $alto);
+    }
+
+
+    /* ================================================= */
+    /* FILTROS Y NOTAS DEL REPORTE */
+    /* ================================================= */
+
+    private function mostrarNotas(): void
+    {
+        $textos = [];
+
+
+        /* Conservar los filtros sin repetir el título del reporte */
+        foreach (($this->reporte['filtros_aplicados'] ?? []) as $filtro) {
+            if (str_starts_with((string) $filtro, 'Tipo de reporte: ')) {
+                continue;
+            }
+
+            $textos[] = (string) $filtro;
+        }
+
+        if (!empty($this->reporte['nota'])) {
+            $textos[] = (string) $this->reporte['nota'];
+        }
+
+
+        /* Mostrar la información debajo de la tabla */
+        foreach ($textos as $texto) {
+            $this->SetFont('Helvetica', '', 7);
+            $this->SetTextColor(122, 101, 91);
+
+            $lineas = $this->envolverTexto(
+                $this->textoParaPDF($texto),
+                self::ANCHO_UTIL
+            );
+
+            $this->Ln(1);
+
+            foreach ($lineas as $linea) {
+                if ($this->GetY() + 3.7 > self::LIMITE_INFERIOR) {
+                    $this->AddPage();
+                    $this->SetY(self::INICIO_TABLA);
+                    $this->SetFont('Helvetica', '', 7);
+                    $this->SetTextColor(122, 101, 91);
+                }
+
+                $this->SetX(self::MARGEN);
+                $this->Cell(self::ANCHO_UTIL, 3.7, $linea, 0, 1);
+            }
+        }
     }
 }

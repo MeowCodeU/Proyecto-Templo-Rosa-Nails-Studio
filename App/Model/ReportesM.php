@@ -4,7 +4,8 @@ namespace App\Model;
 
 use App\Config\Database;
 use App\Traits\FormatoReporteTrait;
-use DateTimeImmutable;
+use App\Traits\ReportesAtencionesTrait;
+use App\Traits\ValidacionReporteTrait;
 use InvalidArgumentException;
 use PDO;
 
@@ -15,8 +16,9 @@ use PDO;
 
 class ReportesM extends Database
 {
-    /* Formato compartido por los reportes */
     use FormatoReporteTrait;
+    use ReportesAtencionesTrait;
+    use ValidacionReporteTrait;
 
     /* Conexión del modelo */
     private PDO $conexionMD;
@@ -29,7 +31,6 @@ class ReportesM extends Database
     /* CATÁLOGO DE REPORTES */
     /* ================================================= */
 
-    /* Los reportes pendientes no ejecutan consultas */
     private const CATALOGO = [
 
         /* Agenda */
@@ -37,9 +38,12 @@ class ReportesM extends Database
             'titulo' => 'Agenda de citas',
             'grupo' => 'Agenda',
             'fechas' => true,
-            'descripcion' => 'Citas registradas durante el período seleccionado.',
+            'descripcion' => 'Citas cuya fecha programada está dentro del período seleccionado.',
             'filtros' => ['cliente', 'especialista', 'servicio', 'estado', 'tipo'],
-            'nota' => 'El monto es el valor registrado en la cita; no acredita pagos ni precios finales por servicio.'
+            'nota' =>
+                'El monto es el registrado en la cita: previsto en citas pendientes ' .
+                'y actualizado por Registro de Servicio al finalizar la atención. ' .
+                'No acredita pagos.'
         ],
 
         'resumen_citas' => [
@@ -48,25 +52,8 @@ class ReportesM extends Database
             'fechas' => true,
             'descripcion' => 'Cantidad de citas agrupadas por estado y tipo de agendamiento.',
             'filtros' => ['cliente', 'especialista', 'servicio', 'estado', 'tipo'],
-            'nota' => 'Las cantidades corresponden a citas, aunque una cita incluya varios servicios.'
-        ],
-
-        'demanda' => [
-            'titulo' => 'Citas por día y franja horaria',
-            'grupo' => 'Agenda',
-            'fechas' => true,
-            'descripcion' => 'Distribución de las citas según su fecha y hora de inicio.',
-            'filtros' => ['especialista', 'servicio', 'tipo'],
-            'nota' => 'Agrupa por la hora de inicio prevista. No calcula ocupación ni tiempos reales de atención.'
-        ],
-
-        'bloqueos' => [
-            'titulo' => 'Bloqueos de horario',
-            'grupo' => 'Agenda',
-            'fechas' => true,
-            'descripcion' => 'Períodos de indisponibilidad registrados para las especialistas.',
-            'filtros' => ['especialista', 'estado_bloqueo'],
-            'nota' => 'Se muestra el estado actual de cada bloqueo, no un historial de sus modificaciones.'
+            'nota' =>
+                'Las cantidades corresponden a citas, aunque una cita incluya varios servicios.'
         ],
 
 
@@ -75,30 +62,27 @@ class ReportesM extends Database
             'titulo' => 'Atenciones realizadas',
             'grupo' => 'Servicios',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar Registro de Servicio.',
+            'descripcion' => 'Atenciones realizadas, con duración real, según la fecha de cita del período.',
             'filtros' => ['cliente', 'especialista', 'servicio'],
-            'disponible' => false,
-            'nota' => 'Se habilitará con los datos finales de la atención y su fecha correspondiente.'
+            'nota' =>
+                'Una fila por atención REALIZADA. La duración real se calcula ' .
+                'entre el inicio y el fin registrados, no con el tiempo previsto. ' .
+                'El filtro de servicio incluye la atención completa. ' .
+                'El importe suma precios aplicados y no acredita pagos.'
         ],
 
         'servicios_frecuentes' => [
             'titulo' => 'Servicios más realizados',
             'grupo' => 'Servicios',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar Registro de Servicio.',
+            'descripcion' => 'Servicios realizados por frecuencia y promedio de duración real disponible.',
             'filtros' => ['especialista', 'servicio'],
-            'disponible' => false,
-            'nota' => 'Contará los servicios efectivamente realizados, separados de las citas.'
-        ],
-
-        'ficha_atencion' => [
-            'titulo' => 'Ficha técnica de una atención',
-            'grupo' => 'Servicios',
-            'fechas' => true,
-            'descripcion' => 'Pendiente de integrar Registro de Servicio y la selección de una atención.',
-            'filtros' => ['cliente', 'especialista'],
-            'disponible' => false,
-            'nota' => 'Reunirá notas, servicios, insumos y evidencias disponibles de la atención seleccionada.'
+            'nota' =>
+                'Cuenta los servicios de atenciones REALIZADAS. El promedio real ' .
+                'solo considera citas de un servicio con inicio y fin registrados; ' .
+                'las citas de varios servicios cuentan, pero no se promedian. ' .
+                'Los importes son precios aplicados, no pagos; ' .
+                'los totales incompletos se indican como no disponibles.'
         ],
 
         'catalogo_servicios' => [
@@ -107,7 +91,9 @@ class ReportesM extends Database
             'fechas' => false,
             'descripcion' => 'Servicios ofrecidos y sus datos actuales de configuración.',
             'filtros' => ['servicio', 'estado_registro'],
-            'nota' => 'Los precios y duraciones son los actuales del catálogo, no valores históricos aplicados.'
+            'nota' =>
+                'Los precios y duraciones son los actuales del catálogo, ' .
+                'no valores históricos aplicados.'
         ],
 
 
@@ -118,37 +104,34 @@ class ReportesM extends Database
             'fechas' => false,
             'descripcion' => 'Identificación, contacto y estado de los clientes registrados.',
             'filtros' => ['cliente', 'estado_registro'],
-            'nota' => 'No se filtra por fecha de alta porque la tabla clientes no registra ese dato.'
+            'nota' => ''
         ],
 
         'clientes_frecuentes' => [
             'titulo' => 'Clientes frecuentes',
             'grupo' => 'Clientes',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar las atenciones efectivamente realizadas.',
+            'descripcion' => 'Clientes ordenados por sus atenciones realizadas durante el período.',
             'filtros' => ['cliente', 'especialista'],
-            'disponible' => false,
-            'nota' => 'La frecuencia se calculará con atenciones realizadas, no con reservas o cancelaciones.'
-        ],
-
-        'clientes_sin_atencion' => [
-            'titulo' => 'Clientes sin atención reciente',
-            'grupo' => 'Clientes',
-            'fechas' => true,
-            'descripcion' => 'Pendiente de integrar el historial real de atenciones.',
-            'filtros' => ['cliente'],
-            'disponible' => false,
-            'nota' => 'Distinguirá la falta de atención reciente de los clientes que nunca han sido atendidos.'
+            'nota' =>
+                'Cada atención se cuenta una vez, aunque incluya varios servicios. ' .
+                'Los importes corresponden a precios aplicados; ' .
+                'el estado del cliente es el actual.'
         ],
 
         'historial' => [
             'titulo' => 'Historial de atenciones por cliente',
             'grupo' => 'Clientes',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar Registro de Servicio y el historial compartido.',
+            'descripcion' =>
+                'Servicios, notas técnicas y precios aplicados ' .
+                'de las atenciones realizadas de un cliente.',
             'filtros' => ['cliente', 'servicio'],
-            'disponible' => false,
-            'nota' => 'Utilizará los datos históricos guardados de cada atención.'
+            'requeridos' => ['cliente'],
+            'nota' =>
+                'Seleccione un cliente. Cada fila corresponde a un servicio realizado; ' .
+                'el filtro de servicio limita los detalles mostrados. ' .
+                'Se indica la cantidad de fotografías, sin incorporar sus imágenes.'
         ],
 
 
@@ -159,56 +142,68 @@ class ReportesM extends Database
             'fechas' => true,
             'descripcion' => 'Citas asignadas y sus estados registrados durante el período.',
             'filtros' => ['especialista', 'servicio'],
-            'nota' => 'Los minutos son previstos. El monto corresponde a citas en estado REALIZADA; no acredita cobros ni precios finales por servicio.'
+            'nota' =>
+                'Los minutos son previstos. El importe suma precios aplicados ' .
+                'en atenciones REALIZADAS y no acredita cobros. ' .
+                'Si faltan precios aplicados, se muestra un guion.'
         ],
 
 
         /* Insumos */
         'existencias' => [
-            'titulo' => 'Disponibilidad de insumos',
+            'titulo' => 'Existencias actuales de insumos',
             'grupo' => 'Insumos',
             'fechas' => false,
-            'descripcion' => 'Existencias actuales, mínimo registrado y proveedores vinculados.',
+            'descripcion' => 'Existencias actuales, mínimo registrado, próximo vencimiento y proveedores vinculados.',
             'filtros' => ['insumo', 'proveedor', 'estado_registro', 'disponibilidad'],
-            'nota' => 'Consulta el stock guardado actualmente; no reconstruye existencias históricas ni descuenta consumos.'
+            'nota' =>
+                'El stock corresponde a las unidades registradas en inventario, ' .
+                'incluidos los lotes vencidos que aún tengan existencias.'
         ],
 
         'reposicion' => [
-            'titulo' => 'Insumos que requieren reposición',
+            'titulo' => 'Insumos en mínimo o agotados',
             'grupo' => 'Insumos',
             'fechas' => false,
-            'descripcion' => 'Insumos cuyo stock está en el mínimo o por debajo.',
+            'descripcion' => 'Insumos cuyo stock actual es igual o inferior al mínimo registrado.',
             'filtros' => ['insumo', 'proveedor', 'estado_registro'],
-            'nota' => 'Es un listado para revisión y reposición; no genera órdenes de compra.'
+            'nota' =>
+                'Es un listado para revisión y reposición; no genera órdenes de compra.'
         ],
 
         'vencimientos' => [
             'titulo' => 'Vencimiento de insumos',
             'grupo' => 'Insumos',
             'fechas' => true,
-            'descripcion' => 'Insumos cuya fecha de vencimiento está dentro del rango elegido.',
+            'descripcion' => 'Lotes disponibles cuyo vencimiento está dentro del rango seleccionado.',
             'filtros' => ['insumo', 'proveedor', 'estado_registro'],
-            'nota' => 'El rango se aplica a la fecha de vencimiento. No representa fecha de compra o de registro.'
+            'nota' =>
+                'Se muestra una fila por lote con existencias y fecha de vencimiento ' .
+                'dentro del período. Un mismo insumo puede aparecer varias veces.'
         ],
 
         'consumos' => [
             'titulo' => 'Consumos por atención',
             'grupo' => 'Insumos',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar el guardado de consumos en Registro de Servicio.',
+            'descripcion' => 'Cantidades enteras de insumos guardadas para cada atención no cancelada.',
             'filtros' => ['insumo', 'especialista'],
-            'disponible' => false,
-            'nota' => 'Utilizará las cantidades registradas de los insumos realmente empleados.'
+            'nota' =>
+                'Incluye consumos guardados de atenciones en proceso o realizadas. ' .
+                'El período corresponde a la fecha del agendamiento; ' .
+                'consultar este reporte no vuelve a descontar existencias.'
         ],
 
         'consumos_acumulados' => [
             'titulo' => 'Consumo acumulado por insumo',
             'grupo' => 'Insumos',
             'fechas' => true,
-            'descripcion' => 'Pendiente de integrar el guardado de consumos en Registro de Servicio.',
+            'descripcion' => 'Cantidades enteras utilizadas, agrupadas por insumo durante el período.',
             'filtros' => ['insumo', 'especialista'],
-            'disponible' => false,
-            'nota' => 'Sumará cantidades por insumo; no mezclará unidades de materiales distintos.'
+            'nota' =>
+                'Incluye consumos guardados de atenciones no canceladas. ' .
+                'Cada insumo conserva su presentación y tipo de control; ' .
+                'no se suman cantidades de materiales diferentes.'
         ],
 
 
@@ -219,27 +214,9 @@ class ReportesM extends Database
             'fechas' => false,
             'descripcion' => 'Empresa, contacto, estado e insumos vinculados.',
             'filtros' => ['proveedor', 'insumo', 'estado_registro'],
-            'nota' => 'Las vinculaciones son las actuales; no representan compras ni entregas realizadas.'
-        ],
-
-        'proveedores_insumos' => [
-            'titulo' => 'Relación de proveedores e insumos',
-            'grupo' => 'Proveedores',
-            'fechas' => false,
-            'descripcion' => 'Insumos asociados a cada proveedor que cumple los filtros.',
-            'filtros' => ['proveedor', 'insumo', 'estado_registro'],
-            'nota' => 'El filtro de estado se aplica al proveedor. No se evalúan precios de compra ni calidad de abastecimiento.'
-        ],
-
-
-        /* General */
-        'resumen_operativo' => [
-            'titulo' => 'Resumen operativo',
-            'grupo' => 'General',
-            'fechas' => true,
-            'descripcion' => 'Indicadores de citas del período y alertas actuales de insumos.',
-            'filtros' => ['especialista'],
-            'nota' => 'Las citas corresponden al período; las alertas de insumos corresponden al stock actual general, sin filtro por especialista.'
+            'nota' =>
+                'Las vinculaciones son las actuales; ' .
+                'no representan compras ni entregas realizadas.'
         ]
     ];
 
@@ -248,7 +225,6 @@ class ReportesM extends Database
     /* CONEXIÓN CON LA BASE DE DATOS */
     /* ================================================= */
 
-    /* Obtener la conexión heredada o utilizar la conexión suministrada */
     public function __construct(?PDO $conexion = null)
     {
         $this->conexionMD = $conexion ?? $this->getConnection();
@@ -267,9 +243,9 @@ class ReportesM extends Database
              FROM usuarios u
              INNER JOIN roles r ON r.id_rol = u.id_rol
              WHERE u.id_usuario = :usuario
-               AND u.estado_usuario = 'ACTIVO'
-               AND r.estado_rol = 'ACTIVO'
-               AND r.nombre_rol = 'ADMINISTRADORA DEL NEGOCIO'",
+                AND u.estado_usuario = 'ACTIVO'
+                AND r.estado_rol = 'ACTIVO'
+                AND r.nombre_rol = 'ADMINISTRADORA DEL NEGOCIO'",
             ['usuario' => $idUsuario]
         );
 
@@ -281,13 +257,15 @@ class ReportesM extends Database
     /* CONFIGURACIÓN DEL MÓDULO */
     /* ================================================= */
 
-    /* Entregar a la vista el catálogo y las opciones de los filtros */
     public function configuracion(): array
     {
         return [
             'reportes' => array_map(
                 static function (array $reporte): array {
-                    return array_merge(['disponible' => true], $reporte);
+                    return array_merge(
+                        ['disponible' => true],
+                        $reporte
+                    );
                 },
                 self::CATALOGO
             ),
@@ -303,7 +281,7 @@ class ReportesM extends Database
 
     private function opciones(): array
     {
-        /* Incluir los registros inactivos para las consultas históricas */
+        /* Incluir registros inactivos para conservar las consultas históricas */
         return [
             'cliente' => $this->seleccionar(
                 "SELECT c.id_cliente AS id,
@@ -367,11 +345,6 @@ class ReportesM extends Database
                  ORDER BY nombre_empresa'
             ),
 
-            'estado_bloqueo' => [
-                ['id' => 'BLOQUEADO', 'texto' => 'Bloqueado'],
-                ['id' => 'DESBLOQUEADO', 'texto' => 'Desbloqueado']
-            ],
-
             'estado_registro' => [
                 ['id' => 'ACTIVO', 'texto' => 'Activo'],
                 ['id' => 'INACTIVO', 'texto' => 'Inactivo']
@@ -387,136 +360,50 @@ class ReportesM extends Database
 
 
     /* ================================================= */
-    /* VALIDACIÓN DE LOS FILTROS */
-    /* ================================================= */
-
-    private function validar(array $entrada, array $opciones): array
-    {
-        /* Comprobar el tipo de reporte solicitado */
-        $tipo = $entrada['reporte'] ?? '';
-
-        if (!is_string($tipo) || !isset(self::CATALOGO[$tipo])) {
-            throw new InvalidArgumentException('Seleccione un tipo de reporte válido.');
-        }
-
-        $definicion = self::CATALOGO[$tipo];
-
-        if (($definicion['disponible'] ?? true) === false) {
-            throw new InvalidArgumentException($definicion['descripcion']);
-        }
-
-
-        /* Determinar los filtros permitidos para el reporte */
-        $permitidos = array_merge(['reporte'], $definicion['filtros']);
-
-        if ($definicion['fechas']) {
-            $permitidos = array_merge($permitidos, ['fecha_inicio', 'fecha_fin']);
-        }
-
-
-        /* Rechazar campos ajenos al reporte y valores que no sean cadenas */
-        foreach ($entrada as $campo => $valor) {
-            if (!in_array($campo, $permitidos, true)) {
-                throw new InvalidArgumentException('El reporte recibió un filtro que no corresponde.');
-            }
-
-            if (!is_string($valor)) {
-                throw new InvalidArgumentException('Los filtros deben contener valores simples.');
-            }
-        }
-
-        $filtros = ['reporte' => $tipo];
-
-
-        /* Validar las fechas y el orden del período */
-        if ($definicion['fechas']) {
-            foreach (['fecha_inicio', 'fecha_fin'] as $campo) {
-                $valor = $entrada[$campo] ?? '';
-
-                if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $valor)) {
-                    throw new InvalidArgumentException('Indique las dos fechas del período correctamente.');
-                }
-
-                $fecha = DateTimeImmutable::createFromFormat('!Y-m-d', $valor);
-
-                if (!$fecha || $fecha->format('Y-m-d') !== $valor) {
-                    throw new InvalidArgumentException('Indique las dos fechas del período correctamente.');
-                }
-
-                $filtros[$campo] = $valor;
-            }
-
-            if ($filtros['fecha_inicio'] > $filtros['fecha_fin']) {
-                throw new InvalidArgumentException('La fecha inicial no puede ser posterior a la fecha final.');
-            }
-        }
-
-
-        /* Comprobar que las opciones seleccionadas sigan disponibles */
-        foreach ($definicion['filtros'] as $campo) {
-            $valor = $entrada[$campo] ?? '';
-
-            if ($valor === '') {
-                continue;
-            }
-
-            $ids = array_map('strval', array_column($opciones[$campo], 'id'));
-
-            if (!in_array($valor, $ids, true)) {
-                throw new InvalidArgumentException(
-                    'Uno de los filtros seleccionados ya no está disponible. Actualice la página.'
-                );
-            }
-
-            $filtros[$campo] = $valor;
-        }
-
-        return $filtros;
-    }
-
-
-    /* ================================================= */
     /* GENERACIÓN DEL REPORTE */
     /* ================================================= */
 
-    public function generar(array $entrada): array
+    public function generar(mixed $entrada): array
     {
+        /* Comprobar los campos y las fechas antes de consultar las opciones */
+        $this->validarEstructuraReporte($entrada);
+
         $opciones = $this->opciones();
-        $filtros = $this->validar($entrada, $opciones);
+        $filtros = $this->validarFiltrosReporte($entrada, $opciones);
         $tipo = $filtros['reporte'];
 
-
-        /* Seleccionar el método correspondiente al reporte */
         $metodos = [
             'agendamientos' => 'agenda',
             'resumen_citas' => 'resumenCitas',
-            'demanda' => 'demanda',
-            'bloqueos' => 'bloqueos',
+            'realizados' => 'atencionesRealizadas',
+            'servicios_frecuentes' => 'serviciosFrecuentes',
+            'clientes_frecuentes' => 'clientesFrecuentes',
+            'historial' => 'historialAtenciones',
+            'consumos' => 'consumosAtenciones',
+            'consumos_acumulados' => 'consumosAcumulados',
             'catalogo_servicios' => 'catalogoServicios',
             'clientes' => 'clientes',
             'especialistas' => 'especialistas',
             'existencias' => 'existencias',
             'reposicion' => 'existencias',
             'vencimientos' => 'existencias',
-            'proveedores' => 'proveedores',
-            'proveedores_insumos' => 'proveedores',
-            'resumen_operativo' => 'resumenOperativo'
+            'proveedores' => 'proveedores'
         ];
 
         $resultado = $this->{$metodos[$tipo]}($filtros);
 
-
-        /* Comprobar el límite antes de preparar la salida */
+        /* Exigir filtros más precisos cuando se supera el límite de salida */
         if (count($resultado['filas']) > self::LIMITE_FILAS) {
             throw new InvalidArgumentException(
-                'La consulta supera 2000 filas. Acote el período o los filtros para consultar y exportar el resultado completo.'
+                'La consulta supera 2000 filas. Acote el período o los filtros ' .
+                'para consultar y exportar el resultado completo.'
             );
         }
 
-        $etiquetas = ['Tipo de reporte: ' . self::CATALOGO[$tipo]['titulo']];
+        $etiquetas = [
+            'Tipo de reporte: ' . self::CATALOGO[$tipo]['titulo']
+        ];
 
-
-        /* Etiquetas utilizadas para describir los filtros aplicados */
         $nombres = [
             'cliente' => 'Cliente',
             'especialista' => 'Especialista',
@@ -526,22 +413,19 @@ class ReportesM extends Database
             'insumo' => 'Insumo',
             'proveedor' => 'Proveedor',
             'estado_registro' => 'Estado del registro',
-            'disponibilidad' => 'Disponibilidad',
-            'estado_bloqueo' => 'Estado del bloqueo'
+            'disponibilidad' => 'Nivel de existencias'
         ];
 
         if (isset($filtros['fecha_inicio'])) {
-            $etiquetas[] = 'Período: ' . $this->formatearFecha($filtros['fecha_inicio']) .
-                ' al ' . $this->formatearFecha($filtros['fecha_fin']);
-
-        } else {
-            $etiquetas[] = 'Alcance: registros actuales';
+            $etiquetas[] =
+                'Período: ' .
+                $this->formatearFecha($filtros['fecha_inicio']) .
+                ' al ' .
+                $this->formatearFecha($filtros['fecha_fin']);
         }
 
         foreach ($nombres as $campo => $nombre) {
-            if (!isset($filtros[$campo])) {
-                continue;
-            }
+            if (!isset($filtros[$campo])) continue;
 
             foreach ($opciones[$campo] as $opcion) {
                 if ((string) $opcion['id'] === $filtros[$campo]) {
@@ -551,8 +435,7 @@ class ReportesM extends Database
             }
         }
 
-
-        /* Preparar la estructura compartida por la vista y el documento */
+        /* Compartir la misma estructura entre la pantalla y el PDF */
         return array_merge(
             $resultado,
             [
@@ -572,8 +455,10 @@ class ReportesM extends Database
     /* EJECUCIÓN DE CONSULTAS */
     /* ================================================= */
 
-    private function seleccionar(string $sql, array $parametros = []): array
-    {
+    private function seleccionar(
+        string $sql,
+        array $parametros = []
+    ): array {
         $stmt = $this->conexionMD->prepare($sql);
         $stmt->execute($parametros);
 
@@ -585,9 +470,12 @@ class ReportesM extends Database
     /* DEFINICIÓN DE COLUMNAS */
     /* ================================================= */
 
-    /* Describir las columnas utilizadas en pantalla y en el documento */
-    private function columna(string $clave, string $titulo, int $ancho, string $formato = 'texto'): array
-    {
+    private function columna(
+        string $clave,
+        string $titulo,
+        int $ancho,
+        string $formato = 'texto'
+    ): array {
         return [
             'clave' => $clave,
             'titulo' => $titulo,
@@ -617,8 +505,6 @@ class ReportesM extends Database
             'tipo' => 'a.id_tipo_agendamiento'
         ];
 
-
-        /* Incorporar los filtros que contienen un valor seleccionado */
         foreach ($columnas as $campo => $columna) {
             if (isset($f[$campo])) {
                 $sql .= " AND $columna = :$campo";
@@ -626,14 +512,13 @@ class ReportesM extends Database
             }
         }
 
-
         /* Filtrar por servicio sin multiplicar las filas de una cita */
         if (isset($f['servicio'])) {
             $sql .= ' AND EXISTS (
                 SELECT 1
                 FROM detalles_agendamientos df
                 WHERE df.id_agendamiento = a.id_agendamiento
-                  AND df.id_servicio = :servicio
+                    AND df.id_servicio = :servicio
             )';
 
             $p['servicio'] = $f['servicio'];
@@ -652,7 +537,6 @@ class ReportesM extends Database
         $p = [];
         $where = $this->condicionesAgenda($f, $p);
 
-
         /* Recuperar cada cita una sola vez */
         $filas = $this->seleccionar(
             "SELECT
@@ -669,27 +553,35 @@ class ReportesM extends Database
                 e.nombre_estado AS estado,
                 a.duracion_minutos AS minutos,
                 a.monto_total AS monto
+
              FROM agendamientos a
+
              LEFT JOIN clientes c
                 ON c.id_cliente = a.id_cliente
+
              LEFT JOIN personas pc
                 ON pc.id_persona = c.id_persona
+
              INNER JOIN usuarios u
                 ON u.id_usuario = a.id_usuario_asignado
+
              INNER JOIN personas pe
                 ON pe.id_persona = u.id_persona
+
              INNER JOIN estados_agendamientos e
                 ON e.id_estado_agendamiento = a.id_estado_agendamiento
+
              INNER JOIN tipos_agendamientos t
                 ON t.id_tipo_agendamiento = a.id_tipo_agendamiento
+
              WHERE $where
+
              ORDER BY a.fecha, a.hora, a.id_agendamiento
+
              LIMIT 2001",
             $p
         );
 
-
-        /* Incorporar los servicios asociados a cada cita */
         $filas = $this->anexarLista(
             $filas,
             'id_agendamiento',
@@ -701,8 +593,7 @@ class ReportesM extends Database
              ORDER BY s.nombre_servicio'
         );
 
-
-        /* Sumar centavos enteros y contar cada cliente una sola vez */
+        /* Sumar los montos y contar cada cliente una sola vez */
         $centavos = 0;
         $clientes = [];
 
@@ -716,14 +607,14 @@ class ReportesM extends Database
 
         return [
             'columnas' => [
-                $this->columna('fecha', 'Fecha', 20, 'fecha'),
-                $this->columna('hora', 'Hora', 15, 'hora'),
+                $this->columna('fecha', 'Fecha de la cita', 20, 'fecha'),
+                $this->columna('hora', 'Hora prevista', 15, 'hora'),
                 $this->columna('cliente', 'Cliente', 35),
                 $this->columna('especialista', 'Especialista', 32),
                 $this->columna('servicios', 'Servicios', 49),
                 $this->columna('tipo', 'Tipo', 29),
                 $this->columna('estado', 'Estado', 25),
-                $this->columna('minutos', 'Minutos', 18, 'entero'),
+                $this->columna('minutos', 'Minutos previstos', 18, 'entero'),
                 $this->columna('monto', 'Monto registrado', 27, 'decimal')
             ],
             'filas' => $filas,
@@ -772,23 +663,33 @@ class ReportesM extends Database
                     SELECT COUNT(*)
                     FROM agendamientos a
                     INNER JOIN estados_agendamientos e
-                        ON e.id_estado_agendamiento = a.id_estado_agendamiento
+                        ON e.id_estado_agendamiento =
+                            a.id_estado_agendamiento
                     WHERE a.id_cliente = c.id_cliente
-                      AND e.nombre_estado = 'REALIZADA'
+                        AND e.nombre_estado = 'REALIZADA'
                 ) AS realizadas
+
              FROM clientes c
-             INNER JOIN personas p ON p.id_persona = c.id_persona
+
+             INNER JOIN personas p
+                ON p.id_persona = c.id_persona
+
              WHERE $where
+
              ORDER BY p.nombre, p.apellido, c.id_cliente
+
              LIMIT 2001",
             $p
         );
 
-
-        /* Contar los clientes activos dentro del resultado */
-        $activos = count(array_filter($filas, static function ($fila) {
-            return $fila['estado'] === 'ACTIVO';
-        }));
+        $activos = count(
+            array_filter(
+                $filas,
+                static function ($fila) {
+                    return $fila['estado'] === 'ACTIVO';
+                }
+            )
+        );
 
         return [
             'columnas' => [
@@ -820,13 +721,12 @@ class ReportesM extends Database
 
         $where = "r.nombre_rol = 'ESPECIALISTA EN MANICURA'";
 
-
-        /* Mantener las fechas en el LEFT JOIN para incluir especialistas sin citas */
         if (isset($f['especialista'])) {
             $where .= ' AND u.id_usuario = :usuario_filtro';
             $p['usuario_filtro'] = $f['especialista'];
         }
 
+        /* Agrupar primero los precios para evitar multiplicar las citas */
         $filas = $this->seleccionar(
             "SELECT
                 CONCAT(p.nombre, ' ', p.apellido) AS especialista,
@@ -847,24 +747,56 @@ class ReportesM extends Database
                     ),
                     0
                 ) AS minutos,
-                COALESCE(
-                    SUM(
-                        CASE WHEN e.nombre_estado = 'REALIZADA'
-                        THEN a.monto_total ELSE 0 END
-                    ),
-                    0
-                ) AS monto
+                CASE
+                    WHEN SUM(
+                        CASE
+                            WHEN e.nombre_estado = 'REALIZADA'
+                                AND da.monto IS NULL
+                            THEN 1 ELSE 0
+                        END
+                    ) > 0 THEN NULL
+                    ELSE COALESCE(
+                        SUM(
+                            CASE WHEN e.nombre_estado = 'REALIZADA'
+                            THEN da.monto ELSE 0 END
+                        ),
+                        0
+                    )
+                END AS monto
+
              FROM usuarios u
-             INNER JOIN personas p ON p.id_persona = u.id_persona
-             INNER JOIN roles r ON r.id_rol = u.id_rol
+
+             INNER JOIN personas p
+                ON p.id_persona = u.id_persona
+
+             INNER JOIN roles r
+                ON r.id_rol = u.id_rol
+
              LEFT JOIN agendamientos a
                 ON a.id_usuario_asignado = u.id_usuario
                 AND $condiciones
+
              LEFT JOIN estados_agendamientos e
                 ON e.id_estado_agendamiento = a.id_estado_agendamiento
+
+             LEFT JOIN (
+                SELECT
+                    id_agendamiento,
+                    CASE
+                        WHEN COUNT(*) = COUNT(precio_aplicado)
+                        THEN SUM(precio_aplicado)
+                        ELSE NULL
+                    END AS monto
+                FROM detalles_agendamientos
+                GROUP BY id_agendamiento
+             ) da ON da.id_agendamiento = a.id_agendamiento
+
              WHERE $where
+
              GROUP BY u.id_usuario, p.nombre, p.apellido, u.estado_usuario
+
              ORDER BY p.nombre, p.apellido, u.id_usuario
+
              LIMIT 2001",
             $p
         );
@@ -877,13 +809,19 @@ class ReportesM extends Database
                 $this->columna('realizadas', 'Realizadas', 29, 'entero'),
                 $this->columna('canceladas', 'Canceladas', 29, 'entero'),
                 $this->columna('minutos', 'Minutos previstos', 36, 'entero'),
-                $this->columna('monto', 'Monto en citas realizadas', 41, 'decimal')
+                $this->columna('monto', 'Importe aplicado', 41, 'decimal')
             ],
             'filas' => $filas,
             'resumen' => [
                 ['titulo' => 'Especialistas', 'valor' => count($filas)],
-                ['titulo' => 'Citas', 'valor' => array_sum(array_column($filas, 'citas'))],
-                ['titulo' => 'Realizadas', 'valor' => array_sum(array_column($filas, 'realizadas'))]
+                [
+                    'titulo' => 'Citas',
+                    'valor' => array_sum(array_column($filas, 'citas'))
+                ],
+                [
+                    'titulo' => 'Realizadas',
+                    'valor' => array_sum(array_column($filas, 'realizadas'))
+                ]
             ]
         ];
     }
@@ -893,8 +831,11 @@ class ReportesM extends Database
     /* FILTROS DE INSUMOS */
     /* ================================================= */
 
-    private function condicionesInsumos(array $f, array &$p, string $alias): string
-    {
+    private function condicionesInsumos(
+        array $f,
+        array &$p,
+        string $alias
+    ): string {
         $where = '1 = 1';
 
         $columnas = [
@@ -909,21 +850,17 @@ class ReportesM extends Database
             }
         }
 
-
-        /* Filtrar los insumos vinculados al proveedor seleccionado */
         if (isset($f['proveedor'])) {
             $where .= " AND EXISTS (
                 SELECT 1
                 FROM proveedores_insumos pi
                 WHERE pi.id_insumo = $alias.id_insumo
-                  AND pi.id_proveedor = :proveedor
+                    AND pi.id_proveedor = :proveedor
             )";
 
             $p['proveedor'] = $f['proveedor'];
         }
 
-
-        /* Aplicar la condición correspondiente a la disponibilidad */
         if (isset($f['disponibilidad'])) {
             $condiciones = [
                 'BAJO' => "$alias.stock_actual <= $alias.stock_minimo",
@@ -944,24 +881,19 @@ class ReportesM extends Database
 
     private function existencias(array $f): array
     {
+        /* Los vencimientos se consultan por lote para no perder fechas distintas */
+        if ($f['reporte'] === 'vencimientos') {
+            return $this->vencimientosPorLote($f);
+        }
+
         $p = [];
-        $where = $this->condicionesInsumos($f, $p);
+        $where = $this->condicionesInsumos($f, $p, 'i');
 
-
-        /* Limitar el resultado a los insumos que requieren reposición */
         if ($f['reporte'] === 'reposicion') {
             $where .= ' AND i.stock_actual <= i.stock_minimo';
         }
 
-
-        /* Aplicar el período a la fecha de vencimiento */
-        if ($f['reporte'] === 'vencimientos') {
-            $where .= ' AND i.fecha_vencimiento BETWEEN :inicio_vencimiento AND :fin_vencimiento';
-
-            $p['inicio_vencimiento'] = $f['fecha_inicio'];
-            $p['fin_vencimiento'] = $f['fecha_fin'];
-        }
-
+        /* Recuperar únicamente el vencimiento más próximo con unidades disponibles */
         $filas = $this->seleccionar(
             "SELECT
                 i.id_insumo,
@@ -970,17 +902,24 @@ class ReportesM extends Database
                 i.tipo_control AS control,
                 i.stock_actual AS stock,
                 i.stock_minimo AS minimo,
-                i.fecha_vencimiento AS vencimiento,
+                (
+                    SELECT MIN(l.fecha_vencimiento)
+                    FROM lotes_insumos AS l
+                    WHERE l.id_insumo = i.id_insumo
+                        AND l.cantidad_disponible > 0
+                ) AS vencimiento,
                 i.estado_insumo AS estado
-             FROM insumos i
+
+             FROM insumos AS i
+
              WHERE $where
+
              ORDER BY i.nombre_insumo, i.id_insumo
+
              LIMIT 2001",
             $p
         );
 
-
-        /* Incorporar los proveedores vinculados a cada insumo */
         $filas = $this->anexarLista(
             $filas,
             'id_insumo',
@@ -992,15 +931,23 @@ class ReportesM extends Database
              ORDER BY p.nombre_empresa'
         );
 
+        $bajos = count(
+            array_filter(
+                $filas,
+                static function ($fila) {
+                    return (int) $fila['stock'] <= (int) $fila['minimo'];
+                }
+            )
+        );
 
-        /* Calcular los indicadores del stock consultado */
-        $bajos = count(array_filter($filas, static function ($fila) {
-            return (int) $fila['stock'] <= (int) $fila['minimo'];
-        }));
-
-        $agotados = count(array_filter($filas, static function ($fila) {
-            return (int) $fila['stock'] === 0;
-        }));
+        $agotados = count(
+            array_filter(
+                $filas,
+                static function ($fila) {
+                    return (int) $fila['stock'] === 0;
+                }
+            )
+        );
 
         return [
             'columnas' => [
@@ -1009,7 +956,7 @@ class ReportesM extends Database
                 $this->columna('control', 'Control', 29),
                 $this->columna('stock', 'Stock', 16, 'entero'),
                 $this->columna('minimo', 'Mínimo', 17, 'entero'),
-                $this->columna('vencimiento', 'Vencimiento', 27, 'fecha'),
+                $this->columna('vencimiento', 'Próx. vencimiento', 27, 'fecha'),
                 $this->columna('estado', 'Estado', 23),
                 $this->columna('proveedores', 'Proveedores', 62)
             ],
@@ -1018,6 +965,92 @@ class ReportesM extends Database
                 ['titulo' => 'Insumos', 'valor' => count($filas)],
                 ['titulo' => 'En mínimo o por debajo', 'valor' => $bajos],
                 ['titulo' => 'Agotados', 'valor' => $agotados]
+            ]
+        ];
+    }
+
+
+    /* ================================================= */
+    /* VENCIMIENTO DE INSUMOS POR LOTE */
+    /* ================================================= */
+
+    private function vencimientosPorLote(array $f): array
+    {
+        $p = [];
+
+        /* El proveedor se filtra por el ingreso real del lote, no por el catálogo */
+        $filtrosInsumo = $f;
+        unset($filtrosInsumo['proveedor']);
+
+        $where = $this->condicionesInsumos($filtrosInsumo, $p, 'i');
+        $where .= ' AND l.cantidad_disponible > 0';
+        $where .= ' AND l.fecha_vencimiento BETWEEN :inicio_vencimiento AND :fin_vencimiento';
+
+        $p['inicio_vencimiento'] = $f['fecha_inicio'];
+        $p['fin_vencimiento'] = $f['fecha_fin'];
+
+        if (isset($f['proveedor'])) {
+            $where .= ' AND movimiento.id_proveedor = :proveedor';
+            $p['proveedor'] = $f['proveedor'];
+        }
+
+        /* Cada lote aporta sus unidades y su propia fecha de vencimiento */
+        $filas = $this->seleccionar(
+            "SELECT
+                i.id_insumo,
+                i.nombre_insumo AS insumo,
+                l.id_lote AS lote,
+                i.presentacion,
+                l.cantidad_disponible AS disponibles,
+                l.fecha_vencimiento AS vencimiento,
+                COALESCE(proveedor.nombre_empresa, 'Sin proveedor registrado') AS proveedores,
+                i.estado_insumo AS estado
+
+             FROM lotes_insumos AS l
+
+             INNER JOIN insumos AS i
+                 ON i.id_insumo = l.id_insumo
+
+             LEFT JOIN movimientos_insumos AS movimiento
+                 ON movimiento.id_movimiento = (
+                     SELECT MIN(entrada.id_movimiento)
+                     FROM movimientos_insumos AS entrada
+                     WHERE entrada.id_lote = l.id_lote
+                         AND entrada.tipo_movimiento = 'INCREMENTO'
+                 )
+
+             LEFT JOIN proveedores AS proveedor
+                 ON proveedor.id_proveedor = movimiento.id_proveedor
+
+             WHERE $where
+
+             ORDER BY l.fecha_vencimiento, i.nombre_insumo, l.id_lote
+
+             LIMIT 2001",
+            $p
+        );
+
+        $insumosDistintos = array_unique(array_column($filas, 'id_insumo'));
+        $unidadesDisponibles = array_sum(array_map(
+            static fn (array $fila): int => (int) $fila['disponibles'],
+            $filas
+        ));
+
+        return [
+            'columnas' => [
+                $this->columna('insumo', 'Insumo', 53),
+                $this->columna('lote', 'Lote', 18, 'entero'),
+                $this->columna('presentacion', 'Presentación', 38),
+                $this->columna('disponibles', 'Unidades del lote', 30, 'entero'),
+                $this->columna('vencimiento', 'Vencimiento', 32, 'fecha'),
+                $this->columna('estado', 'Estado', 25),
+                $this->columna('proveedores', 'Proveedor del lote', 56)
+            ],
+            'filas' => $filas,
+            'resumen' => [
+                ['titulo' => 'Lotes', 'valor' => count($filas)],
+                ['titulo' => 'Insumos', 'valor' => count($insumosDistintos)],
+                ['titulo' => 'Unidades en lotes', 'valor' => $unidadesDisponibles]
             ]
         ];
     }
@@ -1044,14 +1077,12 @@ class ReportesM extends Database
             }
         }
 
-
-        /* Filtrar los proveedores vinculados al insumo seleccionado */
         if (isset($f['insumo'])) {
             $where .= ' AND EXISTS (
                 SELECT 1
                 FROM proveedores_insumos pi
                 WHERE pi.id_proveedor = p.id_proveedor
-                  AND pi.id_insumo = :insumo
+                    AND pi.id_insumo = :insumo
             )';
 
             $p['insumo'] = $f['insumo'];
@@ -1066,17 +1097,20 @@ class ReportesM extends Database
                 pc.telefono,
                 pc.correo,
                 p.estado_proveedor AS estado
+
              FROM proveedores p
+
              INNER JOIN personas pc
                 ON pc.id_persona = p.id_persona_contacto
+
              WHERE $where
+
              ORDER BY p.nombre_empresa, p.id_proveedor
+
              LIMIT 2001",
             $p
         );
 
-
-        /* Incorporar los insumos vinculados a cada proveedor */
         $filas = $this->anexarLista(
             $filas,
             'id_proveedor',
@@ -1088,9 +1122,14 @@ class ReportesM extends Database
              ORDER BY i.nombre_insumo'
         );
 
-        $activos = count(array_filter($filas, static function ($fila) {
-            return $fila['estado'] === 'ACTIVO';
-        }));
+        $activos = count(
+            array_filter(
+                $filas,
+                static function ($fila) {
+                    return $fila['estado'] === 'ACTIVO';
+                }
+            )
+        );
 
         return [
             'columnas' => [
@@ -1115,7 +1154,6 @@ class ReportesM extends Database
     /* RESUMEN DE CITAS */
     /* ================================================= */
 
-    /* Agrupar las citas sin multiplicarlas por sus servicios */
     private function resumenCitas(array $f): array
     {
         $p = [];
@@ -1126,18 +1164,25 @@ class ReportesM extends Database
                 e.nombre_estado AS estado,
                 t.nombre_tipo_agendamiento AS tipo,
                 COUNT(*) AS cantidad
+
              FROM agendamientos a
+
              INNER JOIN estados_agendamientos e
                 ON e.id_estado_agendamiento = a.id_estado_agendamiento
+
              INNER JOIN tipos_agendamientos t
                 ON t.id_tipo_agendamiento = a.id_tipo_agendamiento
+
              WHERE $where
+
              GROUP BY
                 e.id_estado_agendamiento,
                 e.nombre_estado,
                 t.id_tipo_agendamiento,
                 t.nombre_tipo_agendamiento
+
              ORDER BY e.id_estado_agendamiento, t.id_tipo_agendamiento
+
              LIMIT 2001",
             $p
         );
@@ -1150,116 +1195,10 @@ class ReportesM extends Database
             ],
             'filas' => $filas,
             'resumen' => [
-                ['titulo' => 'Citas', 'valor' => array_sum(array_column($filas, 'cantidad'))]
-            ]
-        ];
-    }
-
-
-    /* ================================================= */
-    /* CITAS POR DÍA Y FRANJA HORARIA */
-    /* ================================================= */
-
-    private function demanda(array $f): array
-    {
-        $p = [];
-        $where = $this->condicionesAgenda($f, $p);
-
-        $filas = $this->seleccionar(
-            "SELECT
-                a.fecha,
-                CONCAT(SUBSTR(a.hora, 1, 2), ':00') AS franja,
-                COUNT(*) AS citas,
-                SUM(
-                    CASE WHEN e.nombre_estado = 'REALIZADA'
-                    THEN 1 ELSE 0 END
-                ) AS realizadas,
-                SUM(
-                    CASE WHEN e.nombre_estado = 'CANCELADA'
-                    THEN 1 ELSE 0 END
-                ) AS canceladas
-             FROM agendamientos a
-             INNER JOIN estados_agendamientos e
-                ON e.id_estado_agendamiento = a.id_estado_agendamiento
-             WHERE $where
-             GROUP BY a.fecha, SUBSTR(a.hora, 1, 2)
-             ORDER BY a.fecha, franja
-             LIMIT 2001",
-            $p
-        );
-
-        return [
-            'columnas' => [
-                $this->columna('fecha', 'Fecha', 55, 'fecha'),
-                $this->columna('franja', 'Franja de inicio', 55),
-                $this->columna('citas', 'Citas registradas', 53, 'entero'),
-                $this->columna('realizadas', 'En estado realizada', 53, 'entero'),
-                $this->columna('canceladas', 'Canceladas', 53, 'entero')
-            ],
-            'filas' => $filas,
-            'resumen' => [
-                ['titulo' => 'Citas', 'valor' => array_sum(array_column($filas, 'citas'))]
-            ]
-        ];
-    }
-
-
-    /* ================================================= */
-    /* REPORTE DE BLOQUEOS */
-    /* ================================================= */
-
-    private function bloqueos(array $f): array
-    {
-        $p = [
-            'fecha_inicio' => $f['fecha_inicio'],
-            'fecha_fin' => $f['fecha_fin']
-        ];
-
-        $where = 'b.fecha BETWEEN :fecha_inicio AND :fecha_fin';
-
-        $columnas = [
-            'especialista' => 'b.id_usuario_especialista',
-            'estado_bloqueo' => 'b.estado_bloqueo'
-        ];
-
-        foreach ($columnas as $campo => $columna) {
-            if (isset($f[$campo])) {
-                $where .= " AND $columna = :$campo";
-                $p[$campo] = $f[$campo];
-            }
-        }
-
-        $filas = $this->seleccionar(
-            "SELECT
-                b.fecha,
-                b.hora_inicio,
-                b.hora_fin,
-                CONCAT(p.nombre, ' ', p.apellido) AS especialista,
-                b.motivo,
-                b.estado_bloqueo AS estado
-             FROM bloqueos_horarios b
-             INNER JOIN usuarios u
-                ON u.id_usuario = b.id_usuario_especialista
-             INNER JOIN personas p
-                ON p.id_persona = u.id_persona
-             WHERE $where
-             ORDER BY b.fecha, b.hora_inicio, b.id_bloqueo
-             LIMIT 2001",
-            $p
-        );
-
-        return [
-            'columnas' => [
-                $this->columna('fecha', 'Fecha', 28, 'fecha'),
-                $this->columna('hora_inicio', 'Desde', 22, 'hora'),
-                $this->columna('hora_fin', 'Hasta', 22, 'hora'),
-                $this->columna('especialista', 'Especialista', 57),
-                $this->columna('motivo', 'Motivo', 99),
-                $this->columna('estado', 'Estado', 41)
-            ],
-            'filas' => $filas,
-            'resumen' => [
-                ['titulo' => 'Registros de bloqueo', 'valor' => count($filas)]
+                [
+                    'titulo' => 'Citas',
+                    'valor' => array_sum(array_column($filas, 'cantidad'))
+                ]
             ]
         ];
     }
@@ -1293,9 +1232,13 @@ class ReportesM extends Database
                 s.precio,
                 s.duracion_estimada AS minutos,
                 s.estado_servicio AS estado
+
              FROM servicios s
+
              WHERE $where
+
              ORDER BY s.nombre_servicio, s.id_servicio
+
              LIMIT 2001",
             $p
         );
@@ -1310,130 +1253,9 @@ class ReportesM extends Database
             ],
             'filas' => $filas,
             'resumen' => [
-                ['titulo' => 'Servicios del catálogo', 'valor' => count($filas)]
-            ]
-        ];
-    }
-
-
-    /* ================================================= */
-    /* RESUMEN OPERATIVO */
-    /* ================================================= */
-
-    private function resumenOperativo(array $f): array
-    {
-        $p = [];
-        $where = $this->condicionesAgenda($f, $p);
-
-
-        /* Recuperar los indicadores de citas correspondientes al período */
-        $citas = $this->seleccionar(
-            "SELECT
-                COUNT(*) AS citas,
-                COUNT(DISTINCT a.id_cliente) AS clientes,
-                COALESCE(
-                    SUM(
-                        CASE WHEN e.nombre_estado = 'REALIZADA'
-                        THEN 1 ELSE 0 END
-                    ),
-                    0
-                ) AS realizadas,
-                COALESCE(
-                    SUM(
-                        CASE WHEN e.nombre_estado = 'CANCELADA'
-                        THEN 1 ELSE 0 END
-                    ),
-                    0
-                ) AS canceladas
-             FROM agendamientos a
-             INNER JOIN estados_agendamientos e
-                ON e.id_estado_agendamiento = a.id_estado_agendamiento
-             WHERE $where",
-            $p
-        )[0];
-
-
-        /* Recuperar las alertas correspondientes al stock actual general */
-        $stock = $this->seleccionar(
-            "SELECT
-                COUNT(*) AS insumos,
-                COALESCE(
-                    SUM(
-                        CASE WHEN stock_actual <= stock_minimo
-                        THEN 1 ELSE 0 END
-                    ),
-                    0
-                ) AS bajos,
-                COALESCE(
-                    SUM(
-                        CASE WHEN stock_actual = 0
-                        THEN 1 ELSE 0 END
-                    ),
-                    0
-                ) AS agotados,
-                COALESCE(
-                    SUM(
-                        CASE WHEN fecha_vencimiento < :hoy
-                        THEN 1 ELSE 0 END
-                    ),
-                    0
-                ) AS vencidos
-             FROM insumos
-             WHERE estado_insumo = 'ACTIVO'",
-            ['hoy' => date('Y-m-d')]
-        )[0];
-
-
-        /* Preparar los indicadores que se mostrarán como filas */
-        $filas = [
-            [
-                'indicador' => 'Citas registradas en el período',
-                'cantidad' => $citas['citas']
-            ],
-            [
-                'indicador' => 'Clientes distintos con citas en el período',
-                'cantidad' => $citas['clientes']
-            ],
-            [
-                'indicador' => 'Citas en estado REALIZADA',
-                'cantidad' => $citas['realizadas']
-            ],
-            [
-                'indicador' => 'Citas canceladas en el período',
-                'cantidad' => $citas['canceladas']
-            ],
-            [
-                'indicador' => 'Insumos activos actuales',
-                'cantidad' => $stock['insumos']
-            ],
-            [
-                'indicador' => 'Insumos activos en mínimo o por debajo',
-                'cantidad' => $stock['bajos']
-            ],
-            [
-                'indicador' => 'Insumos activos agotados',
-                'cantidad' => $stock['agotados']
-            ],
-            [
-                'indicador' => 'Insumos activos vencidos antes de hoy',
-                'cantidad' => $stock['vencidos']
-            ]
-        ];
-
-        return [
-            'columnas' => [
-                $this->columna('indicador', 'Indicador', 210),
-                $this->columna('cantidad', 'Cantidad', 59, 'entero')
-            ],
-            'filas' => $filas,
-            'resumen' => [
                 [
-                    'titulo' => 'Citas del período',
-                    'valor' => $citas['citas']
-                ],
-                [
-                    'titulo' => 'Insumos actuales en mínimo o por debajo',
-                    'valor' => $stock['bajos']
+                    'titulo' => 'Servicios del catálogo',
+                    'valor' => count($filas)
                 ]
             ]
         ];
@@ -1444,29 +1266,38 @@ class ReportesM extends Database
     /* DATOS ASOCIADOS A LOS REGISTROS */
     /* ================================================= */
 
-    /* Recuperar los nombres asociados sin duplicar las filas principales */
-    private function anexarLista(array $filas, string $clave, string $destino, string $sql): array
-    {
+    private function anexarLista(
+        array $filas,
+        string $clave,
+        string $destino,
+        string $sql
+    ): array {
         if (!$filas || count($filas) > self::LIMITE_FILAS) {
             return $filas;
         }
 
         $ids = array_column($filas, $clave);
 
-
-        /* Preparar un marcador por cada identificador recibido */
-        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        /* Preparar un marcador por cada identificador consultado */
+        $marcadores = implode(
+            ',',
+            array_fill(0, count($ids), '?')
+        );
 
         $listas = [];
 
-        foreach ($this->seleccionar(sprintf($sql, $marcadores), $ids) as $detalle) {
+        foreach (
+            $this->seleccionar(sprintf($sql, $marcadores), $ids)
+            as $detalle
+        ) {
             $listas[$detalle['id']][$detalle['texto']] = $detalle['texto'];
         }
 
-
-        /* Incorporar las listas de nombres al resultado principal */
         foreach ($filas as &$fila) {
-            $fila[$destino] = implode(', ', array_values($listas[$fila[$clave]] ?? []));
+            $fila[$destino] = implode(
+                ', ',
+                array_values($listas[$fila[$clave]] ?? [])
+            );
         }
 
         unset($fila);

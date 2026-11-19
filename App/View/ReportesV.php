@@ -28,8 +28,7 @@ $categoriasReportes = [
     'Clientes' => 'bi-person-hearts',
     'Especialistas' => 'bi-person-badge',
     'Insumos' => 'bi-box2-heart',
-    'Proveedores' => 'proveedores',
-    'General' => 'bi-bar-chart-line'
+    'Proveedores' => 'proveedores'
 ];
 
 $grupoInicial = 'Agenda';
@@ -43,8 +42,7 @@ $camposReportes = [
     'insumo' => 'Insumo',
     'proveedor' => 'Proveedor',
     'estado_registro' => 'Estado del registro',
-    'disponibilidad' => 'Disponibilidad',
-    'estado_bloqueo' => 'Estado del bloqueo'
+    'disponibilidad' => 'Nivel de existencias'
 ];
 
 ?>
@@ -73,7 +71,7 @@ $camposReportes = [
 
             <i class="bi bi-info-circle" aria-hidden="true"></i>
 
-            <p>
+            <p data-alerta-inicial="error">
                 <?= $escaparReporte($errorReportes) ?>
             </p>
 
@@ -378,7 +376,35 @@ $camposReportes = [
                             type="button"
                             class="btn-templo-secondary"
                         >
-                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                            <svg
+                                class="icono-recargar-corazon"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 64 64"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <!-- Trazo circular de recarga -->
+                                <path
+                                    d="M51 42A21.5 21.5 0 1 1 47 17"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                    stroke-linecap="round"
+                                />
+
+                                <!-- Unión centrada en la hendidura del corazón -->
+                                <path
+                                    d="M47 17
+                                       C44 12 37 13 37 19
+                                       C37 24 43 28 47 31
+                                       C51 28 57 24 57 19
+                                       C57 13 50 12 47 17Z"
+                                    transform="rotate(-45 47 17)"
+                                    fill="currentColor"
+                                />
+                            </svg>
                             Limpiar
                         </button>
 
@@ -573,7 +599,7 @@ $camposReportes = [
 
 
 <!-- ===================================================== -->
-<!-- CIERRE DE LA VISTA -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
 <!-- ===================================================== -->
 
 <?php require_once __DIR__ . '/Layout/Footer.php'; ?>

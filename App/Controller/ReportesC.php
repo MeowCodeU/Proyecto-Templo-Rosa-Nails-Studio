@@ -8,8 +8,13 @@ use App\Reportes\ReportePDF;
 /* GESTIÓN DE REPORTES */
 /* ===================================================== */
 
-/* Identificar las solicitudes asíncronas */
-$esAjaxReportes = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+/* Identificar el método y las solicitudes asíncronas */
+$metodoReportes = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+$esAjaxReportes = $metodoReportes === 'POST' ||
+    strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+
+$modeloReportes = null;
 
 
 /* Enviar la respuesta y finalizar la solicitud */
@@ -26,6 +31,16 @@ $responderReportes = static function (array $datos, int $codigo = 200): void {
 
 
 try {
+    /* Aceptar únicamente los métodos disponibles del módulo */
+    if (!in_array($metodoReportes, ['GET', 'POST'], true)) {
+        header('Allow: GET, POST');
+
+        $responderReportes([
+            'ok' => false,
+            'mensaje' => 'Método no permitido.'
+        ], 405);
+    }
+
     $modeloReportes = new ReportesM();
 
 
@@ -50,7 +65,7 @@ try {
     /* DESCARGA DEL REPORTE */
     /* ================================================= */
 
-    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['pdf'])) {
+    if ($metodoReportes === 'GET' && isset($_GET['pdf'])) {
         $token = is_string($_GET['pdf']) ? $_GET['pdf'] : '';
         $consulta = $consultasGuardadas[$token] ?? null;
 
@@ -67,6 +82,16 @@ try {
         }
 
         $reporte = $consulta['reporte'];
+
+
+        /* Identificar el nombre y el rol del usuario que genera el documento */
+        $usuario = $_SESSION['usuario'] ?? [];
+
+        $reporte['usuario_emisor'] = trim(
+            (string) ($usuario['nombre'] ?? '') . ' ' . (string) ($usuario['apellido'] ?? '')
+        );
+
+        $reporte['rol_emisor'] = (string) ($usuario['nombre_rol'] ?? '');
 
 
         /* Liberar la sesión mientras se construye el documento */
@@ -96,31 +121,47 @@ try {
     /* CONSULTA DEL REPORTE */
     /* ================================================= */
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($metodoReportes === 'POST') {
 
-        /* Recibir los filtros enviados por el formulario */
-        $entrada = json_decode(
-            file_get_contents('php://input'),
-            true,
+        /* Recibir el contenido sin convertir los valores de los filtros */
+        $contenidoReportes = file_get_contents('php://input');
+
+        if ($contenidoReportes === false) {
+            throw new RuntimeException('No fue posible leer la solicitud del reporte.');
+        }
+
+        $datosReportes = json_decode(
+            $contenidoReportes,
+            false,
             32,
             JSON_THROW_ON_ERROR
         );
 
+        if (!$datosReportes instanceof stdClass) {
+            throw new InvalidArgumentException('La solicitud del reporte no es válida.');
+        }
+
+        $entrada = get_object_vars($datosReportes);
+
 
         /* Comprobar la acción y la estructura de la solicitud */
         if (
-            !is_array($entrada) ||
             ($entrada['accion'] ?? '') !== 'consultar' ||
-            !isset($entrada['filtros']) ||
-            !is_array($entrada['filtros']) ||
+            !array_key_exists('filtros', $entrada) ||
             array_diff(array_keys($entrada), ['accion', 'filtros'])
         ) {
             throw new InvalidArgumentException('La solicitud del reporte no es válida.');
         }
 
 
+        /* Preparar los campos conservando los valores recibidos */
+        $filtrosReportes = $entrada['filtros'] instanceof stdClass
+            ? get_object_vars($entrada['filtros'])
+            : $entrada['filtros'];
+
+
         /* Validar los filtros y obtener los resultados mediante el modelo */
-        $reporte = $modeloReportes->generar($entrada['filtros']);
+        $reporte = $modeloReportes->generar($filtrosReportes);
         $token = null;
 
 
@@ -152,17 +193,6 @@ try {
     /* CARGA DE LA VISTA */
     /* ================================================= */
 
-    /* Aceptar únicamente los métodos disponibles del módulo */
-    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        header('Allow: GET, POST');
-
-        $responderReportes([
-            'ok' => false,
-            'mensaje' => 'Método no permitido.'
-        ], 405);
-    }
-
-
     /* Preparar los tipos de reporte y sus filtros */
     $configuracionReportes = $modeloReportes->configuracion();
 
@@ -178,10 +208,17 @@ try {
         ? 'Los datos enviados no contienen un JSON válido.'
         : $e->getMessage();
 
-    $responderReportes([
-        'ok' => false,
-        'mensaje' => $mensaje
-    ], 422);
+    $respuestaReportes = ['ok' => false, 'mensaje' => $mensaje];
+
+    /* Comunicar los campos rechazados por las validaciones del modelo */
+    $erroresReportes = $modeloReportes ? $modeloReportes->obtenerErroresValidacion() : [];
+
+    if ($erroresReportes !== []) {
+        $respuestaReportes['campo'] = array_key_first($erroresReportes);
+        $respuestaReportes['errores'] = $erroresReportes;
+    }
+
+    $responderReportes($respuestaReportes, 422);
 
 } catch (Throwable $e) {
 
