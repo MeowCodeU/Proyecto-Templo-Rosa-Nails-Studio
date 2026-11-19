@@ -3,11 +3,15 @@
 use App\Model\ClientesM;
 
 
+/* ===================================================== */
+/* GESTIÓN DE CLIENTES */
+/* ===================================================== */
+
+
 /* ================================================= */
-/* IDENTIFICAR SOLICITUD */
+/* IDENTIFICAR LA SOLICITUD */
 /* ================================================= */
 
-/* Identificar las solicitudes AJAX y los datos enviados como JSON */
 $contenidoJsonClientes = stripos(
     (string) ($_SERVER['CONTENT_TYPE'] ?? ''),
     'application/json'
@@ -22,7 +26,6 @@ $esAjaxClientes = $contenidoJsonClientes || strtolower(
 /* RESPUESTAS JSON */
 /* ================================================= */
 
-/* Enviar una respuesta JSON y finalizar la solicitud */
 $responderClientes = static function (
     array $datos,
     int $codigo = 200
@@ -42,12 +45,11 @@ $responderClientes = static function (
 
 
 /* ================================================= */
-/* PROCESAR SOLICITUD */
+/* PROCESAR LA SOLICITUD */
 /* ================================================= */
 
 try {
 
-    /* Comprobar el método de la solicitud */
     $metodoClientes = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
     if (!in_array($metodoClientes, ['GET', 'POST'], true)) {
@@ -64,7 +66,7 @@ try {
 
     $datosClientes = $_POST;
 
-    /* Recibir datos JSON o formularios normales */
+    /* Recibir los datos como JSON o mediante un formulario normal */
     if ($metodoClientes === 'POST' && $contenidoJsonClientes) {
 
         $entradaClientes = json_decode(
@@ -83,15 +85,13 @@ try {
         $datosClientes = get_object_vars($entradaClientes);
     }
 
-    /* Modelo de Clientes */
     $modeloClientes = new ClientesM();
 
 
     /* ================================================= */
-    /* CONSULTAR */
+    /* CONSULTAR CLIENTES */
     /* ================================================= */
 
-    /* Consultar clientes activos mediante AJAX */
     if ($metodoClientes === 'GET' && $esAjaxClientes) {
 
         $responderClientes(
@@ -103,12 +103,11 @@ try {
     }
 
 
-    /* Procesar acciones enviadas por los formularios */
     if ($metodoClientes === 'POST') {
 
         $accionClientes = $datosClientes['accion'] ?? '';
 
-        /* Comprobar que la acción esté permitida */
+        /* Admitir únicamente las acciones disponibles en el módulo */
         if (
             !is_string($accionClientes) ||
             !in_array(
@@ -116,6 +115,8 @@ try {
                 [
                     'consultar',
                     'buscar',
+                    'consultar_persona',
+                    'historial',
                     'registrar',
                     'modificar',
                     'desactivar',
@@ -129,7 +130,6 @@ try {
             );
         }
 
-        /* Consultar clientes activos */
         if ($accionClientes === 'consultar') {
 
             $responderClientes(
@@ -142,32 +142,64 @@ try {
 
 
         /* ================================================= */
-        /* IDENTIFICAR CLIENTE */
+        /* IDENTIFICAR AL CLIENTE */
         /* ================================================= */
 
-        /* Comprobar la cédula recibida */
-        $cedulaClientes = $datosClientes['cedula'] ?? '';
+        $modeloClientes->set_Cedula($datosClientes['cedula'] ?? '');
 
-        if (
-            !is_string($cedulaClientes) ||
-            trim($cedulaClientes) === ''
-        ) {
+        /* Solicitar al modelo la validación de la cédula antes de continuar */
+        if (!$modeloClientes->validarIdentificacion()) {
+            $erroresClientes = $modeloClientes->obtenerErroresValidacion();
+
             $responderClientes(
                 [
                     'ok' => false,
-                    'mensaje' => 'Indique la cédula del cliente.',
-                    'errores' => [
-                        'cedula' => 'La cédula es obligatoria.'
-                    ]
+                    'mensaje' => ($erroresClientes['cedula'] ?? '') === 'La cédula es obligatoria.'
+                        ? 'Indique la cédula del cliente.'
+                        : 'Revise los campos señalados.',
+                    'errores' => $erroresClientes
                 ],
                 422
             );
         }
 
-        $modeloClientes->set_Cedula(trim($cedulaClientes));
+
+        /* ================================================= */
+        /* CONSULTAR PERSONA POR CÉDULA */
+        /* ================================================= */
+
+        if ($accionClientes === 'consultar_persona') {
+
+            if (!$esAjaxClientes) {
+                $responderClientes(
+                    [
+                        'ok' => false,
+                        'mensaje' => 'La solicitud enviada no es válida.'
+                    ],
+                    400
+                );
+            }
+
+            $personaClientes = $modeloClientes->consultarDatosPersona(
+                trim($datosClientes['cedula'])
+            );
+
+            $clienteExistente = $personaClientes
+                ? $modeloClientes->buscar()
+                : false;
+
+            $responderClientes(
+                [
+                    'ok' => true,
+                    'encontrada' => $personaClientes !== null,
+                    'ya_es_cliente' => $clienteExistente !== false,
+                    'persona' => $personaClientes
+                ]
+            );
+        }
 
 
-        /* Buscar el cliente activo antes de consultar o modificar sus datos */
+        /* Comprobar que el cliente siga activo antes de operar sobre él */
         if ($accionClientes !== 'registrar') {
 
             $clienteActual = $modeloClientes->buscar();
@@ -183,8 +215,31 @@ try {
                 );
             }
 
-            /* Devolver los datos del cliente solicitado */
+
+            /* ================================================= */
+            /* CONSULTAR EL HISTORIAL DE SERVICIOS */
+            /* ================================================= */
+
+            if ($accionClientes === 'historial') {
+
+                /* Obtener el identificador desde el cliente encontrado */
+                $historialClientes = $modeloClientes->consultarHistorial(
+                    (int) $clienteActual['id_cliente']
+                );
+
+                $responderClientes(
+                    [
+                        'ok' => true,
+                        'cliente' => $clienteActual,
+                        'historial' => $historialClientes
+                    ]
+                );
+            }
+
+
+            /* Devolver los datos actualizados del cliente solicitado */
             if ($accionClientes === 'buscar') {
+
                 $responderClientes(
                     [
                         'ok' => true,
@@ -207,50 +262,9 @@ try {
             )
         ) {
 
-            /* Comprobar los campos obligatorios de la vista */
-            $erroresClientes = [];
-
-            foreach (
-                ['nombre' => 'El nombre', 'apellido' => 'El apellido']
-                as $campo => $etiqueta
-            ) {
-                $valor = $datosClientes[$campo] ?? '';
-
-                if (!is_string($valor) || trim($valor) === '') {
-                    $erroresClientes[$campo] =
-                        $etiqueta . ' es obligatorio.';
-                }
-            }
-
-            /* Comprobar el tipo de los campos opcionales */
-            foreach (
-                ['telefono', 'correo', 'direccion', 'ciudad', 'alergias']
-                as $campo
-            ) {
-                if (
-                    isset($datosClientes[$campo]) &&
-                    !is_string($datosClientes[$campo])
-                ) {
-                    $erroresClientes[$campo] =
-                        'El valor del campo no es válido.';
-                }
-            }
-
-            /* Devolver los errores antes de guardar */
-            if ($erroresClientes) {
-                $responderClientes(
-                    [
-                        'ok' => false,
-                        'mensaje' => 'Revise los campos señalados.',
-                        'errores' => $erroresClientes
-                    ],
-                    422
-                );
-            }
-
-            /* Asignar los datos al modelo */
-            $modeloClientes->set_Nombre($datosClientes['nombre']);
-            $modeloClientes->set_Apellido($datosClientes['apellido']);
+            /* Entregar los datos al modelo, que los valida antes de guardar */
+            $modeloClientes->set_Nombre($datosClientes['nombre'] ?? '');
+            $modeloClientes->set_Apellido($datosClientes['apellido'] ?? '');
             $modeloClientes->set_Telefono($datosClientes['telefono'] ?? '');
             $modeloClientes->set_Correo($datosClientes['correo'] ?? '');
             $modeloClientes->set_Direccion($datosClientes['direccion'] ?? '');
@@ -258,7 +272,6 @@ try {
             $modeloClientes->set_Alergias($datosClientes['alergias'] ?? '');
 
 
-            /* Registrar cliente */
             if ($accionClientes === 'registrar') {
 
                 $resultadoClientes = $modeloClientes->registrar();
@@ -268,7 +281,6 @@ try {
 
             } else {
 
-                /* Modificar cliente */
                 $resultadoClientes = $modeloClientes->modificar();
 
                 $mensajeClientes =
@@ -278,10 +290,10 @@ try {
         } else {
 
             /* ================================================= */
-            /* DESACTIVAR */
+            /* DESACTIVAR CLIENTE */
             /* ================================================= */
 
-            /* Desactivar cliente y conservar su historial */
+            /* Conservar el registro y su historial mediante la baja lógica */
             $resultadoClientes = $modeloClientes->eliminar();
 
             $mensajeClientes =
@@ -290,17 +302,28 @@ try {
 
 
         /* ================================================= */
-        /* CONFIRMAR OPERACIÓN */
+        /* CONFIRMAR LA OPERACIÓN */
         /* ================================================= */
 
-        /* Comprobar el resultado del modelo */
+        $erroresClientes = $modeloClientes->obtenerErroresValidacion();
+
+        if ($erroresClientes) {
+            $responderClientes(
+                [
+                    'ok' => false,
+                    'mensaje' => 'Revise los campos señalados.',
+                    'errores' => $erroresClientes
+                ],
+                422
+            );
+        }
+
         if ($resultadoClientes !== true) {
             throw new RuntimeException(
                 'El modelo no confirmó la operación de clientes.'
             );
         }
 
-        /* Devolver el resultado de la operación AJAX */
         if ($esAjaxClientes) {
             $responderClientes(
                 [
@@ -310,13 +333,14 @@ try {
             );
         }
 
-        /* Redirigir cuando se utiliza un formulario sin AJAX */
+        /* Mantener la navegación de los formularios enviados sin AJAX */
         header('Location: Index.php?url=clientes');
+
         exit;
     }
 
 
-    /* Consultar los datos iniciales para cargar la vista */
+    /* Obtener los registros iniciales para cargar la vista */
     $listaClientes = $modeloClientes->consultar();
 
 } catch (JsonException | InvalidArgumentException $e) {
@@ -341,10 +365,9 @@ try {
     /* ERRORES DE BASE DE DATOS */
     /* ================================================= */
 
-    /* Registrar el detalle técnico del error */
+    /* Registrar el detalle técnico únicamente en el servidor */
     error_log('Clientes: ' . $e->getMessage());
 
-    /* Informar que la cédula ya está registrada */
     if ((int) ($e->errorInfo[1] ?? 0) === 1062) {
         $responderClientes(
             [
@@ -374,7 +397,6 @@ try {
     /* OTROS ERRORES */
     /* ================================================= */
 
-    /* Registrar el detalle técnico del error */
     error_log('Clientes: ' . $e->getMessage());
 
     $responderClientes(
@@ -389,8 +411,7 @@ try {
 
 
 /* ================================================= */
-/* CARGAR VISTA */
+/* CARGAR LA VISTA */
 /* ================================================= */
 
-/* Mostrar la vista de Clientes */
 require_once __DIR__ . '/../View/ClientesV.php';

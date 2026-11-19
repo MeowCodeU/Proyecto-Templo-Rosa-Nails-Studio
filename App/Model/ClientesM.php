@@ -2,8 +2,8 @@
 
 namespace App\Model;
 
-use App\Config\Database;
 use App\Interfaces\CrudInterface;
+use App\Traits\ValidacionTrait;
 use PDO;
 
 
@@ -11,25 +11,15 @@ use PDO;
 /* MODELO DE CLIENTES */
 /* ===================================================== */
 
-class ClientesM extends Database implements CrudInterface
+class ClientesM extends PersonasM implements CrudInterface
 {
+    use ValidacionTrait;
+
+
     /* ================================================= */
-    /* CONEXIÓN Y ATRIBUTOS */
+    /* ATRIBUTOS */
     /* ================================================= */
 
-    /* Conexión con la base de datos */
-    private $conexionMD;
-
-    /* Atributos de la tabla personas */
-    private $cedula;
-    private $nombre;
-    private $apellido;
-    private $telefono;
-    private $correo;
-    private $direccion;
-    private $ciudad;
-
-    /* Atributos de la tabla clientes */
     private $alergias;
 
 
@@ -37,23 +27,47 @@ class ClientesM extends Database implements CrudInterface
     /* SETTERS */
     /* ================================================= */
 
-    public function set_Cedula($cedula) {$this->cedula = $cedula;}
-    public function set_Nombre($nombre) {$this->nombre = $nombre;}
-    public function set_Apellido($apellido) {$this->apellido = $apellido;}
-    public function set_Telefono($telefono) {$this->telefono = $telefono;}
-    public function set_Correo($correo) {$this->correo = $correo;}
-    public function set_Direccion($direccion) {$this->direccion = $direccion;}
-    public function set_Ciudad($ciudad) {$this->ciudad = $ciudad;}
-    public function set_Alergias($alergias) {$this->alergias = $alergias;}
+    public function set_Alergias($alergias) { $this->alergias = $alergias; }
 
 
     /* ================================================= */
-    /* CONSTRUCTOR */
+    /* VALIDAR LA IDENTIFICACIÓN DEL CLIENTE */
     /* ================================================= */
 
-    public function __construct()
+    public function validarIdentificacion(): bool
     {
-        $this->conexionMD = $this->getConnection();
+        if (!$this->validarCampos(['cedula' => $this->cedula], ['cedula'])) return false;
+
+        $this->cedula = trim($this->cedula);
+
+        return true;
+    }
+
+
+    /* ================================================= */
+    /* VALIDAR Y NORMALIZAR LOS DATOS DEL CLIENTE */
+    /* ================================================= */
+
+    private function validarDatosCliente(): bool
+    {
+        $datos = [
+            'cedula' => $this->cedula,
+            'nombre' => $this->nombre,
+            'apellido' => $this->apellido,
+            'telefono' => $this->telefono,
+            'correo' => $this->correo,
+            'ciudad' => $this->ciudad,
+            'direccion' => $this->direccion,
+            'alergias' => $this->alergias
+        ];
+
+        if (!$this->validarCampos($datos, ['cedula', 'nombre', 'apellido'])) return false;
+
+        foreach ($datos as $campo => $valor) {
+            $this->$campo = trim($valor ?? '');
+        }
+
+        return true;
     }
 
 
@@ -61,7 +75,7 @@ class ClientesM extends Database implements CrudInterface
     /* CONSULTAR CLIENTES */
     /* ================================================= */
 
-    public function consultar()
+    public function consultar(): array
     {
         /* Obtener los clientes activos y contar sus citas realizadas */
         $sql = "SELECT
@@ -78,17 +92,24 @@ class ClientesM extends Database implements CrudInterface
                     c.estado_cliente AS estado,
                     (
                         SELECT COUNT(*)
+
                         FROM agendamientos a
+
                         INNER JOIN estados_agendamientos ea
                             ON ea.id_estado_agendamiento =
-                               a.id_estado_agendamiento
+                                a.id_estado_agendamiento
+
                         WHERE a.id_cliente = c.id_cliente
-                        AND ea.nombre_estado = 'REALIZADA'
+                            AND ea.nombre_estado = 'REALIZADA'
                     ) AS visitas
+
                 FROM clientes c
+
                 INNER JOIN personas p
                     ON p.id_persona = c.id_persona
+
                 WHERE c.estado_cliente = 'ACTIVO'
+
                 ORDER BY p.nombre, p.apellido";
 
         $stmt = $this->conexionMD->prepare($sql);
@@ -103,45 +124,15 @@ class ClientesM extends Database implements CrudInterface
     /* REGISTRAR CLIENTE */
     /* ================================================= */
 
-    public function registrar()
+    public function registrar(): bool
     {
+        if (!$this->validarDatosCliente()) return false;
+
         try {
-            /* Iniciar la transacción para registrar ambas tablas */
             $this->conexionMD->beginTransaction();
 
-            /* Registrar los datos de la persona */
-            $sqlPersona = "INSERT INTO personas (
-                                cedula,
-                                nombre,
-                                apellido,
-                                telefono,
-                                correo,
-                                direccion,
-                                ciudad
-                            ) VALUES (
-                                :cedula,
-                                :nombre,
-                                :apellido,
-                                :telefono,
-                                :correo,
-                                :direccion,
-                                :ciudad
-                            )";
-
-            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
-
-            $stmtPersona->bindParam(':cedula', $this->cedula);
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
-
-            $stmtPersona->execute();
-
-            /* Recuperar el identificador de la persona registrada */
-            $idPersona = $this->conexionMD->lastInsertId();
+            /* Reutilizar los datos personales existentes o registrar una nueva persona */
+            $idPersona = $this->obtenerORegistrarPersona();
 
             /* Registrar el cliente relacionado con la persona */
             $sqlCliente = "INSERT INTO clientes (
@@ -156,20 +147,19 @@ class ClientesM extends Database implements CrudInterface
 
             $stmtCliente = $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(':id_persona', $idPersona);
+            $stmtCliente->bindValue(':id_persona', $idPersona, PDO::PARAM_INT);
             $stmtCliente->bindParam(':alergias', $this->alergias);
 
             $stmtCliente->execute();
 
-            /* Confirmar el registro de la persona y del cliente */
             $this->conexionMD->commit();
 
             return true;
 
-        } catch (\Exception $e) {
-
-            /* Revertir los cambios y propagar el error */
-            $this->conexionMD->rollBack();
+        } catch (\Throwable $e) {
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
 
             throw $e;
         }
@@ -182,6 +172,8 @@ class ClientesM extends Database implements CrudInterface
 
     public function buscar()
     {
+        if (!$this->validarIdentificacion()) return false;
+
         /* Obtener un cliente activo por su cédula y calcular sus visitas */
         $sql = "SELECT
                     c.id_cliente,
@@ -197,18 +189,25 @@ class ClientesM extends Database implements CrudInterface
                     c.estado_cliente AS estado,
                     (
                         SELECT COUNT(*)
+
                         FROM agendamientos a
+
                         INNER JOIN estados_agendamientos ea
                             ON ea.id_estado_agendamiento =
-                               a.id_estado_agendamiento
+                                a.id_estado_agendamiento
+
                         WHERE a.id_cliente = c.id_cliente
-                        AND ea.nombre_estado = 'REALIZADA'
+                            AND ea.nombre_estado = 'REALIZADA'
                     ) AS visitas
+
                 FROM clientes c
+
                 INNER JOIN personas p
                     ON p.id_persona = c.id_persona
+
                 WHERE p.cedula = :cedula
-                AND c.estado_cliente = 'ACTIVO'
+                    AND c.estado_cliente = 'ACTIVO'
+
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
@@ -222,60 +221,134 @@ class ClientesM extends Database implements CrudInterface
 
 
     /* ================================================= */
+    /* CONSULTAR EL HISTORIAL DE SERVICIOS */
+    /* ================================================= */
+
+    public function consultarHistorial(int $idCliente): array
+    {
+        if ($idCliente <= 0) {
+            throw new \InvalidArgumentException(
+                'El identificador del cliente no es válido.'
+            );
+        }
+
+        /* Recuperar cada servicio de las atenciones realizadas del cliente */
+        $sql = "SELECT
+                    d.id_detalle_agendamiento,
+                    a.id_agendamiento,
+                    a.fecha,
+                    a.hora,
+                    s.nombre_servicio,
+                    TRIM(
+                        CONCAT(
+                            COALESCE(p.nombre, ''),
+                            ' ',
+                            COALESCE(p.apellido, '')
+                        )
+                    ) AS especialista,
+                    d.precio_aplicado,
+                    d.nota_tecnica
+
+                FROM agendamientos a
+
+                INNER JOIN estados_agendamientos ea
+                    ON ea.id_estado_agendamiento =
+                        a.id_estado_agendamiento
+
+                INNER JOIN detalles_agendamientos d
+                    ON d.id_agendamiento = a.id_agendamiento
+
+                INNER JOIN servicios s
+                    ON s.id_servicio = d.id_servicio
+
+                LEFT JOIN usuarios u
+                    ON u.id_usuario = a.id_usuario_asignado
+
+                LEFT JOIN personas p
+                    ON p.id_persona = u.id_persona
+
+                WHERE a.id_cliente = :id_cliente
+                    AND ea.nombre_estado = 'REALIZADA'
+
+                ORDER BY
+                    a.fecha DESC,
+                    a.hora DESC,
+                    a.id_agendamiento DESC,
+                    d.id_detalle_agendamiento ASC";
+
+        $stmt = $this->conexionMD->prepare($sql);
+
+        $stmt->bindValue(':id_cliente', $idCliente, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /* ================================================= */
     /* MODIFICAR CLIENTE */
     /* ================================================= */
 
-    public function modificar()
+    public function modificar(): bool
     {
+        if (!$this->validarDatosCliente()) return false;
+
         try {
-            /* Iniciar la transacción para actualizar ambas tablas */
             $this->conexionMD->beginTransaction();
 
-            /* Actualizar los datos de la persona */
-            $sqlPersona = "UPDATE personas SET
-                                nombre = :nombre,
-                                apellido = :apellido,
-                                telefono = :telefono,
-                                correo = :correo,
-                                direccion = :direccion,
-                                ciudad = :ciudad
-                           WHERE cedula = :cedula";
+            /* Identificar la persona relacionada con el cliente activo */
+            $sqlPersona = "SELECT
+                                c.id_cliente,
+                                c.id_persona
+
+                            FROM clientes c
+
+                            INNER JOIN personas p
+                                ON p.id_persona = c.id_persona
+
+                            WHERE p.cedula = :cedula
+                                AND c.estado_cliente = 'ACTIVO'
+
+                            LIMIT 1
+                            FOR UPDATE";
 
             $stmtPersona = $this->conexionMD->prepare($sqlPersona);
-
-            $stmtPersona->bindParam(':cedula', $this->cedula);
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
-
+            $stmtPersona->bindValue(':cedula', (string) $this->cedula, PDO::PARAM_STR);
             $stmtPersona->execute();
 
+            $cliente = $stmtPersona->fetch(PDO::FETCH_ASSOC);
+
+            if (!$cliente) {
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            /* Actualizar los datos personales mediante el modelo base */
+            $this->actualizarPersona((int) $cliente['id_persona']);
+
             /* Actualizar las alergias del cliente relacionado */
-            $sqlCliente = "UPDATE clientes c
-                           INNER JOIN personas p
-                               ON p.id_persona = c.id_persona
-                           SET c.alergias = :alergias
-                           WHERE p.cedula = :cedula";
+            $sqlCliente = "UPDATE clientes
+
+                           SET alergias = :alergias
+
+                           WHERE id_cliente = :id_cliente";
 
             $stmtCliente = $this->conexionMD->prepare($sqlCliente);
 
-            $stmtCliente->bindParam(':cedula', $this->cedula);
             $stmtCliente->bindParam(':alergias', $this->alergias);
+            $stmtCliente->bindValue(':id_cliente', (int) $cliente['id_cliente'], PDO::PARAM_INT);
 
             $stmtCliente->execute();
 
-            /* Confirmar la actualización de la persona y del cliente */
             $this->conexionMD->commit();
 
             return true;
 
-        } catch (\Exception $e) {
-
-            /* Revertir los cambios y propagar el error */
-            $this->conexionMD->rollBack();
+        } catch (\Throwable $e) {
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
 
             throw $e;
         }
@@ -286,13 +359,18 @@ class ClientesM extends Database implements CrudInterface
     /* DESACTIVAR CLIENTE */
     /* ================================================= */
 
-    public function eliminar()
+    public function eliminar(): bool
     {
+        if (!$this->validarIdentificacion()) return false;
+
         /* Cambiar el estado del cliente para conservar su registro */
         $sql = "UPDATE clientes c
+
                 INNER JOIN personas p
                     ON p.id_persona = c.id_persona
+
                 SET c.estado_cliente = 'INACTIVO'
+
                 WHERE p.cedula = :cedula";
 
         $stmt = $this->conexionMD->prepare($sql);

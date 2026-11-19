@@ -265,7 +265,7 @@ require_once __DIR__ . '/Layout/Header.php';
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal">
 
-            <form action="Index.php?url=clientes" method="POST">
+            <form action="Index.php?url=clientes" method="POST" novalidate>
                 <input type="hidden" name="accion" value="registrar">
 
                 <!-- Encabezado del modal -->
@@ -283,43 +283,45 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         <div class="col-md-6">
                             <label class="form-label">Cédula <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="cedula" class="form-control templo-input" placeholder="Ej: 12345678" required>
+                            <input type="text" name="cedula" id="nuevoCedulaCliente" class="form-control templo-input" placeholder="Ej: 12345678" minlength="6" maxlength="20" inputmode="numeric" pattern="[0-9]{6,20}" data-buscar-persona="true" aria-describedby="mensajePersonaNuevoCliente" required>
+                            <div id="mensajePersonaNuevoCliente" class="small mt-1" role="status" aria-live="polite" hidden></div>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control templo-input" placeholder="Ej: 04120000000">
+                            <input type="text" name="telefono" class="form-control templo-input" maxlength="25" inputmode="tel" placeholder="Ej: 04120000000">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Nombre <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="nombre" class="form-control templo-input" placeholder="Ej: María" required>
+                            <input type="text" name="nombre" class="form-control templo-input" minlength="2" maxlength="60" placeholder="Ej: María" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Apellido <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="apellido" class="form-control templo-input" placeholder="Ej: Pérez" required>
+                            <input type="text" name="apellido" class="form-control templo-input" minlength="2" maxlength="60" placeholder="Ej: Pérez" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Ciudad</label>
-                            <input type="text" name="ciudad" class="form-control templo-input" placeholder="Ej: Barquisimeto">
+                            <input type="text" name="ciudad" class="form-control templo-input" maxlength="80" placeholder="Ej: Barquisimeto">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Correo</label>
-                            <input type="email" name="correo" class="form-control templo-input" placeholder="Ej: correo@email.com">
+                            <input type="email" name="correo" class="form-control templo-input" maxlength="100" placeholder="Ej: correo@email.com">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label">Dirección</label>
-                            <input type="text" name="direccion" class="form-control templo-input" placeholder="Ej: Av. Lara, Centro Comercial...">
+                            <input type="text" name="direccion" class="form-control templo-input" maxlength="150" placeholder="Ej: Av. Lara, Centro Comercial...">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label">Alergias u observaciones</label>
                             <textarea
                                 name="alergias"
+                                maxlength="2000"
                                 class="form-control templo-input"
                                 rows="3"
                                 placeholder="Ej: alergia al acrílico, sensibilidad a productos, no presenta alergias..."
@@ -356,7 +358,7 @@ require_once __DIR__ . '/Layout/Header.php';
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content templo-modal">
 
-            <form action="Index.php?url=clientes" method="POST">
+            <form action="Index.php?url=clientes" method="POST" novalidate>
                 <input type="hidden" name="accion" value="modificar">
 
                 <!-- Encabezado del modal -->
@@ -379,38 +381,39 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         <div class="col-md-6">
                             <label class="form-label">Teléfono</label>
-                            <input type="text" name="telefono" id="editarTelefono" class="form-control templo-input" placeholder="Ej: 04120000000">
+                            <input type="text" name="telefono" id="editarTelefono" class="form-control templo-input" maxlength="25" inputmode="tel" placeholder="Ej: 04120000000">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Nombre <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="nombre" id="editarNombre" class="form-control templo-input" required>
+                            <input type="text" name="nombre" id="editarNombre" class="form-control templo-input" minlength="2" maxlength="60" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Apellido <span class="required-mark" aria-hidden="true">*</span></label>
-                            <input type="text" name="apellido" id="editarApellido" class="form-control templo-input" required>
+                            <input type="text" name="apellido" id="editarApellido" class="form-control templo-input" minlength="2" maxlength="60" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Ciudad</label>
-                            <input type="text" name="ciudad" id="editarCiudad" class="form-control templo-input" placeholder="Ej: Barquisimeto">
+                            <input type="text" name="ciudad" id="editarCiudad" class="form-control templo-input" maxlength="80" placeholder="Ej: Barquisimeto">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Correo</label>
-                            <input type="email" name="correo" id="editarCorreo" class="form-control templo-input" placeholder="Ej: correo@email.com">
+                            <input type="email" name="correo" id="editarCorreo" class="form-control templo-input" maxlength="100" placeholder="Ej: correo@email.com">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label">Dirección</label>
-                            <input type="text" name="direccion" id="editarDireccion" class="form-control templo-input" placeholder="Ej: Av. Lara, Centro Comercial...">
+                            <input type="text" name="direccion" id="editarDireccion" class="form-control templo-input" maxlength="150" placeholder="Ej: Av. Lara, Centro Comercial...">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label">Alergias u observaciones</label>
                             <textarea
                                 name="alergias"
+                                maxlength="2000"
                                 id="editarAlergias"
                                 class="form-control templo-input"
                                 rows="3"
@@ -1035,7 +1038,7 @@ require_once __DIR__ . '/Layout/Header.php';
 <!-- MODAL DE DESACTIVACIÓN DE CLIENTE -->
 <!-- ===================================================== -->
 
-<div class="modal fade" id="modalDesactivarCliente" tabindex="-1" aria-labelledby="modalDesactivarClienteLabel" aria-hidden="true">
+<div class="modal fade" id="modalDesactivarCliente" data-alerta-confirmacion data-alerta-aceptar="button[type='submit']" tabindex="-1" aria-labelledby="modalDesactivarClienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content templo-modal status-modal">
 

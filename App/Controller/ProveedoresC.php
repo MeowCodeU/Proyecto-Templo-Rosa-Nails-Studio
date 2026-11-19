@@ -34,55 +34,28 @@ $responderJson = static function (array $datos, int $estado = 200): void {
 /* ===================================================== */
 
 try {
+    if (!in_array($metodoSolicitud, ['GET', 'POST'], true)) {
+        header('Allow: GET, POST');
+        $responderJson(['ok' => false, 'mensaje' => 'Método no permitido.'], 405);
+    }
+
     $datosFormulario = $_POST;
 
     /* Recibir JSON o los datos de un formulario tradicional */
     if ($esCuerpoJson) {
         $datosFormulario = json_decode(
             file_get_contents('php://input'),
-            true,
+            false,
             32,
             JSON_THROW_ON_ERROR
         );
 
-        if (!is_array($datosFormulario)) {
+        if (!$datosFormulario instanceof \stdClass) {
             throw new \InvalidArgumentException('Los datos enviados no tienen un formato válido.');
         }
+
+        $datosFormulario = get_object_vars($datosFormulario);
     }
-
-    /* Comprobar los campos obligatorios y los tipos recibidos */
-    $validarCampos = static function (array $obligatorios) use ($datosFormulario): void {
-        $campos = [
-            'rif', 'nombre_empresa', 'cedula', 'nombre', 'apellido',
-            'telefono', 'correo', 'direccion', 'ciudad'
-        ];
-
-        foreach ($campos as $campo) {
-            if (isset($datosFormulario[$campo]) && !is_string($datosFormulario[$campo])) {
-                throw new \InvalidArgumentException('Los datos enviados no son válidos.');
-            }
-        }
-
-        foreach ($obligatorios as $campo) {
-            if (trim($datosFormulario[$campo] ?? '') === '') {
-                throw new \InvalidArgumentException('Complete los campos obligatorios del formulario.');
-            }
-        }
-    };
-
-    /* Comprobar los identificadores recibidos */
-    $validarIdentificador = static function (string $campo) use ($datosFormulario): int {
-        $identificador = filter_var($datosFormulario[$campo] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1]
-        ]);
-
-        if ($identificador === false) {
-            throw new \InvalidArgumentException('Seleccione un proveedor válido.');
-        }
-
-        return $identificador;
-    };
-
 
     /* Crear el objeto del modelo */
     $modeloProveedores = new ProveedoresM();
@@ -121,24 +94,70 @@ try {
 
 
             /* ================================================= */
+            /* CONSULTAR PERSONA POR CÉDULA */
+            /* ================================================= */
+
+            case 'consultar_persona':
+
+                if (!$esPeticionAjax) {
+                    throw new \InvalidArgumentException('La solicitud enviada no es válida.');
+                }
+
+                $modeloProveedores->set_cedula($datosFormulario['cedula'] ?? '');
+
+                if (!$modeloProveedores->validarIdentificacion()) {
+                    throw new \InvalidArgumentException(implode(' ', $modeloProveedores->obtenerErroresValidacion()));
+                }
+
+                $persona = $modeloProveedores->consultarDatosPersona(trim($datosFormulario['cedula']));
+
+                $responderJson([
+                    'ok' => true,
+                    'encontrada' => $persona !== null,
+                    'persona' => $persona
+                ]);
+
+                break;
+
+
+            /* ================================================= */
+            /* CONSULTAR INSUMOS DISPONIBLES */
+            /* ================================================= */
+
+            case 'consultar_insumos_disponibles':
+
+                if (!$esPeticionAjax) {
+                    throw new \InvalidArgumentException('La solicitud enviada no es válida.');
+                }
+
+                $responderJson([
+                    'ok' => true,
+                    'insumos' => $modeloProveedores->consultarInsumosDisponibles()
+                ]);
+
+                break;
+
+
+            /* ================================================= */
             /* REGISTRAR PROVEEDOR */
             /* ================================================= */
 
             case 'registrar':
 
-                $validarCampos(['rif', 'nombre_empresa', 'cedula', 'nombre', 'apellido']);
+                $modeloProveedores->set_rif($datosFormulario['rif'] ?? '');
+                $modeloProveedores->set_nombreEmpresa($datosFormulario['nombre_empresa'] ?? '');
+                $modeloProveedores->set_cedula($datosFormulario['cedula'] ?? '');
+                $modeloProveedores->set_nombre($datosFormulario['nombre'] ?? '');
+                $modeloProveedores->set_apellido($datosFormulario['apellido'] ?? '');
+                $modeloProveedores->set_telefono($datosFormulario['telefono'] ?? '');
+                $modeloProveedores->set_correo($datosFormulario['correo'] ?? '');
+                $modeloProveedores->set_direccion($datosFormulario['direccion'] ?? '');
+                $modeloProveedores->set_ciudad($datosFormulario['ciudad'] ?? '');
 
-                $modeloProveedores->set_rif(trim($datosFormulario['rif'] ?? ''));
-                $modeloProveedores->set_nombreEmpresa(trim($datosFormulario['nombre_empresa'] ?? ''));
-                $modeloProveedores->set_cedula(trim($datosFormulario['cedula'] ?? ''));
-                $modeloProveedores->set_nombre(trim($datosFormulario['nombre'] ?? ''));
-                $modeloProveedores->set_apellido(trim($datosFormulario['apellido'] ?? ''));
-                $modeloProveedores->set_telefono(trim($datosFormulario['telefono'] ?? ''));
-                $modeloProveedores->set_correo(trim($datosFormulario['correo'] ?? ''));
-                $modeloProveedores->set_direccion(trim($datosFormulario['direccion'] ?? ''));
-                $modeloProveedores->set_ciudad(trim($datosFormulario['ciudad'] ?? ''));
+                /* Guardar también los insumos marcados en Registrar */
+                $idsInsumos = $modeloProveedores->obtenerSeleccionInsumos($datosFormulario, false);
 
-                $resultado = $modeloProveedores->registrar();
+                $resultado = $modeloProveedores->registrar($idsInsumos);
                 $mensaje = 'Proveedor registrado correctamente.';
 
                 break;
@@ -150,24 +169,98 @@ try {
 
             case 'modificar':
 
-                $idProveedor = $validarIdentificador('id_proveedor');
-                $idPersonaContacto = $validarIdentificador('id_persona_contacto');
-
-                $validarCampos(['rif', 'nombre_empresa', 'nombre', 'apellido']);
+                $idProveedor = $datosFormulario['id_proveedor'] ?? null;
+                $idPersonaContacto = $datosFormulario['id_persona_contacto'] ?? null;
 
                 $modeloProveedores->set_idProveedor($idProveedor);
                 $modeloProveedores->set_idPersonaContacto($idPersonaContacto);
-                $modeloProveedores->set_rif(trim($datosFormulario['rif'] ?? ''));
-                $modeloProveedores->set_nombreEmpresa(trim($datosFormulario['nombre_empresa'] ?? ''));
-                $modeloProveedores->set_nombre(trim($datosFormulario['nombre'] ?? ''));
-                $modeloProveedores->set_apellido(trim($datosFormulario['apellido'] ?? ''));
-                $modeloProveedores->set_telefono(trim($datosFormulario['telefono'] ?? ''));
-                $modeloProveedores->set_correo(trim($datosFormulario['correo'] ?? ''));
-                $modeloProveedores->set_direccion(trim($datosFormulario['direccion'] ?? ''));
-                $modeloProveedores->set_ciudad(trim($datosFormulario['ciudad'] ?? ''));
+                $modeloProveedores->set_rif($datosFormulario['rif'] ?? '');
+                $modeloProveedores->set_nombreEmpresa($datosFormulario['nombre_empresa'] ?? '');
+                $modeloProveedores->set_nombre($datosFormulario['nombre'] ?? '');
+                $modeloProveedores->set_apellido($datosFormulario['apellido'] ?? '');
+                $modeloProveedores->set_telefono($datosFormulario['telefono'] ?? '');
+                $modeloProveedores->set_correo($datosFormulario['correo'] ?? '');
+                $modeloProveedores->set_direccion($datosFormulario['direccion'] ?? '');
+                $modeloProveedores->set_ciudad($datosFormulario['ciudad'] ?? '');
 
-                $resultado = $modeloProveedores->modificar();
+                /* Solo actualizar las asociaciones si el formulario las envió */
+                $idsInsumos = $modeloProveedores->obtenerSeleccionInsumos($datosFormulario, true);
+
+                $resultado = $modeloProveedores->modificar($idsInsumos);
                 $mensaje = 'Proveedor modificado correctamente.';
+
+                break;
+
+
+            /* ================================================= */
+            /* CAMBIAR PERSONA DE CONTACTO */
+            /* ================================================= */
+
+            case 'cambiar_contacto':
+
+                $idProveedor = $datosFormulario['id_proveedor'] ?? null;
+                $idPersonaContacto = $datosFormulario['id_persona_contacto'] ?? null;
+
+                $modeloProveedores->set_idProveedor($idProveedor);
+                $modeloProveedores->set_idPersonaContacto($idPersonaContacto);
+                $modeloProveedores->set_cedula($datosFormulario['cedula'] ?? '');
+                $modeloProveedores->set_nombre($datosFormulario['nombre'] ?? '');
+                $modeloProveedores->set_apellido($datosFormulario['apellido'] ?? '');
+                $modeloProveedores->set_telefono($datosFormulario['telefono'] ?? '');
+                $modeloProveedores->set_correo($datosFormulario['correo'] ?? '');
+                $modeloProveedores->set_direccion($datosFormulario['direccion'] ?? '');
+                $modeloProveedores->set_ciudad($datosFormulario['ciudad'] ?? '');
+
+                $resultado = $modeloProveedores->cambiarContacto();
+                $mensaje = 'Persona de contacto cambiada correctamente.';
+
+                break;
+
+
+            /* ================================================= */
+            /* CONSULTAR INSUMOS DEL PROVEEDOR */
+            /* ================================================= */
+
+            case 'consultar_insumos':
+
+                if (!$esPeticionAjax) {
+                    throw new \InvalidArgumentException('La solicitud enviada no es válida.');
+                }
+
+                $idProveedor = $datosFormulario['id_proveedor'] ?? null;
+                $insumosProveedor = $modeloProveedores->consultarInsumosProveedor($idProveedor);
+
+                $responderJson([
+                    'ok' => true,
+                    'insumos' => $insumosProveedor
+                ]);
+
+                break;
+
+
+            /* ================================================= */
+            /* ACTUALIZAR INSUMOS DEL PROVEEDOR */
+            /* ================================================= */
+
+            /* Compatibilidad temporal con el modal anterior de asociaciones */
+
+            case 'actualizar_insumos':
+
+                if (!$esPeticionAjax) {
+                    throw new \InvalidArgumentException('La solicitud enviada no es válida.');
+                }
+
+                $idProveedor = $datosFormulario['id_proveedor'] ?? null;
+                $idsInsumos = $datosFormulario['id_insumos'] ?? null;
+
+                $cambios = $modeloProveedores->actualizarInsumosProveedor($idProveedor, $idsInsumos);
+
+                $responderJson([
+                    'ok' => true,
+                    'mensaje' => 'Insumos del proveedor actualizados correctamente.',
+                    'agregados' => $cambios['agregados'],
+                    'retirados' => $cambios['retirados']
+                ]);
 
                 break;
 
@@ -179,7 +272,7 @@ try {
             case 'desactivar':
             case 'eliminar':
 
-                $modeloProveedores->set_idProveedor($validarIdentificador('id_proveedor'));
+                $modeloProveedores->set_idProveedor($datosFormulario['id_proveedor'] ?? null);
 
                 $resultado = $modeloProveedores->eliminar();
                 $mensaje = 'Proveedor desactivado correctamente.';
@@ -191,6 +284,13 @@ try {
                 throw new \InvalidArgumentException('La acción enviada no es válida.');
         }
 
+
+        /* Recuperar los errores que el modelo detectó antes de guardar */
+        $errores = $modeloProveedores->obtenerErroresValidacion();
+
+        if ($errores) {
+            throw new \InvalidArgumentException(implode(' ', $errores));
+        }
 
         /* Confirmar el resultado de la operación */
         if ($resultado === false) {
@@ -216,8 +316,9 @@ try {
         ], 400);
     }
 
-    /* Consultar los proveedores activos */
+    /* Consultar los proveedores e insumos activos para cargar la vista */
     $listaProveedores = $modeloProveedores->consultar();
+    $listaInsumosDisponibles = $modeloProveedores->consultarInsumosDisponibles();
 
 } catch (\Throwable $e) {
 
@@ -239,7 +340,11 @@ try {
     }
 
     if ($esPeticionAjax) {
-        $responderJson(['ok' => false, 'mensaje' => $mensaje], $estadoRespuesta);
+        $responderJson([
+            'ok' => false,
+            'mensaje' => $mensaje,
+            'errores' => isset($modeloProveedores) ? $modeloProveedores->obtenerErroresValidacion() : []
+        ], $estadoRespuesta);
     }
 
     http_response_code($estadoRespuesta);

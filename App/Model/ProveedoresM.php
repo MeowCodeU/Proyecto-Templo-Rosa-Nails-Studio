@@ -2,8 +2,8 @@
 
 namespace App\Model;
 
-use App\Config\Database;
 use App\Interfaces\CrudInterface;
+use App\Traits\ValidacionTrait;
 use PDO;
 
 
@@ -11,55 +11,114 @@ use PDO;
 /* MODELO DE PROVEEDORES */
 /* ===================================================== */
 
-class ProveedoresM extends Database implements CrudInterface
+class ProveedoresM extends PersonasM implements CrudInterface
 {
+    use ValidacionTrait;
+
+
     /* ================================================= */
-    /* CONEXIÓN Y ATRIBUTOS */
+    /* ATRIBUTOS */
     /* ================================================= */
 
-    /* Conexión con la base de datos */
-    private $conexionMD;
-
-    /* Atributos de la tabla proveedores */
     private $idProveedor;
     private $idPersonaContacto;
     private $rif;
     private $nombreEmpresa;
-
-    /* Atributos de la tabla personas */
-    private $cedula;
-    private $nombre;
-    private $apellido;
-    private $telefono;
-    private $correo;
-    private $direccion;
-    private $ciudad;
 
 
     /* ================================================= */
     /* SETTERS */
     /* ================================================= */
 
-    public function set_idProveedor($idProveedor) {$this->idProveedor = $idProveedor;}
-    public function set_idPersonaContacto($idPersonaContacto) {$this->idPersonaContacto = $idPersonaContacto;}
-    public function set_rif($rif) {$this->rif = $rif;}
-    public function set_nombreEmpresa($nombreEmpresa) {$this->nombreEmpresa = $nombreEmpresa;}
-    public function set_cedula($cedula) {$this->cedula = $cedula;}
-    public function set_nombre($nombre) {$this->nombre = $nombre;}
-    public function set_apellido($apellido) {$this->apellido = $apellido;}
-    public function set_telefono($telefono) {$this->telefono = $telefono;}
-    public function set_correo($correo) {$this->correo = $correo;}
-    public function set_direccion($direccion) {$this->direccion = $direccion;}
-    public function set_ciudad($ciudad) {$this->ciudad = $ciudad;}
+    public function set_idProveedor($idProveedor) { $this->idProveedor = $idProveedor; }
+    public function set_idPersonaContacto($idPersonaContacto) { $this->idPersonaContacto = $idPersonaContacto; }
+    public function set_rif($rif) { $this->rif = $rif; }
+    public function set_nombreEmpresa($nombreEmpresa) { $this->nombreEmpresa = $nombreEmpresa; }
 
 
     /* ================================================= */
-    /* CONSTRUCTOR */
+    /* VALIDAR LA IDENTIFICACIÓN DEL CONTACTO */
     /* ================================================= */
 
-    public function __construct()
+    public function validarIdentificacion(): bool
     {
-        $this->conexionMD = $this->getConnection();
+        if (!$this->validarCampos(['cedula' => $this->cedula], ['cedula'])) return false;
+
+        $this->cedula = trim($this->cedula);
+
+        return true;
+    }
+
+
+    /* ================================================= */
+    /* VALIDAR Y NORMALIZAR LOS DATOS DEL PROVEEDOR */
+    /* ================================================= */
+
+    private function validarDatosProveedor(bool $esRegistro, bool $soloContacto = false): bool
+    {
+        $datos = [
+            'nombre' => $this->nombre,
+            'apellido' => $this->apellido,
+            'telefono' => $this->telefono,
+            'correo' => $this->correo,
+            'direccion' => $this->direccion,
+            'ciudad' => $this->ciudad
+        ];
+
+        $obligatorios = ['nombre', 'apellido'];
+
+        if ($esRegistro || $soloContacto) {
+            $datos['cedula'] = $this->cedula;
+            $obligatorios[] = 'cedula';
+        }
+
+        if (!$soloContacto) {
+            $datos['rif'] = $this->rif;
+            $datos['nombre_empresa'] = $this->nombreEmpresa;
+            $obligatorios[] = 'rif';
+            $obligatorios[] = 'nombre_empresa';
+        }
+
+        $this->validarCampos($datos, $obligatorios);
+
+        if (!$esRegistro) {
+            $this->idProveedor = $this->validarIdentificador($this->idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
+            $this->idPersonaContacto = $this->validarIdentificador($this->idPersonaContacto, 'id_persona_contacto', 'Seleccione una persona de contacto válida.');
+        }
+
+        if ($this->erroresValidacion) return false;
+
+        foreach ($datos as $campo => $valor) {
+            $atributo = $campo === 'nombre_empresa' ? 'nombreEmpresa' : $campo;
+            $this->$atributo = trim($valor ?? '');
+        }
+
+        return true;
+    }
+
+
+    /* ================================================= */
+    /* RECIBIR LA SELECCIÓN DE INSUMOS */
+    /* ================================================= */
+
+    public function obtenerSeleccionInsumos(array $datos, bool $esModificacion): ?array
+    {
+        $this->erroresValidacion = [];
+        $incluyeSeleccion = array_key_exists('insumos_presentes', $datos);
+        $incluyeInsumos = array_key_exists('id_insumos', $datos);
+
+        if ($incluyeSeleccion && !in_array($datos['insumos_presentes'], ['1', 1, true], true)) {
+            $mensaje = 'La selección de insumos no es válida.';
+            $this->erroresValidacion['id_insumos'] = $mensaje;
+            throw new \InvalidArgumentException($mensaje);
+        }
+
+        /* Conservar las asociaciones cuando un formulario antiguo no las envía */
+        if (!$incluyeSeleccion && !$incluyeInsumos) return $esModificacion ? null : [];
+
+        $seleccion = $this->validarSeleccionInsumos($datos['id_insumos'] ?? []);
+
+        return array_values($seleccion);
     }
 
 
@@ -67,7 +126,7 @@ class ProveedoresM extends Database implements CrudInterface
     /* CONSULTAR PROVEEDORES */
     /* ================================================= */
 
-    public function consultar()
+    public function consultar(): array
     {
         /* Obtener los proveedores activos y los datos de sus contactos */
         $sql = "SELECT
@@ -108,87 +167,18 @@ class ProveedoresM extends Database implements CrudInterface
     /* REGISTRAR PROVEEDOR */
     /* ================================================= */
 
-    public function registrar()
+    public function registrar(array $idsInsumos = []): bool
     {
+        if (!$this->validarDatosProveedor(true)) return false;
+
+        /* Comprobar la selección antes de crear el proveedor */
+        $insumosSeleccionados = $this->validarSeleccionInsumos($idsInsumos);
+
         try {
-            /* Agrupar el registro del proveedor y los datos de su contacto */
             $this->conexionMD->beginTransaction();
 
-            /* Buscar a la persona de contacto mediante su cédula */
-            $sqlBuscarPersona = "SELECT id_persona
-                                 FROM personas
-                                 WHERE cedula = :cedula
-                                 LIMIT 1";
-
-            $stmtBuscarPersona = $this->conexionMD->prepare($sqlBuscarPersona);
-            $stmtBuscarPersona->bindParam(':cedula', $this->cedula);
-            $stmtBuscarPersona->execute();
-
-            $persona = $stmtBuscarPersona->fetch(PDO::FETCH_ASSOC);
-
-            if ($persona) {
-
-                /* Reutilizar el identificador de la persona existente */
-                $idPersonaContacto = $persona['id_persona'];
-
-                /* Actualizar sus datos personales y de contacto */
-                $sqlActualizarPersona = "UPDATE personas
-                                         SET nombre = :nombre,
-                                             apellido = :apellido,
-                                             telefono = :telefono,
-                                             correo = :correo,
-                                             direccion = :direccion,
-                                             ciudad = :ciudad
-                                         WHERE id_persona = :id_persona";
-
-                $stmtActualizarPersona = $this->conexionMD->prepare($sqlActualizarPersona);
-
-                $stmtActualizarPersona->bindParam(':nombre', $this->nombre);
-                $stmtActualizarPersona->bindParam(':apellido', $this->apellido);
-                $stmtActualizarPersona->bindParam(':telefono', $this->telefono);
-                $stmtActualizarPersona->bindParam(':correo', $this->correo);
-                $stmtActualizarPersona->bindParam(':direccion', $this->direccion);
-                $stmtActualizarPersona->bindParam(':ciudad', $this->ciudad);
-                $stmtActualizarPersona->bindParam(':id_persona', $idPersonaContacto);
-
-                $stmtActualizarPersona->execute();
-
-            } else {
-
-                /* Registrar a la persona cuando su cédula no existe */
-                $sqlPersona = "INSERT INTO personas (
-                                    cedula,
-                                    nombre,
-                                    apellido,
-                                    telefono,
-                                    correo,
-                                    direccion,
-                                    ciudad
-                               ) VALUES (
-                                    :cedula,
-                                    :nombre,
-                                    :apellido,
-                                    :telefono,
-                                    :correo,
-                                    :direccion,
-                                    :ciudad
-                               )";
-
-                $stmtPersona = $this->conexionMD->prepare($sqlPersona);
-
-                $stmtPersona->bindParam(':cedula', $this->cedula);
-                $stmtPersona->bindParam(':nombre', $this->nombre);
-                $stmtPersona->bindParam(':apellido', $this->apellido);
-                $stmtPersona->bindParam(':telefono', $this->telefono);
-                $stmtPersona->bindParam(':correo', $this->correo);
-                $stmtPersona->bindParam(':direccion', $this->direccion);
-                $stmtPersona->bindParam(':ciudad', $this->ciudad);
-
-                $stmtPersona->execute();
-
-                /* Recuperar el identificador de la persona registrada */
-                $idPersonaContacto = $this->conexionMD->lastInsertId();
-            }
+            /* Reutilizar o registrar a la persona de contacto */
+            $idPersonaContacto = $this->obtenerORegistrarPersona();
 
             /* Registrar el proveedor relacionado con la persona de contacto */
             $sqlProveedor = "INSERT INTO proveedores (
@@ -205,20 +195,22 @@ class ProveedoresM extends Database implements CrudInterface
 
             $stmtProveedor = $this->conexionMD->prepare($sqlProveedor);
 
-            $stmtProveedor->bindParam(':id_persona_contacto', $idPersonaContacto);
+            $stmtProveedor->bindValue(':id_persona_contacto', $idPersonaContacto, PDO::PARAM_INT);
             $stmtProveedor->bindParam(':rif', $this->rif);
             $stmtProveedor->bindParam(':nombre_empresa', $this->nombreEmpresa);
 
             $stmtProveedor->execute();
+            $idProveedor = (int) $this->conexionMD->lastInsertId();
 
-            /* Confirmar todos los cambios de la operación */
+            /* Guardar los insumos seleccionados en la misma transacción */
+            $this->sincronizarInsumosEnTransaccion($idProveedor, $insumosSeleccionados);
+
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Throwable $e) {
 
-            /* Revertir la transacción si alguna parte de la operación falla */
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -232,39 +224,49 @@ class ProveedoresM extends Database implements CrudInterface
     /* MODIFICAR PROVEEDOR */
     /* ================================================= */
 
-    public function modificar()
+    public function modificar(?array $idsInsumos = null): bool
     {
+        if (!$this->validarDatosProveedor(false)) return false;
+
+        /* NULL conserva las asociaciones hasta adaptar el controlador anterior */
+        $insumosSeleccionados = $idsInsumos === null
+            ? null
+            : $this->validarSeleccionInsumos($idsInsumos);
+
         try {
-            /* Agrupar los cambios del proveedor y de su contacto */
             $this->conexionMD->beginTransaction();
 
-            /* Actualizar los datos de la persona de contacto */
-            $sqlPersona = "UPDATE personas
-                           SET nombre = :nombre,
-                               apellido = :apellido,
-                               telefono = :telefono,
-                               correo = :correo,
-                               direccion = :direccion,
-                               ciudad = :ciudad
-                           WHERE id_persona = :id_persona_contacto";
+            /* Comprobar que se está editando al contacto actual */
+            $sqlBuscarContacto = "SELECT id_persona_contacto
+                                 FROM proveedores
+                                 WHERE id_proveedor = :id_proveedor
+                                     AND estado_proveedor = 'ACTIVO'
+                                 LIMIT 1
+                                 FOR UPDATE";
 
-            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
+            $stmtBuscarContacto = $this->conexionMD->prepare($sqlBuscarContacto);
+            $stmtBuscarContacto->bindValue(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+            $stmtBuscarContacto->execute();
 
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
-            $stmtPersona->bindParam(':id_persona_contacto', $this->idPersonaContacto);
+            $idContactoActual = $stmtBuscarContacto->fetchColumn();
 
-            $stmtPersona->execute();
+            if ($idContactoActual === false) {
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            if ((int) $idContactoActual !== (int) $this->idPersonaContacto) {
+                throw new \InvalidArgumentException('La persona de contacto cambió. Actualice el listado antes de editar.');
+            }
+
+            $this->actualizarPersona((int) $idContactoActual);
 
             /* Actualizar los datos propios del proveedor */
             $sqlProveedor = "UPDATE proveedores
                              SET rif = :rif,
                                  nombre_empresa = :nombre_empresa
-                             WHERE id_proveedor = :id_proveedor";
+                             WHERE id_proveedor = :id_proveedor
+                                 AND estado_proveedor = 'ACTIVO'";
 
             $stmtProveedor = $this->conexionMD->prepare($sqlProveedor);
 
@@ -274,14 +276,292 @@ class ProveedoresM extends Database implements CrudInterface
 
             $stmtProveedor->execute();
 
-            /* Confirmar la actualización de ambas tablas */
+            /* Las casillas modifican las asociaciones dentro de la misma operación */
+            if ($insumosSeleccionados !== null) {
+                $this->sincronizarInsumosEnTransaccion((int) $this->idProveedor, $insumosSeleccionados);
+            }
+
             $this->conexionMD->commit();
 
             return true;
 
         } catch (\Throwable $e) {
 
-            /* Revertir la transacción si alguna parte de la operación falla */
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+
+    /* ================================================= */
+    /* CAMBIAR PERSONA DE CONTACTO */
+    /* ================================================= */
+
+    public function cambiarContacto(): bool
+    {
+        if (!$this->validarDatosProveedor(false, true)) return false;
+
+        try {
+            $this->conexionMD->beginTransaction();
+
+            /* Comprobar que la empresa conserva el contacto seleccionado */
+            $sqlBuscarContacto = "SELECT id_persona_contacto
+                                 FROM proveedores
+                                 WHERE id_proveedor = :id_proveedor
+                                     AND estado_proveedor = 'ACTIVO'
+                                 LIMIT 1
+                                 FOR UPDATE";
+
+            $stmtBuscarContacto = $this->conexionMD->prepare($sqlBuscarContacto);
+            $stmtBuscarContacto->bindValue(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+            $stmtBuscarContacto->execute();
+
+            $idContactoActual = $stmtBuscarContacto->fetchColumn();
+
+            if ($idContactoActual === false) {
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            if ((int) $idContactoActual !== (int) $this->idPersonaContacto) {
+                throw new \InvalidArgumentException('La persona de contacto cambió. Actualice el listado antes de continuar.');
+            }
+
+            $persona = $this->obtenerPersonaPorCedula($this->cedula);
+
+            if ($persona !== null && (int) $persona['id_persona'] === (int) $idContactoActual) {
+                throw new \InvalidArgumentException('La persona seleccionada ya es el contacto de este proveedor.');
+            }
+
+            $idNuevoContacto = $this->obtenerORegistrarPersona();
+
+            /* Cambiar la relación sin eliminar a la persona anterior */
+            $sqlProveedor = "UPDATE proveedores
+                             SET id_persona_contacto = :id_persona_contacto
+                             WHERE id_proveedor = :id_proveedor
+                                 AND estado_proveedor = 'ACTIVO'";
+
+            $stmtProveedor = $this->conexionMD->prepare($sqlProveedor);
+            $stmtProveedor->bindValue(':id_persona_contacto', $idNuevoContacto, PDO::PARAM_INT);
+            $stmtProveedor->bindValue(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+            $stmtProveedor->execute();
+
+            $this->conexionMD->commit();
+
+            return true;
+
+        } catch (\Throwable $e) {
+
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+
+    /* ================================================= */
+    /* CONSULTAR INSUMOS DISPONIBLES */
+    /* ================================================= */
+
+    public function consultarInsumosDisponibles(): array
+    {
+        /* Mostrar los insumos activos para el registro de proveedores */
+        $sql = "SELECT
+                    id_insumo,
+                    nombre_insumo,
+                    presentacion
+                FROM insumos
+                WHERE estado_insumo = 'ACTIVO'
+                ORDER BY nombre_insumo ASC, id_insumo ASC";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /* ================================================= */
+    /* CONSULTAR INSUMOS DEL PROVEEDOR */
+    /* ================================================= */
+
+    public function consultarInsumosProveedor(mixed $idProveedor): array
+    {
+        $this->erroresValidacion = [];
+        $idProveedor = $this->validarIdentificador($idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
+
+        if ($idProveedor === null) {
+            throw new \InvalidArgumentException('Seleccione un proveedor válido.');
+        }
+
+        /* Comprobar que el proveedor se encuentra activo */
+        $sql = "SELECT id_proveedor
+                FROM proveedores
+                WHERE id_proveedor = :id_proveedor
+                    AND estado_proveedor = 'ACTIVO'
+                LIMIT 1";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->fetchColumn() === false) {
+            throw new \InvalidArgumentException('El proveedor no se encuentra activo.');
+        }
+
+        /* Consultar el catálogo e identificar los insumos asociados */
+        $sql = "SELECT
+                    insumo.id_insumo,
+                    insumo.nombre_insumo,
+                    insumo.presentacion,
+                    CASE WHEN relacion.id_proveedor_insumo IS NULL THEN 0 ELSE 1 END AS seleccionado
+                FROM insumos AS insumo
+                LEFT JOIN proveedores_insumos AS relacion
+                    ON relacion.id_insumo = insumo.id_insumo
+                    AND relacion.id_proveedor = :id_proveedor
+                WHERE insumo.estado_insumo = 'ACTIVO'
+                ORDER BY insumo.nombre_insumo ASC";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /* ================================================= */
+    /* SINCRONIZAR INSUMOS EN UNA TRANSACCIÓN */
+    /* ================================================= */
+
+    private function sincronizarInsumosEnTransaccion(int $idProveedor, array $insumosSeleccionados): array
+    {
+        /* Este método forma parte de la transacción de Registrar o Modificar */
+        if (!$this->conexionMD->inTransaction()) {
+            throw new \LogicException('La asociación de insumos requiere una transacción activa.');
+        }
+
+        /* Bloquear el proveedor para impedir modificaciones concurrentes */
+        $sql = "SELECT id_proveedor
+                FROM proveedores
+                WHERE id_proveedor = :id_proveedor
+                    AND estado_proveedor = 'ACTIVO'
+                LIMIT 1
+                FOR UPDATE";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->fetchColumn() === false) {
+            throw new \InvalidArgumentException('El proveedor no se encuentra activo. Actualice el listado.');
+        }
+
+        /* Admitir únicamente insumos activos existentes */
+        if ($insumosSeleccionados) {
+            $marcadores = implode(', ', array_fill(0, count($insumosSeleccionados), '?'));
+
+            $sql = "SELECT id_insumo
+                    FROM insumos
+                    WHERE estado_insumo = 'ACTIVO'
+                        AND id_insumo IN ($marcadores)
+                    ORDER BY id_insumo ASC
+                    FOR UPDATE";
+
+            $stmt = $this->conexionMD->prepare($sql);
+            $stmt->execute(array_values($insumosSeleccionados));
+
+            $insumosValidos = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+            if (count($insumosValidos) !== count($insumosSeleccionados)) {
+                throw new \InvalidArgumentException('Uno de los insumos ya no está disponible. Actualice la selección.');
+            }
+        }
+
+        /* Conservar las asociaciones históricas de insumos inactivos */
+        $sql = "SELECT relacion.id_insumo
+                FROM proveedores_insumos AS relacion
+                INNER JOIN insumos AS insumo
+                    ON insumo.id_insumo = relacion.id_insumo
+                WHERE relacion.id_proveedor = :id_proveedor
+                    AND insumo.estado_insumo = 'ACTIVO'
+                ORDER BY relacion.id_insumo ASC
+                FOR UPDATE";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $insumosAnteriores = array_fill_keys(
+            array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)),
+            true
+        );
+
+        $agregar = array_diff_key($insumosSeleccionados, $insumosAnteriores);
+        $retirar = array_diff_key($insumosAnteriores, $insumosSeleccionados);
+
+        /* Retirar solamente las asociaciones que se desmarcaron */
+        $sqlEliminar = "DELETE FROM proveedores_insumos
+                       WHERE id_proveedor = :id_proveedor
+                           AND id_insumo = :id_insumo";
+
+        $stmtEliminar = $this->conexionMD->prepare($sqlEliminar);
+
+        foreach (array_keys($retirar) as $idInsumo) {
+            $stmtEliminar->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+            $stmtEliminar->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+            $stmtEliminar->execute();
+        }
+
+        /* Agregar nuevas asociaciones sin alterar existencias ni lotes */
+        $sqlAgregar = "INSERT INTO proveedores_insumos (id_proveedor, id_insumo)
+                       VALUES (:id_proveedor, :id_insumo)";
+
+        $stmtAgregar = $this->conexionMD->prepare($sqlAgregar);
+
+        foreach ($agregar as $idInsumo) {
+            $stmtAgregar->bindValue(':id_proveedor', $idProveedor, PDO::PARAM_INT);
+            $stmtAgregar->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+            $stmtAgregar->execute();
+        }
+
+        return [
+            'agregados' => count($agregar),
+            'retirados' => count($retirar)
+        ];
+    }
+
+
+    /* ================================================= */
+    /* ACTUALIZAR INSUMOS DEL PROVEEDOR */
+    /* ================================================= */
+
+    public function actualizarInsumosProveedor(mixed $idProveedor, mixed $idsInsumos): array
+    {
+        $this->erroresValidacion = [];
+        $idProveedor = $this->validarIdentificador($idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
+
+        if ($idProveedor === null) {
+            throw new \InvalidArgumentException('Seleccione un proveedor válido.');
+        }
+
+        /* Mantener compatibilidad con el controlador mientras se actualiza la vista */
+        $insumosSeleccionados = $this->validarSeleccionInsumos($idsInsumos);
+
+        $this->conexionMD->beginTransaction();
+
+        try {
+            $cambios = $this->sincronizarInsumosEnTransaccion($idProveedor, $insumosSeleccionados);
+            $this->conexionMD->commit();
+
+            return $cambios;
+
+        } catch (\Throwable $e) {
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
@@ -295,8 +575,13 @@ class ProveedoresM extends Database implements CrudInterface
     /* DESACTIVAR PROVEEDOR */
     /* ================================================= */
 
-    public function eliminar()
+    public function eliminar(): bool
     {
+        $this->erroresValidacion = [];
+        $this->idProveedor = $this->validarIdentificador($this->idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
+
+        if ($this->idProveedor === null) return false;
+
         /* Cambiar el estado del proveedor para conservar su registro */
         $sql = "UPDATE proveedores
                 SET estado_proveedor = 'INACTIVO'
