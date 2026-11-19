@@ -4,10 +4,11 @@ use App\Model\ServicioM;
 use App\Model\EstadoAgendamientoM;
 use App\Model\TipoAgendamientoM;
 
-
 /* ===================================================== */
 /* CONFIGURACIÓN DEL SISTEMA */
 /* ===================================================== */
+
+$erroresValidacion = [];
 
 $esPeticionAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
@@ -19,7 +20,6 @@ $responderJson = static function (array $datos, int $estado = 200): void {
     echo json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 };
-
 
 /* ===================================================== */
 /* LECTURA Y COMPROBACIÓN DE LOS DATOS */
@@ -38,44 +38,25 @@ try {
         }
     }
 
-    $textoFormulario = static function (string $campo, bool $obligatorio = false) use ($datosFormulario): string {
-        $valor = $datosFormulario[$campo] ?? '';
-
-        if (!is_string($valor)) {
-            throw new \InvalidArgumentException('Los datos enviados no son válidos.');
-        }
-
-        $valor = trim($valor);
-
-        if ($obligatorio && $valor === '') {
-            throw new \InvalidArgumentException('Complete los campos obligatorios del formulario.');
-        }
-
-        return $valor;
-    };
-
-    $identificadorFormulario = static function (string $campo) use ($datosFormulario): int {
-        $identificador = filter_var($datosFormulario[$campo] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1]
-        ]);
-
-        if ($identificador === false) {
-            throw new \InvalidArgumentException('Seleccione un registro válido.');
-        }
-
-        return $identificador;
-    };
-
+    if (!in_array($metodoSolicitud, ['GET', 'POST'], true)) {
+        header('Allow: GET, POST');
+        $responderJson(['ok' => false, 'mensaje' => 'El método solicitado no está permitido.'], 405);
+    }
 
     /* Modelos de Configuración */
     $modeloServicio = new ServicioM();
     $modeloEstadoAgendamiento = new EstadoAgendamientoM();
     $modeloTipoAgendamiento = new TipoAgendamientoM();
 
-
     /* Procesar acciones enviadas por los formularios */
     if ($metodoSolicitud === 'POST') {
-        $accion = $textoFormulario('accion', true);
+        $accion = $datosFormulario['accion'] ?? null;
+
+        if (!is_string($accion)) {
+            throw new \InvalidArgumentException('La acción enviada no es válida.');
+        }
+
+        $accion = trim($accion);
 
         switch ($accion) {
 
@@ -89,7 +70,13 @@ try {
                     throw new \InvalidArgumentException('La solicitud enviada no es válida.');
                 }
 
-                $catalogo = $textoFormulario('catalogo', true);
+                $catalogo = $datosFormulario['catalogo'] ?? null;
+
+                if (!is_string($catalogo)) {
+                    throw new \InvalidArgumentException('Seleccione un catálogo válido.');
+                }
+
+                $catalogo = trim($catalogo);
 
                 switch ($catalogo) {
                     case 'servicios':
@@ -115,7 +102,6 @@ try {
                 $responderJson(['ok' => true, 'catalogo' => $catalogo, 'registros' => array_values($registros)]);
                 break;
 
-
             /* ================================================= */
             /* REGISTRAR */
             /* ================================================= */
@@ -123,10 +109,10 @@ try {
             /* Registrar servicio */
             case 'registrar_servicio':
 
-                $modeloServicio->set_nombreServicio($textoFormulario('nombre_servicio', true));
-                $modeloServicio->set_descripcion($textoFormulario('descripcion'));
-                $modeloServicio->set_precio($textoFormulario('precio', true));
-                $modeloServicio->set_duracionEstimada($textoFormulario('duracion_estimada'));
+                $modeloServicio->set_nombreServicio($datosFormulario['nombre_servicio'] ?? '');
+                $modeloServicio->set_descripcion($datosFormulario['descripcion'] ?? '');
+                $modeloServicio->set_precio($datosFormulario['precio'] ?? '');
+                $modeloServicio->set_duracionEstimada($datosFormulario['duracion_estimada'] ?? '');
 
                 $resultado = $modeloServicio->registrar();
                 $catalogo = 'servicios';
@@ -137,8 +123,8 @@ try {
             /* Registrar estado de agendamiento */
             case 'registrar_estado_agendamiento':
 
-                $modeloEstadoAgendamiento->set_nombreEstado($textoFormulario('nombre_estado', true));
-                $modeloEstadoAgendamiento->set_descripcion($textoFormulario('descripcion'));
+                $modeloEstadoAgendamiento->set_nombreEstado($datosFormulario['nombre_estado'] ?? '');
+                $modeloEstadoAgendamiento->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloEstadoAgendamiento->registrar();
                 $catalogo = 'estados_agendamiento';
@@ -149,15 +135,14 @@ try {
             /* Registrar tipo de agendamiento */
             case 'registrar_tipo_agendamiento':
 
-                $modeloTipoAgendamiento->set_nombreTipoAgendamiento($textoFormulario('nombre_tipo_agendamiento', true));
-                $modeloTipoAgendamiento->set_descripcion($textoFormulario('descripcion'));
+                $modeloTipoAgendamiento->set_nombreTipoAgendamiento($datosFormulario['nombre_tipo_agendamiento'] ?? '');
+                $modeloTipoAgendamiento->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloTipoAgendamiento->registrar();
                 $catalogo = 'tipos_agendamiento';
                 $mensaje = 'Tipo de agendamiento registrado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* MODIFICAR */
@@ -166,11 +151,11 @@ try {
             /* Modificar servicio */
             case 'modificar_servicio':
 
-                $modeloServicio->set_idServicio($identificadorFormulario('id_servicio'));
-                $modeloServicio->set_nombreServicio($textoFormulario('nombre_servicio', true));
-                $modeloServicio->set_descripcion($textoFormulario('descripcion'));
-                $modeloServicio->set_precio($textoFormulario('precio', true));
-                $modeloServicio->set_duracionEstimada($textoFormulario('duracion_estimada'));
+                $modeloServicio->set_idServicio($datosFormulario['id_servicio'] ?? null);
+                $modeloServicio->set_nombreServicio($datosFormulario['nombre_servicio'] ?? '');
+                $modeloServicio->set_descripcion($datosFormulario['descripcion'] ?? '');
+                $modeloServicio->set_precio($datosFormulario['precio'] ?? '');
+                $modeloServicio->set_duracionEstimada($datosFormulario['duracion_estimada'] ?? '');
 
                 $resultado = $modeloServicio->modificar();
                 $catalogo = 'servicios';
@@ -181,9 +166,9 @@ try {
             /* Modificar estado de agendamiento */
             case 'modificar_estado_agendamiento':
 
-                $modeloEstadoAgendamiento->set_idEstadoAgendamiento($identificadorFormulario('id_estado_agendamiento'));
-                $modeloEstadoAgendamiento->set_nombreEstado($textoFormulario('nombre_estado', true));
-                $modeloEstadoAgendamiento->set_descripcion($textoFormulario('descripcion'));
+                $modeloEstadoAgendamiento->set_idEstadoAgendamiento($datosFormulario['id_estado_agendamiento'] ?? null);
+                $modeloEstadoAgendamiento->set_nombreEstado($datosFormulario['nombre_estado'] ?? '');
+                $modeloEstadoAgendamiento->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloEstadoAgendamiento->modificar();
                 $catalogo = 'estados_agendamiento';
@@ -194,16 +179,15 @@ try {
             /* Modificar tipo de agendamiento */
             case 'modificar_tipo_agendamiento':
 
-                $modeloTipoAgendamiento->set_idTipoAgendamiento($identificadorFormulario('id_tipo_agendamiento'));
-                $modeloTipoAgendamiento->set_nombreTipoAgendamiento($textoFormulario('nombre_tipo_agendamiento', true));
-                $modeloTipoAgendamiento->set_descripcion($textoFormulario('descripcion'));
+                $modeloTipoAgendamiento->set_idTipoAgendamiento($datosFormulario['id_tipo_agendamiento'] ?? null);
+                $modeloTipoAgendamiento->set_nombreTipoAgendamiento($datosFormulario['nombre_tipo_agendamiento'] ?? '');
+                $modeloTipoAgendamiento->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloTipoAgendamiento->modificar();
                 $catalogo = 'tipos_agendamiento';
                 $mensaje = 'Tipo de agendamiento modificado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* DESACTIVAR */
@@ -212,7 +196,7 @@ try {
             /* Desactivar servicio */
             case 'cambiar_estado_servicio':
 
-                $modeloServicio->set_idServicio($identificadorFormulario('id_servicio'));
+                $modeloServicio->set_idServicio($datosFormulario['id_servicio'] ?? null);
 
                 $resultado = $modeloServicio->eliminar();
                 $catalogo = 'servicios';
@@ -223,7 +207,7 @@ try {
             /* Desactivar estado de agendamiento */
             case 'cambiar_estado_agendamiento':
 
-                $modeloEstadoAgendamiento->set_idEstadoAgendamiento($identificadorFormulario('id_estado_agendamiento'));
+                $modeloEstadoAgendamiento->set_idEstadoAgendamiento($datosFormulario['id_estado_agendamiento'] ?? null);
 
                 $resultado = $modeloEstadoAgendamiento->eliminar();
                 $catalogo = 'estados_agendamiento';
@@ -234,7 +218,7 @@ try {
             /* Desactivar tipo de agendamiento */
             case 'cambiar_estado_tipo_agendamiento':
 
-                $modeloTipoAgendamiento->set_idTipoAgendamiento($identificadorFormulario('id_tipo_agendamiento'));
+                $modeloTipoAgendamiento->set_idTipoAgendamiento($datosFormulario['id_tipo_agendamiento'] ?? null);
 
                 $resultado = $modeloTipoAgendamiento->eliminar();
                 $catalogo = 'tipos_agendamiento';
@@ -242,9 +226,20 @@ try {
 
                 break;
 
-
             default:
                 throw new \InvalidArgumentException('La acción enviada no es válida.');
+        }
+
+        /* Recuperar los errores de validación del modelo utilizado */
+        $modeloOperacion = match ($catalogo) {
+            'servicios' => $modeloServicio,
+            'estados_agendamiento' => $modeloEstadoAgendamiento,
+            'tipos_agendamiento' => $modeloTipoAgendamiento
+        };
+        $erroresValidacion = $modeloOperacion->obtenerErroresValidacion();
+
+        if ($erroresValidacion !== []) {
+            throw new \InvalidArgumentException('Revise los campos señalados.');
         }
 
         /* Confirmar el resultado de la operación */
@@ -287,14 +282,15 @@ try {
         $mensaje = 'Ya existe un registro con uno de los datos únicos ingresados. Revise los datos del formulario.';
     }
 
+    if ($estadoRespuesta === 500) error_log('ConfiguracionC: ' . $e->getMessage());
+
     if ($esPeticionAjax) {
-        $responderJson(['ok' => false, 'mensaje' => $mensaje], $estadoRespuesta);
+        $responderJson(['ok' => false, 'mensaje' => $mensaje, 'errores' => $erroresValidacion], $estadoRespuesta);
     }
 
     http_response_code($estadoRespuesta);
-    exit($mensaje);
+    exit(htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'));
 }
-
 
 /* ===================================================== */
 /* CARGA DE LA VISTA */

@@ -680,6 +680,8 @@ require_once __DIR__ . '/Layout/Header.php';
 <div
     class="modal fade"
     id="modalEstadoServicio"
+    data-alerta-confirmacion
+    data-alerta-aceptar="button[type='submit']"
     tabindex="-1"
     aria-labelledby="modalEstadoServicioLabel"
     aria-hidden="true"
@@ -920,6 +922,8 @@ require_once __DIR__ . '/Layout/Header.php';
 <div
     class="modal fade"
     id="modalEstadoEstadoAgendamiento"
+    data-alerta-confirmacion
+    data-alerta-aceptar="button[type='submit']"
     tabindex="-1"
     aria-labelledby="modalEstadoEstadoAgendamientoLabel"
     aria-hidden="true"
@@ -1160,6 +1164,8 @@ require_once __DIR__ . '/Layout/Header.php';
 <div
     class="modal fade"
     id="modalEstadoTipoAgendamiento"
+    data-alerta-confirmacion
+    data-alerta-aceptar="button[type='submit']"
     tabindex="-1"
     aria-labelledby="modalEstadoTipoAgendamientoLabel"
     aria-hidden="true"
@@ -1217,7 +1223,8 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 
-$scriptVista = 'Assets/js/configuracion.js';
+$scriptVista = 'Assets/js/configuracion.js?v=2';
+$scriptVistaModulo = true;
 
 require_once __DIR__ . '/Layout/Footer.php';
 

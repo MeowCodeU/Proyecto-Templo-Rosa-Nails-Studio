@@ -1,24 +1,62 @@
 <?php
 
+/* ===================================================== */
+/* DATOS DE LA VISTA */
+/* ===================================================== */
+
 $tituloPagina = 'Inicio';
 
 require_once __DIR__ . '/Layout/Header.php';
 
+/* Identificar el rol para personalizar la bienvenida */
+$idRolInicio = (int) ($datosUsuarioHeader['id_rol'] ?? 0);
+$esAdministradorSistemaInicio = $idRolInicio === 3;
+$esEspecialistaInicio = $idRolInicio === 2;
+
+/* Seleccionar la imagen correspondiente al rol */
+$imagenBienvenidaInicio = 'Assets/img/TR_Girl_Pant.png';
+$descripcionImagenInicio = 'Especialista en manicura de Templo Rosa';
+
+if ($idRolInicio === 1) {
+    $imagenBienvenidaInicio = 'Assets/img/TR_Administradora_Negocio.png';
+    $descripcionImagenInicio = 'Administradora del Negocio de Templo Rosa';
+
+} elseif ($esAdministradorSistemaInicio) {
+    $imagenBienvenidaInicio = 'Assets/img/TR_Administradora_Sistema.png';
+    $descripcionImagenInicio = 'Administradora del Sistema de Templo Rosa';
+}
+
 ?>
+
 
 <!-- ===================================================== -->
 <!-- INICIO DEL SISTEMA -->
 <!-- ===================================================== -->
 
-<section class="module-card inicio-module">
+<section
+    class="module-card inicio-module"
+    data-ruta="Index.php?url=inicio"
+    aria-busy="<?= $esAdministradorSistemaInicio ? 'false' : 'true'; ?>"
+>
 
     <div class="inicio-scroll">
+
+        <!-- Avisos de la consulta -->
+        <div
+            id="mensajeInicio"
+            class="alert py-2 small d-none"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            hidden
+        ></div>
+
 
         <!-- ===================================================== -->
         <!-- BIENVENIDA Y CALENDARIO -->
         <!-- ===================================================== -->
 
-        <div class="inicio-superior">
+        <div class="inicio-superior"<?= $esAdministradorSistemaInicio ? ' style="grid-template-columns: minmax(0, 1fr);"' : ''; ?>>
 
             <!-- Bienvenida -->
             <div class="inicio-bienvenida-wrap">
@@ -27,39 +65,58 @@ require_once __DIR__ . '/Layout/Header.php';
 
                     <div class="inicio-bienvenida-texto">
 
-                        <h3>¡Bienvenida, <?= $escaparHeader($nombreUsuarioHeader); ?>!</h3>
+                        <h3>
+                            ¡Bienvenida, <?= $escaparHeader($nombreUsuarioHeader); ?>!
+                        </h3>
 
+                        <?php if ($esEspecialistaInicio): ?>
+                        <!-- Agendamientos personales de la especialista -->
                         <p class="inicio-bienvenida-programadas">
-                            Para hoy tienes programadas:
+                            Agendamientos para hoy:
                         </p>
 
-                        <!-- Cantidad de citas programadas para hoy -->
                         <div class="inicio-bienvenida-citas">
 
-                            <strong id="cantidadCitasHoy">0</strong>
-                            <span id="textoCitasHoy">citas</span>
+                            <strong id="cantidadCitasEspecialistaHoy">—</strong>
+                            <span id="textoCitasEspecialistaHoy">agendamientos</span>
 
                         </div>
+                        <?php endif; ?>
 
                     </div>
 
                 </article>
 
                 <img
-                    src="Assets/img/TR_Girl_Pant.png"
-                    alt="Manicurista de Templo Rosa"
+                    src="<?= $escaparHeader($imagenBienvenidaInicio); ?>"
+                    alt="<?= $escaparHeader($descripcionImagenInicio); ?>"
                     class="inicio-bienvenida-imagen"
                 >
 
             </div>
 
 
+            <?php if (!$esAdministradorSistemaInicio): ?>
             <!-- Mini calendario -->
             <article class="inicio-calendario-card">
 
                 <div class="inicio-card-header">
-                    <i class="bi bi-calendar-heart"></i>
-                    Mini calendario
+
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-heart" aria-hidden="true"></i>
+                        Mini calendario
+                    </span>
+
+                    <button
+                        type="button"
+                        class="inicio-panel-enlace ms-auto border-0 bg-transparent p-0"
+                        id="btnMesActual"
+                        aria-controls="miniCalendarioDias"
+                        disabled
+                    >
+                        Mes actual
+                    </button>
+
                 </div>
 
                 <div class="inicio-calendario-body">
@@ -72,19 +129,23 @@ require_once __DIR__ . '/Layout/Header.php';
                             class="inicio-calendario-btn"
                             id="btnMesAnterior"
                             aria-label="Mes anterior"
+                            aria-controls="miniCalendarioDias"
+                            disabled
                         >
-                            <i class="bi bi-chevron-left"></i>
+                            <i class="bi bi-chevron-left" aria-hidden="true"></i>
                         </button>
 
-                        <h4 id="miniCalendarioTitulo" aria-live="polite"></h4>
+                        <h4 id="miniCalendarioTitulo" aria-live="polite">—</h4>
 
                         <button
                             type="button"
                             class="inicio-calendario-btn"
                             id="btnMesSiguiente"
                             aria-label="Mes siguiente"
+                            aria-controls="miniCalendarioDias"
+                            disabled
                         >
-                            <i class="bi bi-chevron-right"></i>
+                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
                         </button>
 
                     </div>
@@ -103,22 +164,29 @@ require_once __DIR__ . '/Layout/Header.php';
                         </div>
 
                         <!-- Días generados por el script de inicio -->
-                        <div class="inicio-calendario-dias" id="miniCalendarioDias"></div>
+                        <div
+                            class="inicio-calendario-dias"
+                            id="miniCalendarioDias"
+                            role="list"
+                            aria-label="Agendamientos por día"
+                        ></div>
 
                     </div>
 
                     <small class="inicio-calendario-ayuda">
-                        <i class="bi bi-info-circle"></i>
-                        Los números indican la cantidad de agendamientos de cada día.
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        Los números indican la cantidad de agendamientos de cada día
                     </small>
 
                 </div>
 
             </article>
+            <?php endif; ?>
 
         </div>
 
 
+        <?php if (!$esAdministradorSistemaInicio): ?>
         <!-- ===================================================== -->
         <!-- TARJETAS DE RESUMEN -->
         <!-- ===================================================== -->
@@ -127,18 +195,23 @@ require_once __DIR__ . '/Layout/Header.php';
 
             <div class="inicio-resumen-grid">
 
-                <!-- Agendamientos de hoy -->
+                <!-- Agendamientos de hoy: total global -->
                 <article class="inicio-resumen-card">
 
                     <div class="inicio-resumen-icono">
-                        <i class="bi bi-calendar2-heart"></i>
+                        <i class="bi bi-calendar2-heart" aria-hidden="true"></i>
                     </div>
 
                     <div class="inicio-resumen-contenido">
 
-                        <span class="inicio-resumen-titulo">Agendamientos de hoy</span>
+                        <span class="inicio-resumen-titulo">
+                            Agendamientos de hoy
+                        </span>
 
-                        <strong class="inicio-resumen-cantidad" id="resumenAgendamientosHoy">0</strong>
+                        <strong
+                            class="inicio-resumen-cantidad"
+                            id="resumenAgendamientosHoy"
+                        >—</strong>
 
                         <small>Citas y llegadas inmediatas</small>
 
@@ -151,6 +224,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <article class="inicio-resumen-card">
 
                     <div class="inicio-resumen-icono">
+
                         <span class="servicio-icono" aria-hidden="true">
                             <svg viewBox="0 0 64 64">
 
@@ -160,9 +234,9 @@ require_once __DIR__ . '/Layout/Header.php';
                                 <path d="M32 10V22"></path>
                                 <path d="M36 10V22"></path>
                                 <path d="M24 28H29"></path>
-                                <path d="M35 28H40"></path>
-                                <path d="M29 28C29 30 28 31 26 31"></path>
                                 <path d="M35 28C35 30 36 31 38 31"></path>
+                                <path d="M29 28C29 30 28 31 26 31"></path>
+                                <path d="M35 28H40"></path>
 
                                 <!-- Cuerpo del frasco -->
                                 <path
@@ -187,13 +261,19 @@ require_once __DIR__ . '/Layout/Header.php';
 
                             </svg>
                         </span>
+
                     </div>
 
                     <div class="inicio-resumen-contenido">
 
-                        <span class="inicio-resumen-titulo">Servicios realizados</span>
+                        <span class="inicio-resumen-titulo">
+                            Servicios realizados
+                        </span>
 
-                        <strong class="inicio-resumen-cantidad" id="resumenServiciosHoy">0</strong>
+                        <strong
+                            class="inicio-resumen-cantidad"
+                            id="resumenServiciosHoy"
+                        >—</strong>
 
                         <small>Finalizados durante el día</small>
 
@@ -206,14 +286,19 @@ require_once __DIR__ . '/Layout/Header.php';
                 <article class="inicio-resumen-card">
 
                     <div class="inicio-resumen-icono">
-                        <i class="bi bi-person-hearts"></i>
+                        <i class="bi bi-person-hearts" aria-hidden="true"></i>
                     </div>
 
                     <div class="inicio-resumen-contenido">
 
-                        <span class="inicio-resumen-titulo">Clientas registradas</span>
+                        <span class="inicio-resumen-titulo">
+                            Clientas registradas
+                        </span>
 
-                        <strong class="inicio-resumen-cantidad" id="resumenClientasRegistradas">0</strong>
+                        <strong
+                            class="inicio-resumen-cantidad"
+                            id="resumenClientasRegistradas"
+                        >—</strong>
 
                         <small>Total registrado en el sistema</small>
 
@@ -226,14 +311,19 @@ require_once __DIR__ . '/Layout/Header.php';
                 <article class="inicio-resumen-card">
 
                     <div class="inicio-resumen-icono">
-                        <i class="bi bi-box2-heart"></i>
+                        <i class="bi bi-box2-heart" aria-hidden="true"></i>
                     </div>
 
                     <div class="inicio-resumen-contenido">
 
-                        <span class="inicio-resumen-titulo">Insumos con stock bajo</span>
+                        <span class="inicio-resumen-titulo">
+                            Insumos con stock bajo
+                        </span>
 
-                        <strong class="inicio-resumen-cantidad" id="resumenStockBajo">0</strong>
+                        <strong
+                            class="inicio-resumen-cantidad"
+                            id="resumenStockBajo"
+                        >—</strong>
 
                         <small>Requieren reposición</small>
 
@@ -258,7 +348,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="inicio-panel-header">
 
                     <div class="inicio-panel-titulo">
-                        <i class="bi bi-calendar2-heart"></i>
+                        <i class="bi bi-calendar2-heart" aria-hidden="true"></i>
                         <span>Agendamientos de hoy</span>
                     </div>
 
@@ -267,7 +357,7 @@ require_once __DIR__ . '/Layout/Header.php';
                         class="inicio-panel-enlace"
                     >
                         Ver agendamientos
-                        <i class="bi bi-arrow-right"></i>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </a>
 
                 </div>
@@ -279,29 +369,33 @@ require_once __DIR__ . '/Layout/Header.php';
 
                         <div class="inicio-estado inicio-estado-activo">
                             <span>En atención</span>
-                            <strong id="inicioEnAtencion">0</strong>
+                            <strong id="inicioEnAtencion">—</strong>
                         </div>
 
                         <div class="inicio-estado inicio-estado-espera">
                             <span>En espera</span>
-                            <strong id="inicioEnEspera">0</strong>
+                            <strong id="inicioEnEspera">—</strong>
                         </div>
 
                         <div class="inicio-estado inicio-estado-finalizado">
                             <span>Finalizados</span>
-                            <strong id="inicioFinalizadosHoy">0</strong>
+                            <strong id="inicioFinalizadosHoy">—</strong>
                         </div>
 
                     </div>
 
                     <!-- Lista de agendamientos del día -->
-                    <div class="inicio-lista" id="inicioListaAgendamientos">
+                    <div
+                        class="inicio-lista"
+                        id="inicioListaAgendamientos"
+                        role="list"
+                    >
 
-                        <div class="inicio-vacio">
-                            <i class="bi bi-calendar2-x"></i>
+                        <div class="inicio-vacio" role="listitem">
+                            <i class="bi bi-calendar2-x" aria-hidden="true"></i>
 
                             <p>
-                                No hay agendamientos registrados para hoy.
+                                El listado aparecerá al completar la consulta.
                             </p>
                         </div>
 
@@ -318,30 +412,37 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="inicio-panel-header">
 
                     <div class="inicio-panel-titulo">
-                        <i class="bi bi-box2-heart"></i>
+                        <i class="bi bi-box2-heart" aria-hidden="true"></i>
                         <span>Alertas de stock</span>
                     </div>
 
+                    <?php if (!$esEspecialistaInicio): ?>
+                    <!-- Acceso a Insumos para la Administradora del Negocio -->
                     <a
                         href="Index.php?url=insumos"
                         class="inicio-panel-enlace"
                     >
                         Ver insumos
-                        <i class="bi bi-arrow-right"></i>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </a>
+                    <?php endif; ?>
 
                 </div>
 
                 <div class="inicio-panel-body">
 
                     <!-- Lista de insumos que requieren reposición -->
-                    <div class="inicio-lista" id="inicioListaStock">
+                    <div
+                        class="inicio-lista"
+                        id="inicioListaStock"
+                        role="list"
+                    >
 
-                        <div class="inicio-vacio">
-                            <i class="bi bi-box2-heart-fill"></i>
+                        <div class="inicio-vacio" role="listitem">
+                            <i class="bi bi-box2-heart-fill" aria-hidden="true"></i>
 
                             <p>
-                                No hay alertas de stock por mostrar.
+                                Las alertas aparecerán al completar la consulta.
                             </p>
                         </div>
 
@@ -363,9 +464,10 @@ require_once __DIR__ . '/Layout/Header.php';
             <!-- Servicios más solicitados -->
             <article class="inicio-panel">
 
-                <div class="inicio-panel-header">
+                <div class="inicio-panel-header flex-wrap">
 
                     <div class="inicio-panel-titulo">
+
                         <span class="servicio-icono" aria-hidden="true">
                             <svg viewBox="0 0 64 64">
 
@@ -375,9 +477,9 @@ require_once __DIR__ . '/Layout/Header.php';
                                 <path d="M32 10V22"></path>
                                 <path d="M36 10V22"></path>
                                 <path d="M24 28H29"></path>
-                                <path d="M35 28H40"></path>
-                                <path d="M29 28C29 30 28 31 26 31"></path>
                                 <path d="M35 28C35 30 36 31 38 31"></path>
+                                <path d="M29 28C29 30 28 31 26 31"></path>
+                                <path d="M35 28H40"></path>
 
                                 <!-- Cuerpo del frasco -->
                                 <path
@@ -404,20 +506,31 @@ require_once __DIR__ . '/Layout/Header.php';
                         </span>
 
                         <span>Servicios más solicitados</span>
+
                     </div>
+
+                    <!-- Mes consultado -->
+                    <small
+                        class="inicio-panel-enlace inicio-mes-etiqueta text-nowrap"
+                        data-mes-inicio
+                    >—</small>
 
                 </div>
 
                 <div class="inicio-panel-body">
 
                     <!-- Listado de servicios más solicitados -->
-                    <div class="inicio-lista" id="inicioServiciosSolicitados">
+                    <div
+                        class="inicio-lista"
+                        id="inicioServiciosSolicitados"
+                        role="list"
+                    >
 
-                        <div class="inicio-vacio">
-                            <i class="bi bi-clipboard2-heart"></i>
+                        <div class="inicio-vacio" role="listitem">
+                            <i class="bi bi-clipboard2-heart" aria-hidden="true"></i>
 
                             <p>
-                                Todavía no hay servicios registrados para mostrar.
+                                Los servicios aparecerán al completar la consulta.
                             </p>
                         </div>
 
@@ -431,18 +544,27 @@ require_once __DIR__ . '/Layout/Header.php';
             <!-- Resumen mensual -->
             <article class="inicio-panel">
 
-                <div class="inicio-panel-header">
+                <div class="inicio-panel-header flex-wrap">
 
                     <div class="inicio-panel-titulo">
-                        <i class="bi bi-bar-chart-line"></i>
+                        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
                         <span>Resumen mensual</span>
                     </div>
+
+                    <!-- Mes consultado -->
+                    <small
+                        class="inicio-panel-enlace inicio-mes-etiqueta text-nowrap"
+                        data-mes-inicio
+                    >—</small>
 
                 </div>
 
                 <div class="inicio-panel-body">
 
-                    <div class="inicio-metricas">
+                    <div
+                        class="inicio-metricas"
+                        style="grid-template-columns: repeat(2, minmax(0, 1fr));"
+                    >
 
                         <!-- Servicios realizados en el mes -->
                         <div class="inicio-metrica">
@@ -456,9 +578,9 @@ require_once __DIR__ . '/Layout/Header.php';
                                     <path d="M32 10V22"></path>
                                     <path d="M36 10V22"></path>
                                     <path d="M24 28H29"></path>
-                                    <path d="M35 28H40"></path>
-                                    <path d="M29 28C29 30 28 31 26 31"></path>
                                     <path d="M35 28C35 30 36 31 38 31"></path>
+                                    <path d="M29 28C29 30 28 31 26 31"></path>
+                                    <path d="M35 28H40"></path>
 
                                     <!-- Cuerpo del frasco -->
                                     <path
@@ -484,29 +606,43 @@ require_once __DIR__ . '/Layout/Header.php';
                                 </svg>
                             </span>
 
-                            <strong id="inicioServiciosMes">0</strong>
+                            <strong id="inicioServiciosMes">—</strong>
 
                             <span>Servicios realizados</span>
 
                         </div>
 
-                        <!-- Clientas registradas en el mes -->
+
+                        <!-- Clientas en su primera atención realizada -->
                         <div class="inicio-metrica">
 
-                            <i class="bi bi-person-heart"></i>
+                            <i class="bi bi-person-heart" aria-hidden="true"></i>
 
-                            <strong id="inicioClientasMes">0</strong>
+                            <strong id="inicioClientasMes">—</strong>
 
                             <span>Clientas nuevas</span>
 
                         </div>
 
+
+                        <!-- Clientas distintas atendidas durante el mes -->
+                        <div class="inicio-metrica">
+
+                            <i class="bi bi-person-check" aria-hidden="true"></i>
+
+                            <strong id="inicioClientasAtendidasMes">—</strong>
+
+                            <span>Clientas atendidas</span>
+
+                        </div>
+
+
                         <!-- Agendamientos atendidos en el mes -->
                         <div class="inicio-metrica">
 
-                            <i class="bi bi-calendar2-heart-fill"></i>
+                            <i class="bi bi-calendar2-heart-fill" aria-hidden="true"></i>
 
-                            <strong id="inicioAgendamientosMes">0</strong>
+                            <strong id="inicioAgendamientosMes">—</strong>
 
                             <span>Agendamientos atendidos</span>
 
@@ -520,6 +656,54 @@ require_once __DIR__ . '/Layout/Header.php';
 
         </div>
 
+
+        <!-- ===================================================== -->
+        <!-- ACTUALIZAR LOS DATOS DEL INICIO -->
+        <!-- ===================================================== -->
+
+        <div class="inicio-acciones d-flex justify-content-end mt-3">
+
+            <button
+                type="button"
+                class="btn-templo-secondary inicio-actualizar-btn"
+                id="btnActualizarInicio"
+            >
+                <svg
+                    class="icono-recargar-corazon"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                    focusable="false"
+                >
+                    <!-- Trazo circular de recarga -->
+                    <path
+                        d="M51 42A21.5 21.5 0 1 1 47 17"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="4"
+                        stroke-linecap="round"
+                    />
+
+                    <!-- La curva se une al centro superior del corazón -->
+                    <path
+                        d="M47 17
+                           C44 12 37 13 37 19
+                           C37 24 43 28 47 31
+                           C51 28 57 24 57 19
+                           C57 13 50 12 47 17Z"
+                        transform="rotate(-45 47 17)"
+                        fill="currentColor"
+                    />
+                </svg>
+
+                <span>Actualizar</span>
+            </button>
+
+        </div>
+        <?php endif; ?>
+
     </div>
 
 </section>
@@ -531,7 +715,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 
-$scriptVista = 'Assets/js/inicio.js';
+$scriptVista = $esAdministradorSistemaInicio ? null : 'Assets/js/inicio.js?v=2';
 
 require_once __DIR__ . '/Layout/Footer.php';
 

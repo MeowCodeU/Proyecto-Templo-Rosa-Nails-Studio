@@ -2,6 +2,8 @@
 /* GESTIÓN DE CONFIGURACIÓN */
 /* ===================================================== */
 
+import { Validaciones } from "./validaciones/validaciones.js";
+
 $(function () {
     "use strict";
 
@@ -21,6 +23,7 @@ $(function () {
     const catalogos = [
         {
             clave: "servicios",
+            reglas: Validaciones.reglasServicios,
             titulo: "Servicios",
             registro: "servicio",
             tabla: "#tablaConfigServicios",
@@ -45,6 +48,7 @@ $(function () {
         },
         {
             clave: "estados_agendamiento",
+            reglas: Validaciones.reglasEstadosAgendamiento,
             titulo: "Estados de agendamiento",
             registro: "estado de agendamiento",
             tabla: "#tablaConfigEstadosAgendamiento",
@@ -67,6 +71,7 @@ $(function () {
         },
         {
             clave: "tipos_agendamiento",
+            reglas: Validaciones.reglasTiposAgendamiento,
             titulo: "Tipos de agendamiento",
             registro: "tipo de agendamiento",
             tabla: "#tablaConfigTiposAgendamiento",
@@ -118,7 +123,7 @@ $(function () {
             ? catalogo.elementoTabla.DataTable()
             : catalogo.elementoTabla.DataTable({
                 language: {
-                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
+                    url: "Assets/libs/datatables/i18n/es-ES.json"
                 },
                 pageLength: 4,
                 lengthMenu: [4, 8, 16, 20],
@@ -132,6 +137,7 @@ $(function () {
 
         if (tablaExistente) habilitarTabla();
     });
+
 
     /* Ajustar las columnas al mostrar una pestaña */
     $("#configTabs").on("shown.bs.tab", 'button[data-bs-toggle="tab"]', function () {
@@ -165,7 +171,11 @@ $(function () {
                         ? respuesta.mensaje
                         : "No se pudo confirmar la operación. Actualice la lista antes de repetirla.";
 
-                    reject(new Error(mensaje));
+                    const error = new Error(mensaje);
+
+                    error.errores = $.isPlainObject(respuesta?.errores) ? respuesta.errores : {};
+
+                    reject(error);
                 },
 
                 error: function (xhr, estado) {
@@ -184,6 +194,7 @@ $(function () {
                         typeof xhr.responseJSON?.mensaje === "string" ? xhr.responseJSON.mensaje : mensaje
                     );
 
+                    error.errores = $.isPlainObject(xhr.responseJSON?.errores) ? xhr.responseJSON.errores : {};
                     error.status = xhr.status;
                     error.respuesta = xhr.responseJSON;
 
@@ -198,7 +209,11 @@ $(function () {
     /* MENSAJES DEL CATÁLOGO Y DEL FORMULARIO */
     /* ================================================= */
 
-    function mostrarMensaje(catalogo, texto, esError = false, reintentar = false) {
+    function mostrarMensaje(catalogo, texto, esError = false, reintentar = false, tipoAviso = null) {
+        if (!redirigiendo && window.Alertas?.disponible()) {
+            window.Alertas.notificar(texto, tipoAviso || (esError ? "error" : "success"));
+        }
+
         catalogo.mensaje
             .empty()
             .text(texto)
@@ -221,8 +236,10 @@ $(function () {
                     if (await actualizarLista(catalogo)) {
                         mostrarMensaje(catalogo, "Lista actualizada correctamente.");
                     }
+
                 } catch (error) {
                     mostrarMensaje(catalogo, error.message, true, true);
+
                 } finally {
                     boton.prop("disabled", false);
                 }
@@ -230,12 +247,13 @@ $(function () {
         }
     }
 
+
     function mensajeFormulario(formulario) {
         let mensaje = formulario.find(".configuracion-mensaje-formulario");
 
         if (!mensaje.length) {
             mensaje = $("<div>", {
-                class: "alert alert-danger configuracion-mensaje-formulario",
+                class: "estado-error configuracion-mensaje-formulario mb-3",
                 role: "alert",
                 hidden: true
             }).prependTo(formulario.find(".modal-body").first());
@@ -246,15 +264,45 @@ $(function () {
 
 
     /* ================================================= */
+    /* VALIDACIONES DE LOS FORMULARIOS */
+    /* ================================================= */
+
+    function reglasFormulario(catalogo, formulario) {
+        const modal = "#" + formulario.closest(".modal").attr("id");
+        const reglas = modal === catalogo.desactivar ? {} : { ...catalogo.reglas };
+
+        if (modal !== catalogo.nuevo) {
+            reglas[catalogo.identificador] = {
+                comprobar: valor => Validaciones.validarEntero(valor, 1)
+                    ? null : "No se pudo identificar el registro seleccionado."
+            };
+        }
+
+        return reglas;
+    }
+
+
+    catalogos.forEach(function (catalogo) {
+        catalogo.modales.find("form").each(function () {
+            this.noValidate = true;
+
+            Validaciones.activar(this, reglasFormulario(catalogo, $(this)));
+        });
+    });
+
+
+    /* ================================================= */
     /* BOTONES Y FILAS DEL LISTADO */
     /* ================================================= */
 
     function crearBoton(catalogo, registro, desactivar = false) {
         const boton = $("<button>", {
             type: "button",
-            class: "btn-action " + (desactivar
-                ? "btn-deactivate " + catalogo.botonDesactivar
-                : "btn-edit " + catalogo.botonEditar),
+            class: "btn-action " + (
+                desactivar
+                    ? "btn-deactivate " + catalogo.botonDesactivar
+                    : "btn-edit " + catalogo.botonEditar
+            ),
             "data-bs-toggle": "modal",
             "data-bs-target": desactivar ? catalogo.desactivar : catalogo.editar,
             title: (desactivar ? "Desactivar " : "Editar ") + catalogo.registro,
@@ -270,6 +318,7 @@ $(function () {
             "aria-hidden": "true"
         }));
     }
+
 
     function crearFila(catalogo, registro) {
         const fila = $("<tr>");
@@ -288,7 +337,11 @@ $(function () {
 
         const acciones = $("<div>", { class: "btn-group-actions" });
 
-        acciones.append(crearBoton(catalogo, registro), crearBoton(catalogo, registro, true));
+        acciones.append(
+            crearBoton(catalogo, registro),
+            crearBoton(catalogo, registro, true)
+        );
+
         $("<td>").append(acciones).appendTo(fila);
 
         return fila[0];
@@ -374,6 +427,9 @@ $(function () {
             }
 
             formulario[0].reset();
+
+            Validaciones.limpiarFormulario(formulario[0]);
+
             mensajeFormulario(formulario).empty().prop("hidden", true);
 
             if ("#" + modal.attr("id") === catalogo.editar) {
@@ -396,9 +452,11 @@ $(function () {
             }
         });
 
+
         catalogo.modales.on("hide.bs.modal", function (evento) {
             if ($(this).find("form").data("enviando")) evento.preventDefault();
         });
+
 
         catalogo.modales.on("hidden.bs.modal", function () {
             const modal = $(this);
@@ -407,6 +465,9 @@ $(function () {
             if (!formulario.length) return;
 
             formulario[0].reset();
+
+            Validaciones.limpiarFormulario(formulario[0]);
+
             mensajeFormulario(formulario).empty().prop("hidden", true);
 
             if ("#" + modal.attr("id") === catalogo.desactivar) {
@@ -427,7 +488,20 @@ $(function () {
             const formulario = $(this);
             const aviso = mensajeFormulario(formulario).empty().prop("hidden", true);
 
-            if (!this.reportValidity()) return;
+            Validaciones.limpiarFormulario(this);
+
+            const validacion = Validaciones.validarFormulario(
+                this,
+                reglasFormulario(catalogo, formulario)
+            );
+
+            if (!validacion.valido) {
+                aviso.text("Revise los campos señalados.").prop("hidden", false);
+
+                if (validacion.primerCampo?.type !== "hidden") validacion.primerCampo?.focus();
+
+                return;
+            }
 
             const datos = {};
 
@@ -440,7 +514,11 @@ $(function () {
             formulario.find("input, select, textarea, button").each(function () {
                 const elemento = $(this);
 
-                controles.push({ elemento, deshabilitado: elemento.prop("disabled") });
+                controles.push({
+                    elemento,
+                    deshabilitado: elemento.prop("disabled")
+                });
+
                 elemento.prop("disabled", true);
             });
 
@@ -448,12 +526,16 @@ $(function () {
             const contenidoBoton = enviar.html();
 
             enviar.text("Procesando...");
+
             formulario.data("enviando", true).attr("aria-busy", "true");
+
             operacionEnCurso = true;
             ++catalogo.versionLista;
+
             catalogo.elementoTabla.attr("aria-busy", "false");
             catalogo.mensaje.prop("hidden", true);
 
+            let primerCampo = null;
             let respuestaConfirmada = null;
             let mensajeExito = "Operación completada.";
 
@@ -472,24 +554,26 @@ $(function () {
                 };
 
                 /* Completar el cierre si el formulario todavía estaba abriéndose */
-                modal.one("shown.bs.modal", cerrarModal);
+                if (modal.hasClass("show")) modal.one("shown.bs.modal", cerrarModal);
 
-                modal.one("hidden.bs.modal", function () {
+                if (modal.hasClass("show")) modal.one("hidden.bs.modal", function () {
                     modal.off("shown.bs.modal", cerrarModal);
                 });
 
                 cerrarModal();
-                mostrarMensaje(catalogo, mensajeExito);
 
                 try {
                     await actualizarLista(catalogo);
+
+                    mostrarMensaje(catalogo, mensajeExito);
 
                 } catch (error) {
                     mostrarMensaje(
                         catalogo,
                         mensajeExito + " No se pudo actualizar la lista. La operación ya fue confirmada.",
                         true,
-                        true
+                        true,
+                        "warning"
                     );
                 }
 
@@ -500,11 +584,17 @@ $(function () {
                         mensajeExito + " No se pudo actualizar la vista. " +
                         "La operación ya fue confirmada; actualice la lista antes de repetirla.",
                         true,
-                        true
+                        true,
+                        "warning"
                     );
 
                 } else if (!redirigiendo) {
+                    window.Alertas?.rechazo(error.message, error, formulario);
+
                     aviso.text(error.message).prop("hidden", false);
+
+                    primerCampo = Validaciones.mostrarErrores(this, error.errores);
+
                     formulario.find(".modal-body").scrollTop(0);
                 }
 
@@ -514,8 +604,12 @@ $(function () {
                 });
 
                 enviar.html(contenidoBoton);
+
                 formulario.data("enviando", false).attr("aria-busy", "false");
+
                 operacionEnCurso = false;
+
+                if (primerCampo && !redirigiendo) primerCampo.focus();
             }
         });
     });
