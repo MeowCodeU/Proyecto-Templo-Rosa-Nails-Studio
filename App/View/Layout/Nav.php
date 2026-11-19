@@ -1,7 +1,16 @@
 <?php
 
+use App\Components\RestriccionesRol;
+use App\Components\Session;
+
 /* Identificar el módulo para resaltar su enlace en la navegación */
 $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
+
+/* Identificar el rol para organizar el menú de escritorio */
+$usuarioActual = Session\obtenerUsuario();
+$idRolActual = (int) ($usuarioActual['id_rol'] ?? 0);
+$esEspecialista = $idRolActual === 2;
+$esAdministradorSistema = $idRolActual === 3;
 
 ?>
 
@@ -18,6 +27,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
     <!-- Módulos principales y logo central -->
     <ul class="dock-menu dock-menu-balanced" id="dockMenu">
 
+        <?php if (RestriccionesRol\puedeAcceder('inicio') && !$esAdministradorSistema): ?>
         <!-- Inicio -->
         <li class="dock-item <?= ($moduloActual === 'inicio') ? 'active' : ''; ?>">
 
@@ -63,8 +73,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
 
+        <?php if (RestriccionesRol\puedeAcceder('clientes')): ?>
         <!-- Clientes -->
         <li class="dock-item <?= ($moduloActual === 'clientes') ? 'active' : ''; ?>">
 
@@ -79,8 +91,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
 
+        <?php if (RestriccionesRol\puedeAcceder('agendamiento') && !$esEspecialista): ?>
         <!-- Agendamiento -->
         <li class="dock-item <?= ($moduloActual === 'agendamiento') ? 'active' : ''; ?>">
 
@@ -95,6 +109,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
 
         <!-- Logo central -->
@@ -118,8 +133,27 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
         </li>
 
 
+        <?php if ($esEspecialista && RestriccionesRol\puedeAcceder('agendamiento')): ?>
+        <!-- Agendamiento -->
+        <li class="dock-item <?= ($moduloActual === 'agendamiento') ? 'active' : ''; ?>" style="--base-y: -6px;">
+
+            <a href="Index.php?url=agendamiento">
+
+                <span class="icon" aria-hidden="true">
+                    <i class="bi bi-calendar-heart"></i>
+                </span>
+
+                <span class="label">Agendamiento</span>
+
+            </a>
+
+        </li>
+        <?php endif; ?>
+
+
+        <?php if (RestriccionesRol\puedeAcceder('registroServicio')): ?>
         <!-- Servicios -->
-        <li class="dock-item <?= ($moduloActual === 'registroServicio') ? 'active' : ''; ?>">
+        <li class="dock-item <?= ($moduloActual === 'registroServicio') ? 'active' : ''; ?>" <?= $esEspecialista ? 'style="--base-y: -14px;"' : ''; ?>>
 
             <a href="Index.php?url=registroServicio">
 
@@ -171,8 +205,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
 
+        <?php if (RestriccionesRol\puedeAcceder('insumos')): ?>
         <!-- Insumos -->
         <li class="dock-item <?= ($moduloActual === 'insumos') ? 'active' : ''; ?>">
 
@@ -187,8 +223,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
 
+        <?php if (RestriccionesRol\puedeAcceder('proveedores')): ?>
         <!-- Proveedores -->
         <li class="dock-item <?= ($moduloActual === 'proveedores') ? 'active' : ''; ?>">
 
@@ -253,6 +291,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             </a>
 
         </li>
+        <?php endif; ?>
 
     </ul>
 
@@ -354,6 +393,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
             <!-- Navegación principal -->
             <ul class="mobile-menu-list">
 
+                <?php if (!$esAdministradorSistema && RestriccionesRol\puedeAcceder('inicio')): ?>
                 <!-- Inicio -->
                 <li>
 
@@ -406,8 +446,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
+                <?php if (RestriccionesRol\puedeAcceder('clientes')): ?>
                 <!-- Clientes -->
                 <li>
 
@@ -426,8 +468,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
+                <?php if (RestriccionesRol\puedeAcceder('agendamiento')): ?>
                 <!-- Agendamiento -->
                 <li>
 
@@ -446,8 +490,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
+                <?php if (RestriccionesRol\puedeAcceder('registroServicio')): ?>
                 <!-- Servicios -->
                 <li>
 
@@ -476,9 +522,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                                 <path d="M32 10V22"></path>
                                 <path d="M36 10V22"></path>
                                 <path d="M24 28H29"></path>
-                                <path d="M35 28H40"></path>
-                                <path d="M29 28C29 30 28 31 26 31"></path>
                                 <path d="M35 28C35 30 36 31 38 31"></path>
+                                <path d="M29 28C29 30 28 31 26 31"></path>
+                                <path d="M24 28H29"></path>
+                                <path d="M35 28H40"></path>
 
                                 <path
                                     d="M18 31H46L44 50
@@ -508,8 +555,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
+                <?php if (RestriccionesRol\puedeAcceder('insumos')): ?>
                 <!-- Insumos -->
                 <li>
 
@@ -528,8 +577,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
 
+                <?php if (RestriccionesRol\puedeAcceder('proveedores')): ?>
                 <!-- Proveedores -->
                 <li>
 
@@ -580,7 +631,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                                     d="M24.5 35
                                        C23.5 33 21 32.5 21 30.5
                                        C21 29 22.5 28 24.5 28
-                                       C25.5 28 26.5 28.5 27 29.5
+                                       C25.5 28 26.5 28 27 29.5
                                        C27.5 28.5 28.5 28 29.5 28
                                        C31.5 28 33 29 33 30.5
                                        C33 32.5 30.5 33 29.5 35
@@ -597,6 +648,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                     </a>
 
                 </li>
+                <?php endif; ?>
 
             </ul>
 
@@ -606,11 +658,12 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
 
                 <ul class="mobile-access-list">
 
+                    <?php if (RestriccionesRol\puedeAcceder('manual')): ?>
                     <!-- Manual de usuario -->
                     <li>
 
                         <a
-                            href="#"
+                            href="Index.php?url=manual"
                             class="mobile-access-link"
                             title="Manual de usuario"
                         >
@@ -668,7 +721,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                                            C16.9 42.4 14.4 42.3 13.4 44
                                            C12.3 45.8 13.3 47.9 18 51.5
                                            C22.7 47.9 23.7 45.8 22.6 44
-                                           C21.6 42.3 19.1 42.4 18 44Z"
+                                           C21.6 42.3 19.1 22.4 18 44Z"
                                     ></path>
 
                                 </svg>
@@ -680,8 +733,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                         </a>
 
                     </li>
+                    <?php endif; ?>
 
 
+                    <?php if (RestriccionesRol\puedeAcceder('seguridad')): ?>
                     <!-- Seguridad -->
                     <li>
 
@@ -744,8 +799,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                         </a>
 
                     </li>
+                    <?php endif; ?>
 
 
+                    <?php if (RestriccionesRol\puedeAcceder('configuracion')): ?>
                     <!-- Configuración -->
                     <li>
 
@@ -764,8 +821,10 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                         </a>
 
                     </li>
+                    <?php endif; ?>
 
 
+                    <?php if (RestriccionesRol\puedeAcceder('reportes')): ?>
                     <!-- Reportes -->
                     <li>
 
@@ -784,6 +843,7 @@ $moduloActual = $moduloActual ?? ($_GET['url'] ?? 'inicio');
                         </a>
 
                     </li>
+                    <?php endif; ?>
 
                 </ul>
 

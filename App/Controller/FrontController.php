@@ -2,7 +2,8 @@
 
 namespace App\Controller;
 
-use App\Controller\Components\Session;
+use App\Components\Session;
+use App\Components\RestriccionesRol;
 
 
 /* ===================================================== */
@@ -33,7 +34,7 @@ class FrontController
             $this->url = trim((string) $_GET['url']);
 
         } else {
-            $this->url = Session::estaAutenticada() ? 'inicio' : 'login';
+            $this->url = Session\estaAutenticada() ? 'inicio' : 'login';
         }
 
 
@@ -47,7 +48,7 @@ class FrontController
 
         /* Procesar el cierre de sesión */
         if ($this->url === 'logout') {
-            Session::cerrar();
+            Session\cerrar();
 
             header('Location: Index.php?url=login');
 
@@ -73,10 +74,14 @@ class FrontController
         }
 
 
-        /* Permitir el acceso cuando la sesión esté activa y vigente */
-        $teniaSesion = Session::estaAutenticada();
+        /* Comprobar la sesión y los permisos del rol */
+        $teniaSesion = Session\estaAutenticada();
 
-        if ($teniaSesion && Session::validarVigencia()) {
+        if ($teniaSesion && Session\validarVigencia()) {
+            if (!RestriccionesRol\puedeAcceder($this->url)) {
+                $this->mostrarError403();
+            }
+
             return;
         }
 
@@ -145,6 +150,35 @@ class FrontController
         }
 
         $this->mostrarError404();
+    }
+
+
+    /* ================================================= */
+    /* RESPUESTA DE ACCESO NO AUTORIZADO */
+    /* ================================================= */
+
+    private function mostrarError403(): void
+    {
+        http_response_code(403);
+
+        /* Responder con JSON a las solicitudes asíncronas */
+        if ($this->esPeticionAjax()) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+
+            echo json_encode(
+                [
+                    'ok' => false,
+                    'mensaje' => 'No tiene permiso para acceder a este módulo.'
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+
+            exit;
+        }
+
+        echo 'Error 403: no tiene permiso para acceder a este módulo.';
+        exit;
     }
 
 
