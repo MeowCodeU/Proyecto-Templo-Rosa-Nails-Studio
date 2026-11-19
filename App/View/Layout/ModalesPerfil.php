@@ -18,6 +18,12 @@ $telefonoPerfil = $datosPerfil['telefono'] ?? '';
 $correoPerfil = $datosPerfil['correo'] ?? '';
 $fotoPerfil = $datosPerfil['foto_perfil'] ?? '';
 
+/* Mostrar el nombre completo de la persona, independientemente del nickname */
+$nombreCompletoPerfil = trim(
+    (string) ($datosPerfil['nombre'] ?? '') . ' ' .
+    (string) ($datosPerfil['apellido'] ?? '')
+);
+
 if (trim((string) $fotoPerfil) === '') {
     $fotoPerfil = 'Assets/img/LogoTR.png';
 }
@@ -565,6 +571,13 @@ HTML;
                             accept="image/jpeg, image/png, image/webp"
                             class="d-none"
                         >
+
+                        <?php if ($nombreCompletoPerfil !== ''): ?>
+                        <!-- Nombre completo de la persona autenticada -->
+                        <p class="fw-bold mt-3 mb-1" id="nombreCompletoPerfil">
+                            <?= $escaparPerfil($nombreCompletoPerfil); ?>
+                        </p>
+                        <?php endif; ?>
 
                         <p class="profile-photo-help">
                             Haz clic sobre la imagen para cambiar la foto

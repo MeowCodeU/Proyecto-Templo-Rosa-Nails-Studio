@@ -5,6 +5,40 @@
 $(function () {
     "use strict";
 
+    /* Cargar las reglas compartidas sin cambiar los scripts de las vistas */
+    const cargaValidaciones = import("./validaciones/validaciones.js")
+        .then(function (modulo) {
+            const validaciones = modulo.Validaciones;
+
+            return {
+                validaciones,
+
+                login: Object.freeze({
+                    cedula: validaciones.reglasClientes.cedula,
+                    clave: {
+                        comprobar: valor => typeof valor === "string" && valor !== "" && !valor.includes("\0")
+                            ? null : "Ingrese una contraseña válida."
+                    }
+                }),
+
+                universal: Object.freeze({
+                    clave_universal: {
+                        comprobar: function (valor) {
+                            if (typeof valor !== "string" || valor.includes("\0")) {
+                                return "La clave universal ingresada no es válida.";
+                            }
+
+                            return valor.trim() === "" ? "Debe ingresar la clave universal." : null;
+                        }
+                    }
+                })
+            };
+
+        }).catch(function () {
+            return null;
+        });
+
+
     /* ================================================= */
     /* VISIBILIDAD DE LA CONTRASEÑA */
     /* ================================================= */
@@ -87,29 +121,131 @@ $(function () {
     $("#formLogin, #formClaveAdmin").each(function () {
         const formulario = $(this);
         const esLogin = formulario.attr("id") === "formLogin";
-        const aviso = $(".login-access-header .login-message").first();
+        const aviso = formulario.closest(".login-content")
+            .find(".login-access-header .login-message").first();
 
         let enviando = false;
+        let preparandoEnvio = false;
         let redirigiendo = false;
 
 
-        /* Mostrar los mensajes en el espacio reservado de la vista */
-        function mostrarMensaje(mensaje) {
-            aviso.text(mensaje).prop("hidden", false);
+        /* Utilizar el aviso reservado sin modificar la distribución del frasco */
+        formulario.prop("noValidate", true);
+
+        const mensajeInicial = aviso.text().trim();
+
+        if (mensajeInicial && window.Alertas?.disponible()) {
+            window.Alertas.notificar(
+                mensajeInicial,
+                aviso.attr("data-tipo-aviso") || "error"
+            );
         }
 
 
-        /* Validar y enviar los datos del formulario */
+        function limpiarMensajes() {
+            aviso.empty().prop("hidden", true);
+            formulario.find("[aria-invalid]").removeAttr("aria-invalid");
+        }
+
+
+        /* Mostrar los mensajes en el espacio reservado de la vista */
+        function mostrarMensaje(mensaje, errores = null, campoError = "") {
+            aviso.text(mensaje).prop("hidden", false);
+
+            let primerCampo = null;
+
+            if ($.isPlainObject(errores)) {
+                Object.keys(errores).forEach(function (nombre) {
+                    const campo = formulario.find("[name]").filter(function () {
+                        return this.name === nombre;
+                    }).first();
+
+                    if (!campo.length || campo.prop("type") === "hidden") return;
+
+                    campo.attr("aria-invalid", "true");
+
+                    if (!primerCampo) primerCampo = campo;
+                });
+            }
+
+            if (!primerCampo && campoError) {
+                const campo = formulario.find("[name]").filter(function () {
+                    return this.name === campoError;
+                }).first();
+
+                if (campo.length && campo.prop("type") !== "hidden") {
+                    campo.attr("aria-invalid", "true");
+                    primerCampo = campo;
+                }
+            }
+
+            if (primerCampo) primerCampo.trigger("focus");
+        }
+
+
+        /* Retirar el aviso anterior cuando se corrige la entrada */
+        formulario.on("input change", "[name]", function () {
+            $(this).removeAttr("aria-invalid");
+            aviso.empty().prop("hidden", true);
+        });
+
+
+        /* Comprobar los valores con las reglas comunes */
+        function validarAcceso(configuracion) {
+            const reglas = esLogin ? configuracion.login : configuracion.universal;
+            const errores = {};
+
+            Object.keys(reglas).forEach(function (nombre) {
+                const campo = formulario.find("[name]").filter(function () {
+                    return this.name === nombre;
+                }).first();
+
+                if (!campo.length) return;
+
+                const mensaje = configuracion.validaciones.validarValor(nombre, campo.val(), reglas);
+
+                if (mensaje) errores[nombre] = mensaje;
+            });
+
+            return errores;
+        }
+
+
         formulario.on("submit", async function (evento) {
             evento.preventDefault();
 
-            if (enviando || redirigiendo || !this.reportValidity()) {
+            if (enviando || preparandoEnvio || redirigiendo) return;
+
+            preparandoEnvio = true;
+
+            let configuracion = null;
+
+            try {
+                configuracion = await cargaValidaciones;
+
+            } finally {
+                preparandoEnvio = false;
+            }
+
+            limpiarMensajes();
+
+            if (!configuracion) {
+                mostrarMensaje("No se cargaron las validaciones. Recargue la página.");
+                return;
+            }
+
+            const errores = validarAcceso(configuracion);
+
+            if (Object.keys(errores).length) {
+                mostrarMensaje(Object.values(errores)[0], errores);
                 return;
             }
 
             const datos = {};
             const estadosControles = [];
             const etiquetasBotones = [];
+
+            let avisoPendiente = null;
 
 
             /* Recoger los datos antes de deshabilitar los controles */
@@ -151,53 +287,47 @@ $(function () {
             /* Impedir envíos repetidos durante la solicitud */
             enviando = true;
 
-            aviso.text("").prop("hidden", true);
-
             formulario.attr("aria-busy", "true");
             formulario.find(":input").prop("disabled", true);
 
             try {
                 const respuesta = await solicitarAcceso(formulario.attr("action"), datos);
 
-
-                /* Mantener el formulario abierto si los datos son rechazados */
                 if (!respuesta || respuesta.ok !== true) {
-                    mostrarMensaje(
-                        typeof respuesta?.mensaje === "string"
-                            ? respuesta.mensaje
-                            : "No fue posible validar los datos. Intente nuevamente."
-                    );
+                    avisoPendiente = {
+                        mensaje: typeof respuesta?.mensaje === "string"
+                            ? respuesta.mensaje : "No fue posible validar los datos. Intente nuevamente.",
+                        errores: respuesta?.errores,
+                        campo: typeof respuesta?.campo === "string" ? respuesta.campo : ""
+                    };
 
-                    return;
+                } else {
+                    redirigiendo = true;
+
+                    window.location.assign(
+                        esLogin
+                            ? "Index.php?url=inicio"
+                            : "Index.php?url=registroUsuario"
+                    );
                 }
 
-
-                /* Continuar hacia la ruta correspondiente al formulario */
-                redirigiendo = true;
-
-                window.location.assign(
-                    esLogin
-                        ? "Index.php?url=inicio"
-                        : "Index.php?url=registroUsuario"
-                );
-
             } catch (error) {
-                mostrarMensaje(
-                    error.message || "No fue posible completar la solicitud. Intente nuevamente."
-                );
+                const respuesta = error.respuesta;
+
+                avisoPendiente = {
+                    mensaje: error.message || "No fue posible completar la solicitud. Intente nuevamente.",
+                    errores: respuesta?.errores,
+                    campo: typeof respuesta?.campo === "string" ? respuesta.campo : ""
+                };
 
             } finally {
 
                 /* Mantener el bloqueo mientras se realiza la redirección */
                 if (!redirigiendo) {
-
-                    /* Recuperar el estado original de los controles */
                     estadosControles.forEach(function (control) {
                         control.elemento.prop("disabled", control.deshabilitado);
                     });
 
-
-                    /* Recuperar el contenido y los iconos de los botones */
                     etiquetasBotones.forEach(function (etiqueta) {
                         if (etiqueta.esInput) {
                             etiqueta.elemento.val(etiqueta.contenido);
@@ -207,7 +337,22 @@ $(function () {
                     });
 
                     formulario.removeAttr("aria-busy");
+
                     enviando = false;
+
+                    if (avisoPendiente) {
+                        mostrarMensaje(
+                            avisoPendiente.mensaje,
+                            avisoPendiente.errores,
+                            avisoPendiente.campo
+                        );
+
+                        window.Alertas?.rechazo(
+                            avisoPendiente.mensaje,
+                            { errores: avisoPendiente.errores },
+                            formulario
+                        );
+                    }
                 }
             }
         });

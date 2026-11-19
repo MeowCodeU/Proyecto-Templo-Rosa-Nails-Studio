@@ -2,6 +2,8 @@
 /* GESTIÓN DE SEGURIDAD */
 /* ===================================================== */
 
+import { Validaciones } from "./validaciones/validaciones.js";
+
 $(function () {
     "use strict";
 
@@ -16,6 +18,7 @@ $(function () {
     );
 
     let operacionEnCurso = false;
+    let redirigiendo = false;
     let versionLista = 0;
     let versionPersona = 0;
     let datosAutocompletados = false;
@@ -46,7 +49,7 @@ $(function () {
             ? $(selector).DataTable()
             : $(selector).DataTable({
                 language: {
-                    url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
+                    url: "Assets/libs/datatables/i18n/es-ES.json"
                 },
                 pageLength: cantidad,
                 lengthMenu: opciones,
@@ -62,6 +65,7 @@ $(function () {
 
         return { instancia, preparada };
     }
+
 
     const tablaUsuarios = prepararTabla("#tablaUsuarios", 5, [5, 10, 25, 50]);
     const tablaRoles = prepararTabla("#tablaRoles", 4, [4, 8, 16, 20]);
@@ -85,6 +89,7 @@ $(function () {
         }
     }
 
+
     function solicitarSeguridad(datos) {
         return new Promise(function (resolve, reject) {
             $.ajax({
@@ -107,11 +112,15 @@ $(function () {
                         return;
                     }
 
-                    reject(new Error(
+                    const error = new Error(
                         typeof respuesta?.mensaje === "string"
                             ? respuesta.mensaje
                             : "No se pudo confirmar la operación. Actualice la lista antes de repetirla."
-                    ));
+                    );
+
+                    error.errores = $.isPlainObject(respuesta?.errores) ? respuesta.errores : {};
+
+                    reject(error);
                 },
 
                 error: function (xhr, estado) {
@@ -120,19 +129,27 @@ $(function () {
                     }
 
                     if (xhr.status === 401) {
+                        redirigiendo = true;
+
                         window.location.assign("Index.php?url=login&sesion=expirada");
                     }
 
                     const ambiguo = xhr.status === 0 || estado === "timeout" || estado === "parsererror";
+
                     const mensaje = ambiguo
                         ? "No se pudo confirmar la respuesta. Actualice la lista antes de repetir la operación."
                         : "No fue posible completar la solicitud. Intente nuevamente.";
 
-                    reject(new Error(
+                    const error = new Error(
                         typeof xhr.responseJSON?.mensaje === "string"
                             ? xhr.responseJSON.mensaje
                             : mensaje
-                    ));
+                    );
+
+                    error.errores = $.isPlainObject(xhr.responseJSON?.errores) ? xhr.responseJSON.errores : {};
+                    error.status = xhr.status;
+
+                    reject(error);
                 }
             });
         });
@@ -143,7 +160,11 @@ $(function () {
     /* MENSAJES DEL MÓDULO Y DE LOS FORMULARIOS */
     /* ================================================= */
 
-    function mostrarMensaje(texto, esError = false, reintentar = false) {
+    function mostrarMensaje(texto, esError = false, reintentar = false, tipoAviso = null) {
+        if (!redirigiendo && window.Alertas?.disponible()) {
+            window.Alertas.notificar(texto, tipoAviso || (esError ? "error" : "success"));
+        }
+
         mensajeGeneral
             .empty()
             .text(texto)
@@ -158,7 +179,7 @@ $(function () {
                 class: "btn-templo-secondary ms-2",
                 text: "Actualizar listas"
             }).on("click", async function () {
-                if (operacionEnCurso) return;
+                if (operacionEnCurso || redirigiendo) return;
 
                 const boton = $(this).prop("disabled", true);
 
@@ -166,8 +187,10 @@ $(function () {
                     if (await actualizarListas()) {
                         mostrarMensaje("Listas actualizadas correctamente.");
                     }
+
                 } catch (error) {
                     mostrarMensaje(error.message, true, true);
+
                 } finally {
                     boton.prop("disabled", false);
                 }
@@ -175,12 +198,13 @@ $(function () {
         }
     }
 
+
     function mensajeFormulario(formulario) {
         let mensaje = formulario.find(".seguridad-mensaje-formulario");
 
         if (!mensaje.length) {
             mensaje = $("<div>", {
-                class: "alert alert-danger seguridad-mensaje-formulario",
+                class: "estado-error seguridad-mensaje-formulario mb-3",
                 role: "alert",
                 hidden: true
             }).prependTo(formulario.find(".modal-body").first());
@@ -194,22 +218,101 @@ $(function () {
     /* CONTRASEÑAS Y VISIBILIDAD DE LOS CAMPOS */
     /* ================================================= */
 
-    function validarCoincidencia(formulario) {
-        const clave = formulario.find('[name="clave"], [name="nueva_clave"]').first();
-        const confirmar = formulario.find('[name="confirmar_clave"]').first();
+    const reglaClave = {
+        comprobar: valor => Validaciones.validarClave(valor)
+            ? null : "Use al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo, sin espacios. Reduzca la longitud si la clave es demasiado larga."
+    };
 
-        if (clave.length && confirmar.length) {
-            confirmar[0].setCustomValidity(
-                confirmar.val() !== "" && clave.val() !== confirmar.val()
-                    ? "Las contraseñas no coinciden."
-                    : ""
-            );
+    const reglaIdentificador = {
+        comprobar: valor => Validaciones.validarEntero(valor, 1)
+            ? null : "No se pudo identificar el registro seleccionado."
+    };
+
+
+    function reglasFormulario(formulario) {
+        const accion = formulario.find('[name="accion"]').val();
+        const campoClave = accion === "restablecer_clave" ? "nueva_clave" : "clave";
+
+        const confirmacion = {
+            comprobar: valor => valor !== "" && valor === formulario.find('[name="' + campoClave + '"]').val()
+                ? null : "Las contraseñas no coinciden."
+        };
+
+        switch (accion) {
+            case "registrar_usuario":
+                return {
+                    ...Validaciones.reglasUsuarios,
+                    clave: reglaClave,
+                    confirmar_clave: confirmacion
+                };
+
+            case "modificar_usuario": {
+                const reglas = { ...Validaciones.reglasUsuarios };
+
+                delete reglas.cedula;
+
+                return {
+                    ...reglas,
+                    id_usuario: reglaIdentificador,
+                    id_persona: reglaIdentificador
+                };
+            }
+
+            case "restablecer_clave":
+                return {
+                    id_usuario: reglaIdentificador,
+                    nueva_clave: reglaClave,
+                    confirmar_clave: confirmacion
+                };
+
+            case "registrar_rol":
+                return Validaciones.reglasRoles;
+
+            case "modificar_rol":
+                return {
+                    ...Validaciones.reglasRoles,
+                    id_rol: reglaIdentificador
+                };
+
+            case "cambiar_estado_usuario":
+                return {
+                    id_usuario: reglaIdentificador,
+                    estado_usuario: {
+                        comprobar: valor => valor === "INACTIVO"
+                            ? null : "Seleccione una desactivación válida."
+                    }
+                };
+
+            case "cambiar_estado_rol":
+                return { id_rol: reglaIdentificador };
+
+            default:
+                return {};
         }
     }
 
-    $("#formNuevoUsuario, #formRestablecerClave").on("input", "input", function () {
-        validarCoincidencia($(this).closest("form"));
+
+    modales.find("form").each(function () {
+        this.noValidate = true;
+
+        Validaciones.activar(this, reglasFormulario($(this)));
     });
+
+
+    /* Actualizar la confirmación si cambia la contraseña principal */
+    $("#formNuevoUsuario, #formRestablecerClave").on(
+        "input",
+        '[name="clave"], [name="nueva_clave"]',
+        function () {
+            const confirmar = $(this).closest("form").find('[name="confirmar_clave"]').first();
+            const referencia = confirmar.closest(".templo-password-field");
+
+            if (referencia.next(".templo-validacion-feedback").length) {
+                confirmar[0].dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        }
+    );
+
 
     function establecerVisibilidad(boton, visible) {
         const idCampo = boton.attr("data-password-target");
@@ -228,6 +331,7 @@ $(function () {
             title: (visible ? "Ocultar" : "Mostrar") + " contraseña"
         });
     }
+
 
     $(document).on("click", ".btnAlternarClave", function () {
         const boton = $(this);
@@ -252,10 +356,17 @@ $(function () {
         ciudad: "#nuevoUsuarioCiudad"
     };
 
+
     function limpiarPersona() {
-        Object.values(camposPersona).forEach(selector => $(selector).val(""));
+        Object.values(camposPersona).forEach(function (selector) {
+            const campo = $(selector).val("")[0];
+
+            campo?.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
         datosAutocompletados = false;
     }
+
 
     async function buscarPersonaUsuario(completar = true) {
         const campoCedula = $("#nuevoUsuarioCedula");
@@ -265,13 +376,26 @@ $(function () {
         const cedula = String(campoCedula.val() || "").trim();
         const turno = ++versionPersona;
 
-        campoCedula[0].setCustomValidity("");
-
         if (!cedula) {
             if (datosAutocompletados) limpiarPersona();
 
             $("#nuevoUsuarioIdPersona").val("");
+
             return false;
+        }
+
+        const mensajeCedula = Validaciones.validarValor(
+            "cedula",
+            cedula,
+            Validaciones.reglasUsuarios
+        );
+
+        if (mensajeCedula) {
+            const error = new Error(mensajeCedula);
+
+            error.errores = { cedula: mensajeCedula };
+
+            throw error;
         }
 
         const resultado = await solicitarSeguridad({
@@ -293,13 +417,17 @@ $(function () {
 
             if (completar) {
                 Object.entries(camposPersona).forEach(function ([campo, selector]) {
-                    $(selector).val(resultado.persona[campo] ?? "");
+                    const elemento = $(selector).val(resultado.persona[campo] ?? "")[0];
+
+                    elemento?.dispatchEvent(new Event("input", { bubbles: true }));
                 });
 
                 datosAutocompletados = true;
+
             } else {
                 $("#nuevoUsuarioIdPersona").val(resultado.persona.id_persona ?? "");
             }
+
         } else {
             if (completar && datosAutocompletados) limpiarPersona();
 
@@ -307,30 +435,35 @@ $(function () {
         }
 
         if (resultado.es_usuario) {
-            campoCedula[0].setCustomValidity(
-                "Esta persona ya se encuentra registrada como usuario."
-            );
+            const error = new Error("Esta persona ya se encuentra registrada como usuario.");
 
-            throw new Error("Esta persona ya se encuentra registrada como usuario.");
+            error.errores = { cedula: error.message };
+
+            throw error;
         }
 
         return true;
     }
 
+
     $("#nuevoUsuarioCedula").on("input", function () {
         ++versionPersona;
-        this.setCustomValidity("");
+
+        mensajeFormulario($("#formNuevoUsuario")).empty().prop("hidden", true);
 
         if (datosAutocompletados) limpiarPersona();
 
         $("#nuevoUsuarioIdPersona").val("");
+
     }).on("blur", function () {
-        if (operacionEnCurso) return;
+        if (operacionEnCurso || redirigiendo) return;
 
         const turnoModal = versionPersona;
 
         buscarPersonaUsuario().catch(function (error) {
-            if (versionPersona === turnoModal + 1) {
+            if (!redirigiendo && versionPersona === turnoModal + 1) {
+                Validaciones.mostrarErrores($("#formNuevoUsuario")[0], error.errores);
+
                 mensajeFormulario($("#formNuevoUsuario"))
                     .text(error.message)
                     .prop("hidden", false);
@@ -361,6 +494,7 @@ $(function () {
         "#tablaUsuarios .detalle-accion-icono svg, #formNuevoUsuario .templo-eye-open"
     ).first().clone().removeAttr("class");
 
+
     function crearBoton(clase, destino, titulo, atributos, icono) {
         return $("<button>", {
             type: "button",
@@ -374,6 +508,7 @@ $(function () {
             "aria-hidden": "true"
         }));
     }
+
 
     function crearFilaUsuario(usuario) {
         const fila = $("<tr>");
@@ -457,6 +592,7 @@ $(function () {
         return fila[0];
     }
 
+
     function crearFilaRol(rol) {
         const fila = $("<tr>");
         const estado = String(rol.estado_rol || "ACTIVO").trim().toUpperCase();
@@ -523,6 +659,7 @@ $(function () {
     };
 
     let modalDetalle = $(".modal[id^='modalDetalleUsuario']").first().clone();
+
 
     /* Utilizar la ficha existente como plantilla para los registros actualizados */
     if (!modalDetalle.length) {
@@ -620,6 +757,7 @@ $(function () {
         if (pagina > ultima) tabla.page(ultima).draw("page");
     }
 
+
     function actualizarSelectoresRoles(roles) {
         $("#nuevoUsuarioRol, #editarUsuarioRol").each(function () {
             const selector = $(this);
@@ -645,7 +783,10 @@ $(function () {
         });
     }
 
+
     async function actualizarListas() {
+        if (redirigiendo) return false;
+
         const turno = ++versionLista;
 
         try {
@@ -684,6 +825,7 @@ $(function () {
             actualizarSelectoresRoles(respuesta.roles);
 
             return true;
+
         } catch (error) {
             if (turno === versionLista) throw error;
 
@@ -703,6 +845,8 @@ $(function () {
 
         formulario[0].reset();
 
+        Validaciones.limpiarFormulario(formulario[0]);
+
         formulario.find("input").each(function () {
             this.setCustomValidity("");
         });
@@ -714,8 +858,9 @@ $(function () {
         mensajeFormulario(formulario).empty().prop("hidden", true);
     }
 
+
     modales.on("show.bs.modal", function (evento) {
-        if (operacionEnCurso) {
+        if (operacionEnCurso || redirigiendo) {
             evento.preventDefault();
             return;
         }
@@ -752,6 +897,7 @@ $(function () {
             $("#nombreEstadoUsuario").text(boton.attr("data-nombre") || "");
             $("#tituloEstadoUsuario").text("Desactivar Usuario");
             $("#preguntaEstadoUsuario").text("¿Deseas desactivar este usuario?");
+
             $("#advertenciaEstadoUsuario").text(
                 "El usuario no podrá iniciar sesión mientras permanezca inactivo."
             );
@@ -771,11 +917,13 @@ $(function () {
         }
     });
 
+
     modales.on("hide.bs.modal", function (evento) {
         if ($(this).find("form").data("enviando")) {
             evento.preventDefault();
         }
     });
+
 
     modales.on("hidden.bs.modal", function () {
         limpiarFormulario($(this));
@@ -794,14 +942,36 @@ $(function () {
     modales.find("form").on("submit", async function (evento) {
         evento.preventDefault();
 
-        if (operacionEnCurso) return;
+        if (operacionEnCurso || redirigiendo) return;
 
         const formulario = $(this);
         const aviso = mensajeFormulario(formulario).empty().prop("hidden", true);
 
-        validarCoincidencia(formulario);
+        Validaciones.limpiarFormulario(this);
 
-        if (!this.reportValidity()) return;
+        const validacion = Validaciones.validarFormulario(this, reglasFormulario(formulario));
+
+        if (!validacion.valido) {
+            aviso.text("Revise los campos señalados.").prop("hidden", false);
+
+            if (validacion.primerCampo?.type !== "hidden") validacion.primerCampo?.focus();
+
+            return;
+        }
+
+        if (formulario.attr("id") === "formRestablecerClave" && window.Alertas?.disponible()) {
+            const confirmado = await window.Alertas.confirmar(
+                "Se reemplazará la contraseña del usuario seleccionado por la contraseña temporal indicada.",
+                {
+                    titulo: "Restablecer contraseña",
+                    textoConfirmar: "Sí, restablecer",
+                    origen: formulario
+                }
+            );
+
+            if (!confirmado) return;
+            if (operacionEnCurso || redirigiendo) return;
+        }
 
         const controles = formulario.find("input, select, textarea, button")
             .map(function () {
@@ -817,10 +987,17 @@ $(function () {
         const contenidoBoton = enviar.html();
 
         operacionEnCurso = true;
+
         formulario.data("enviando", true);
         enviar.prop("disabled", true).text("Procesando...");
+
         ++versionLista;
+
         mensajeGeneral.prop("hidden", true);
+
+        let primerCampo = null;
+        let respuestaConfirmada = null;
+        let mensajeExito = "Operación completada.";
 
         try {
             if (formulario.attr("id") === "formNuevoUsuario") {
@@ -828,10 +1005,14 @@ $(function () {
                     throw new Error("Revise la cédula y vuelva a enviar el formulario.");
                 }
 
-                validarCoincidencia(formulario);
+                const revision = Validaciones.validarFormulario(this, reglasFormulario(formulario));
 
-                if (!this.reportValidity()) {
-                    throw new Error("Revise los datos del formulario.");
+                if (!revision.valido) {
+                    const error = new Error("Revise los campos señalados.");
+
+                    error.errores = revision.errores;
+
+                    throw error;
                 }
             }
 
@@ -847,6 +1028,9 @@ $(function () {
 
             const respuesta = await solicitarSeguridad(datos);
 
+            respuestaConfirmada = respuesta;
+            mensajeExito = typeof respuesta.mensaje === "string" ? respuesta.mensaje : mensajeExito;
+
             formulario.data("enviando", false);
 
             const modal = formulario.closest(".modal");
@@ -855,38 +1039,66 @@ $(function () {
                 window.bootstrap.Modal.getOrCreateInstance(modal[0]).hide();
             };
 
-            modal.one("shown.bs.modal", cerrarModal);
+            if (modal.hasClass("show")) modal.one("shown.bs.modal", cerrarModal);
 
-            modal.one("hidden.bs.modal", function () {
+            if (modal.hasClass("show")) modal.one("hidden.bs.modal", function () {
                 modal.off("shown.bs.modal", cerrarModal);
             });
 
             cerrarModal();
-            mostrarMensaje(respuesta.mensaje);
+
+            if (datos.accion === "restablecer_clave") {
+                mostrarMensaje(mensajeExito);
+            }
 
             if (datos.accion !== "restablecer_clave") {
                 try {
                     await actualizarListas();
+
+                    mostrarMensaje(mensajeExito);
+
                 } catch (error) {
                     mostrarMensaje(
-                        respuesta.mensaje +
+                        mensajeExito +
                         " No se pudieron actualizar las listas. La operación ya fue confirmada.",
                         true,
-                        true
+                        true,
+                        "warning"
                     );
                 }
             }
+
         } catch (error) {
-            aviso.text(error.message).prop("hidden", false);
-            formulario.find(".modal-body").scrollTop(0);
+            if (respuestaConfirmada) {
+                mostrarMensaje(
+                    mensajeExito + " No se pudo actualizar la vista. La operación ya fue confirmada; actualice las listas antes de repetirla.",
+                    true,
+                    true,
+                    "warning"
+                );
+
+            } else if (!redirigiendo) {
+                window.Alertas?.rechazo(error.message, error, formulario);
+
+                aviso.text(error.message).prop("hidden", false);
+
+                primerCampo = Validaciones.mostrarErrores(this, error.errores);
+
+                formulario.find(".modal-body").scrollTop(0);
+            }
+
         } finally {
             controles.forEach(control => {
                 control.elemento.prop("disabled", control.deshabilitado);
             });
 
             enviar.html(contenidoBoton);
+
             formulario.data("enviando", false);
+
             operacionEnCurso = false;
+
+            if (primerCampo && !redirigiendo) primerCampo.focus();
         }
     });
 

@@ -1,5 +1,8 @@
 <?php
 
+use App\Model\LoginM;
+
+
 /* ===================================================== */
 /* VALIDACIÓN DE LA CLAVE UNIVERSAL */
 /* ===================================================== */
@@ -7,10 +10,11 @@
 /* Variables utilizadas en la vista */
 $mensajeClaveAdmin = '';
 $tipoMensajeClaveAdmin = 'error';
+$erroresClaveAdmin = [];
+$modeloLogin = null;
 
 
-/* Configuración de la autorización de registro */
-$hashClaveUniversal = '$2y$12$yhjAIohVHg.buqNIDwmi0.ADc//0D6x4xF5bqphiK/U9qaFogkVi6';
+/* Duración de la autorización para registrar una cuenta */
 $duracionAutorizacion = 600;
 
 
@@ -52,12 +56,7 @@ try {
 
     /* Leer los datos enviados en el cuerpo de la solicitud */
     if ($metodoSolicitud === 'POST' && $tipoContenido === 'application/json') {
-        $datosFormulario = json_decode(
-            file_get_contents('php://input'),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        $datosFormulario = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
 
         if (!is_array($datosFormulario)) {
             throw new \InvalidArgumentException('Los datos enviados no tienen un formato válido.');
@@ -67,33 +66,26 @@ try {
 
     /* Comprobar la acción solicitada */
     if ($metodoSolicitud === 'POST') {
-
         if (($datosFormulario['accion'] ?? '') !== 'validar_clave_universal') {
             throw new \InvalidArgumentException('La solicitud enviada no es válida.');
         }
 
-        $claveUniversal = $datosFormulario['clave_universal'] ?? '';
+
+        /* Retirar el permiso anterior antes de volver a comprobar la clave */
+        unset($_SESSION['registro_usuario_autorizado_hasta']);
 
 
-        /* Comprobar el tipo del dato recibido */
-        if (!is_string($claveUniversal)) {
-            throw new \InvalidArgumentException('La clave universal ingresada no es válida.');
-        }
+        /* Delegar la comprobación al modelo y al trait de usuarios */
+        $modeloLogin = new LoginM();
+        $autorizado = $modeloLogin->comprobarClaveUniversal($datosFormulario['clave_universal'] ?? '');
 
-        $claveUniversal = trim($claveUniversal);
+        if ($autorizado) {
 
+            /* Renovar el identificador antes de conceder la autorización */
+            if (!@session_regenerate_id(true)) {
+                throw new \RuntimeException('No fue posible renovar el identificador de la sesión.');
+            }
 
-        /* Validar la clave universal */
-        if ($claveUniversal === '') {
-            $mensajeClaveAdmin = 'Debe ingresar la clave universal.';
-
-        } elseif (password_verify($claveUniversal, $hashClaveUniversal)) {
-
-            /* Renovar el identificador de la sesión */
-            session_regenerate_id(true);
-
-
-            /* Autorizar el registro durante diez minutos */
             $_SESSION['registro_usuario_autorizado_hasta'] = time() + $duracionAutorizacion;
 
 
@@ -106,24 +98,21 @@ try {
             }
 
             header('Location: Index.php?url=registroUsuario');
-
             exit;
-
-        } else {
-
-            /* Retirar la autorización cuando la clave sea incorrecta */
-            unset($_SESSION['registro_usuario_autorizado_hasta']);
-
-            $mensajeClaveAdmin = 'La clave universal ingresada no es válida.';
         }
+
+        $mensajeClaveAdmin = $modeloLogin->obtenerMensajeAcceso();
+        $erroresClaveAdmin = $modeloLogin->obtenerErroresValidacion();
 
 
         /* Informar los errores sin cargar la vista */
         if ($esPeticionAjax) {
             $responderJson([
                 'ok' => false,
-                'mensaje' => $mensajeClaveAdmin
-            ], 422);
+                'mensaje' => $mensajeClaveAdmin,
+                'campo' => array_key_first($erroresClaveAdmin),
+                'errores' => $erroresClaveAdmin
+            ], $modeloLogin->obtenerEstadoRespuesta());
         }
 
     } elseif ($esPeticionAjax) {
@@ -134,15 +123,9 @@ try {
     }
 
 } catch (\Throwable $error) {
-
-    /* Registrar el error técnico sin exponerlo en la respuesta */
-    error_log($error->getMessage());
-
     $estadoRespuesta = 500;
     $mensajeClaveAdmin = 'No fue posible validar la clave universal. Intente nuevamente.';
 
-
-    /* Identificar los errores del formato o de los datos enviados */
     if ($error instanceof \JsonException) {
         $estadoRespuesta = 422;
         $mensajeClaveAdmin = 'Los datos enviados no tienen un formato válido.';
@@ -150,14 +133,21 @@ try {
     } elseif ($error instanceof \InvalidArgumentException) {
         $estadoRespuesta = 422;
         $mensajeClaveAdmin = $error->getMessage();
+
+        if ($modeloLogin instanceof LoginM) {
+            $erroresClaveAdmin = $modeloLogin->obtenerErroresValidacion();
+        }
+
+    } else {
+        error_log($error->getMessage());
     }
 
-
-    /* Devolver el mensaje correspondiente a la solicitud */
     if ($esPeticionAjax) {
         $responderJson([
             'ok' => false,
-            'mensaje' => $mensajeClaveAdmin
+            'mensaje' => $mensajeClaveAdmin,
+            'campo' => array_key_first($erroresClaveAdmin),
+            'errores' => $erroresClaveAdmin
         ], $estadoRespuesta);
     }
 }

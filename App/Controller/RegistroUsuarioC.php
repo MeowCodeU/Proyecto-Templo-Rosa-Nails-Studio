@@ -11,6 +11,8 @@ use App\Model\SeguridadM;
 /* Variables utilizadas en la vista */
 $mensajeRegistro = '';
 $listaRoles = [];
+$erroresRegistro = [];
+$modeloSeguridad = null;
 
 $datosRegistro = [
     'nombres' => '',
@@ -21,15 +23,34 @@ $datosRegistro = [
     'id_rol' => ''
 ];
 
+
+/* Identificar las solicitudes asíncronas */
 $esPeticionAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
+
+/* Enviar la respuesta y finalizar la solicitud */
 $responderJson = static function (array $datos, int $estado = 200): void {
     http_response_code($estado);
+
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
 
     echo json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+
     exit;
+};
+
+
+/* Asociar los errores del modelo con los nombres del formulario */
+$adaptarErrores = static function (array $errores): array {
+    $nombresCampos = ['nombre' => 'nombres', 'apellido' => 'apellidos'];
+    $resultado = [];
+
+    foreach ($errores as $campo => $mensaje) {
+        $resultado[$nombresCampos[$campo] ?? $campo] = $mensaje;
+    }
+
+    return $resultado;
 };
 
 
@@ -57,12 +78,8 @@ if ($autorizadoHasta < time()) {
 
 
 try {
-
-    /* Crear las instancias de los modelos */
-    $modeloSeguridad = new SeguridadM();
+    /* Consultar los roles activos para presentar el formulario */
     $modeloRol = new RolM();
-
-    /* Consultar los roles activos */
     $listaRoles = $modeloRol->consultar();
 
 
@@ -82,160 +99,83 @@ try {
         }
     }
 
-    $textoFormulario = static function (
-        string $campo,
-        bool $recortar = true
-    ) use ($datosFormulario): string {
 
-        $valor = $datosFormulario[$campo] ?? '';
+    /* ================================================= */
+    /* REGISTRO MEDIANTE EL MODELO */
+    /* ================================================= */
 
-        if (!is_string($valor)) {
-            throw new \InvalidArgumentException('Los datos enviados no son válidos.');
+    if ($metodoSolicitud === 'POST' && ($datosFormulario['accion'] ?? '') === 'registrar_usuario') {
+
+        /* Conservar los textos que volverá a mostrar la vista */
+        foreach (array_keys($datosRegistro) as $campo) {
+            $valor = $datosFormulario[$campo] ?? '';
+            $datosRegistro[$campo] = is_string($valor) ? trim($valor) : '';
         }
 
-        return $recortar ? trim($valor) : $valor;
-    };
 
+        /* Entregar los datos originales al modelo para su validación */
+        $modeloSeguridad = new SeguridadM();
+        $modeloSeguridad->set_cedula($datosFormulario['cedula'] ?? '');
+        $modeloSeguridad->set_nombre($datosFormulario['nombres'] ?? '');
+        $modeloSeguridad->set_apellido($datosFormulario['apellidos'] ?? '');
+        $modeloSeguridad->set_telefono($datosFormulario['telefono'] ?? '');
+        $modeloSeguridad->set_correo($datosFormulario['correo'] ?? '');
+        $modeloSeguridad->set_direccion('');
+        $modeloSeguridad->set_ciudad('');
+        $modeloSeguridad->set_idRol($datosFormulario['id_rol'] ?? '');
+        $modeloSeguridad->set_nickname('');
+        $modeloSeguridad->set_clave($datosFormulario['clave'] ?? '');
 
-    /* ================================================= */
-    /* VALIDACIONES DEL REGISTRO */
-    /* ================================================= */
+        $registrado = $modeloSeguridad->registrar($datosFormulario['confirmar_clave'] ?? '');
 
-    if (
-        $metodoSolicitud === 'POST' &&
-        $textoFormulario('accion') === 'registrar_usuario'
-    ) {
-        $datosRegistro = [
-            'nombres' => $textoFormulario('nombres'),
-            'apellidos' => $textoFormulario('apellidos'),
-            'cedula' => $textoFormulario('cedula'),
-            'telefono' => $textoFormulario('telefono'),
-            'correo' => $textoFormulario('correo'),
-            'id_rol' => $textoFormulario('id_rol')
-        ];
+        if ($registrado) {
 
-        $clave = $textoFormulario('clave', false);
-        $confirmarClave = $textoFormulario('confirmar_clave', false);
-        $campoError = '';
+            /* Utilizar la autorización para registrar una sola cuenta */
+            unset($_SESSION['registro_usuario_autorizado_hasta']);
 
+            $_SESSION['mensaje_login'] = 'El usuario fue registrado exitosamente. Ya puede iniciar sesión.';
+            $_SESSION['tipo_mensaje_login'] = 'success';
 
-        /* Validar los nombres */
-        if (!preg_match("/^[\\p{L}\\s'-]{2,60}$/u", $datosRegistro['nombres'])) {
-            $mensajeRegistro = 'Los nombres ingresados no son válidos.';
-            $campoError = 'nombres';
-
-        /* Validar los apellidos */
-        } elseif (!preg_match("/^[\\p{L}\\s'-]{2,60}$/u", $datosRegistro['apellidos'])) {
-            $mensajeRegistro = 'Los apellidos ingresados no son válidos.';
-            $campoError = 'apellidos';
-
-        /* Validar la cédula */
-        } elseif (!preg_match('/^[0-9]{6,20}$/', $datosRegistro['cedula'])) {
-            $mensajeRegistro = 'La cédula debe contener solamente números.';
-            $campoError = 'cedula';
-
-        /* Validar el teléfono cuando sea suministrado */
-        } elseif (
-            $datosRegistro['telefono'] !== '' &&
-            !preg_match('/^[0-9+()\-\s]{7,20}$/', $datosRegistro['telefono'])
-        ) {
-            $mensajeRegistro = 'El teléfono ingresado no es válido.';
-            $campoError = 'telefono';
-
-        /* Validar el correo electrónico */
-        } elseif (!filter_var($datosRegistro['correo'], FILTER_VALIDATE_EMAIL)) {
-            $mensajeRegistro = 'El correo electrónico ingresado no es válido.';
-            $campoError = 'correo';
-
-        /* Validar la longitud de la contraseña */
-        } elseif (strlen($clave) < 8) {
-            $mensajeRegistro = 'La contraseña debe contener al menos 8 caracteres.';
-            $campoError = 'clave';
-
-        /* Validar que ambas contraseñas coincidan */
-        } elseif ($clave !== $confirmarClave) {
-            $mensajeRegistro = 'La contraseña y su confirmación no coinciden.';
-            $campoError = 'confirmar_clave';
-
-        /* Validar el identificador del rol */
-        } elseif (
-            !ctype_digit($datosRegistro['id_rol']) ||
-            (int) $datosRegistro['id_rol'] <= 0
-        ) {
-            $mensajeRegistro = 'Debe seleccionar un rol válido.';
-            $campoError = 'id_rol';
-
-        } else {
-
-            /* Comprobar que el rol exista y esté activo */
-            $modeloRol->set_idRol((int) $datosRegistro['id_rol']);
-
-            $rolSeleccionado = $modeloRol->buscar();
-
-            if (
-                !$rolSeleccionado ||
-                ($rolSeleccionado['estado_rol'] ?? '') !== 'ACTIVO'
-            ) {
-                $mensajeRegistro = 'El rol seleccionado no se encuentra disponible.';
-                $campoError = 'id_rol';
-
-            } else {
-
-                /* Asignar los datos al modelo */
-                $modeloSeguridad->set_cedula($datosRegistro['cedula']);
-                $modeloSeguridad->set_nombre($datosRegistro['nombres']);
-                $modeloSeguridad->set_apellido($datosRegistro['apellidos']);
-                $modeloSeguridad->set_telefono($datosRegistro['telefono']);
-                $modeloSeguridad->set_correo($datosRegistro['correo']);
-                $modeloSeguridad->set_direccion('');
-                $modeloSeguridad->set_ciudad('');
-                $modeloSeguridad->set_idRol((int) $datosRegistro['id_rol']);
-                $modeloSeguridad->set_nickname('');
-                $modeloSeguridad->set_clave($clave);
-
-                $registrado = $modeloSeguridad->registrar();
-
-                if ($registrado) {
-
-                    /* Utilizar la autorización para registrar una sola cuenta */
-                    unset($_SESSION['registro_usuario_autorizado_hasta']);
-
-                    $_SESSION['mensaje_login'] = 'El usuario fue registrado exitosamente. Ya puede iniciar sesión.';
-
-                    if ($esPeticionAjax) {
-                        $responderJson([
-                            'ok' => true,
-                            'mensaje' => $_SESSION['mensaje_login'],
-                            'redireccion' => 'Index.php?url=login'
-                        ]);
-                    }
-
-                    header('Location: Index.php?url=login');
-                    exit;
-                }
-
-                $mensajeRegistro = 'La persona ya posee una cuenta de usuario registrada.';
-                $campoError = 'cedula';
+            if ($esPeticionAjax) {
+                $responderJson([
+                    'ok' => true,
+                    'mensaje' => $_SESSION['mensaje_login'],
+                    'redireccion' => 'Index.php?url=login'
+                ]);
             }
+
+            header('Location: Index.php?url=login');
+            exit;
         }
 
+        $erroresRegistro = $adaptarErrores($modeloSeguridad->obtenerErroresValidacion());
+
+        $mensajeRegistro = $erroresRegistro !== []
+            ? (string) reset($erroresRegistro)
+            : 'No fue posible completar el registro. Intente nuevamente.';
+
+
+        /* Informar los errores sin perder los datos del formulario */
         if ($esPeticionAjax) {
             $responderJson([
                 'ok' => false,
                 'mensaje' => $mensajeRegistro,
-                'campo' => $campoError
+                'campo' => array_key_first($erroresRegistro),
+                'errores' => $erroresRegistro
             ], 422);
         }
 
     } elseif ($esPeticionAjax) {
-        $responderJson(['ok' => false, 'mensaje' => 'La solicitud enviada no es válida.'], 400);
+        $responderJson([
+            'ok' => false,
+            'mensaje' => 'La solicitud enviada no es válida.'
+        ], 400);
+
+    } elseif ($metodoSolicitud !== 'GET') {
+        $mensajeRegistro = 'La solicitud enviada no es válida.';
     }
 
 } catch (\Throwable $error) {
-
-    /* Registrar el error internamente y preparar el mensaje para el formulario */
-    error_log($error->getMessage());
-
     $estadoRespuesta = 500;
     $mensajeRegistro = 'No fue posible completar el registro. Intente nuevamente.';
 
@@ -246,12 +186,21 @@ try {
     } elseif ($error instanceof \InvalidArgumentException) {
         $estadoRespuesta = 422;
         $mensajeRegistro = $error->getMessage();
+
+        if ($modeloSeguridad instanceof SeguridadM) {
+            $erroresRegistro = $adaptarErrores($modeloSeguridad->obtenerErroresValidacion());
+        }
+
+    } else {
+        error_log($error->getMessage());
     }
 
     if ($esPeticionAjax) {
         $responderJson([
             'ok' => false,
-            'mensaje' => $mensajeRegistro
+            'mensaje' => $mensajeRegistro,
+            'campo' => array_key_first($erroresRegistro),
+            'errores' => $erroresRegistro
         ], $estadoRespuesta);
     }
 }

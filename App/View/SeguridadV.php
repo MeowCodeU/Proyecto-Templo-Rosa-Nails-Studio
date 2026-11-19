@@ -20,6 +20,161 @@ $escaparSeguridad = static function ($valor): string {
     return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
 };
 
+
+/* Reutilizar los mismos iconos en los cuatro botones de contraseña */
+$iconosVisibilidadSeguridad = <<<'HTML'
+<svg
+    class="templo-eye-svg templo-eye-closed"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+    focusable="false"
+>
+    <path
+        d="M2.68936 6.70456
+           C2.52619 6.32384 2.08528 6.14747 1.70456 6.31064
+           C1.32384 6.47381 1.14747 6.91472 1.31064 7.29544
+           L2.68936 6.70456Z
+           M15.5872 13.3287L15.3125 12.6308
+           L15.5872 13.3287Z
+           M9.04145 13.7377
+           C9.26736 13.3906 9.16904 12.926 8.82185 12.7001
+           C8.47466 12.4742 8.01008 12.5725 7.78417 12.9197
+           L9.04145 13.7377Z
+           M6.37136 15.091
+           C6.14545 15.4381 6.24377 15.9027 6.59096 16.1286
+           C6.93815 16.3545 7.40273 16.2562 7.62864 15.909
+           L6.37136 15.091Z
+           M22.6894 7.29544
+           C22.8525 6.91472 22.6762 6.47381 22.2954 6.31064
+           C21.9147 6.14747 21.4738 6.32384 21.3106 6.70456
+           L22.6894 7.29544Z
+           M19 11.1288L18.4867 10.582V10.582
+           L19 11.1288Z
+           M19.9697 13.1592
+           C20.2626 13.4521 20.7374 13.4521 21.0303 13.1592
+           C21.3232 12.8663 21.3232 12.3914 21.0303 12.0985
+           L19.9697 13.1592Z
+           M11.25 16.5
+           C11.25 16.9142 11.5858 17.25 12 17.25
+           C12.4142 17.25 12.75 16.9142 12.75 16.5
+           H11.25Z
+           M16.3714 15.909
+           C16.5973 16.2562 17.0619 16.3545 17.409 16.1286
+           C17.7562 15.9027 17.8545 15.4381 17.6286 15.091
+           L16.3714 15.909Z
+           M5.53033 11.6592
+           C5.82322 11.3663 5.82322 10.8914 5.53033 10.5985
+           C5.23744 10.3056 4.76256 10.3056 4.46967 10.5985
+           L5.53033 11.6592Z
+           M2.96967 12.0985
+           C2.67678 12.3914 2.67678 12.8663 2.96967 13.1592
+           C3.26256 13.4521 3.73744 13.4521 4.03033 13.1592
+           L2.96967 12.0985Z
+           M12 13.25
+           C8.77611 13.25 6.46133 11.6446 4.9246 9.98966
+           C4.15645 9.16243 3.59325 8.33284 3.22259 7.71014
+           C3.03769 7.3995 2.90187 7.14232 2.8134 6.96537
+           C2.76919 6.87696 2.73689 6.80875 2.71627 6.76411
+           C2.70597 6.7418 2.69859 6.7254 2.69411 6.71533
+           C2.69187 6.7103 2.69036 6.70684 2.68957 6.70503
+           C2.68917 6.70413 2.68896 6.70363 2.68892 6.70355
+           C2.68891 6.70351 2.68893 6.70357 2.68901 6.70374
+           C2.68904 6.70382 2.68913 6.70403 2.68915 6.70407
+           C2.68925 6.7043 2.68936 6.70456 2 7
+           C1.31064 7.29544 1.31077 7.29575 1.31092 7.29609
+           C1.31098 7.29624 1.31114 7.2966 1.31127 7.2969
+           C1.31152 7.29749 1.31183 7.2982 1.31218 7.299
+           C1.31287 7.30062 1.31376 7.30266 1.31483 7.30512
+           C1.31698 7.31003 1.31988 7.31662 1.32353 7.32483
+           C1.33083 7.34125 1.34115 7.36415 1.35453 7.39311
+           C1.38127 7.45102 1.42026 7.5332 1.47176 7.63619
+           C1.57469 7.84206 1.72794 8.13175 1.93366 8.47736
+           C2.34425 9.16716 2.96855 10.0876 3.8254 11.0103
+           C5.53867 12.8554 8.22389 14.75 12 14.75
+           V13.25Z
+           M15.3125 12.6308
+           C14.3421 13.0128 13.2417 13.25 12 13.25
+           V14.75
+           C13.4382 14.75 14.7246 14.4742 15.8619 14.0266
+           L15.3125 12.6308Z
+           M7.78417 12.9197L6.37136 15.091
+           L7.62864 15.909L9.04145 13.7377
+           L7.78417 12.9197Z
+           M22 7
+           C21.3106 6.70456 21.3107 6.70441 21.3108 6.70427
+           C21.3108 6.70423 21.3108 6.7041 21.3109 6.70402
+           C21.3109 6.70388 21.311 6.70376 21.311 6.70368
+           C21.3111 6.70352 21.3111 6.70349 21.3111 6.7036
+           C21.311 6.7038 21.3107 6.70452 21.3101 6.70576
+           C21.309 6.70823 21.307 6.71275 21.3041 6.71924
+           C21.2983 6.73223 21.2889 6.75309 21.2758 6.78125
+           C21.2495 6.83757 21.2086 6.92295 21.1526 7.03267
+           C21.0406 7.25227 20.869 7.56831 20.6354 7.9432
+           C20.1669 8.69516 19.4563 9.67197 18.4867 10.582
+           L19.5133 11.6757
+           C20.6023 10.6535 21.3917 9.56587 21.9085 8.73646
+           C22.1676 8.32068 22.36 7.9668 22.4889 7.71415
+           C22.5533 7.58775 22.602 7.48643 22.6353 7.41507
+           C22.6519 7.37939 22.6647 7.35118 22.6737 7.33104
+           C22.6782 7.32097 22.6818 7.31292 22.6844 7.30696
+           C22.6857 7.30398 22.6867 7.30153 22.6876 7.2996
+           C22.688 7.29864 22.6883 7.29781 22.6886 7.29712
+           C22.6888 7.29677 22.6889 7.29646 22.689 7.29618
+           C22.6891 7.29604 22.6892 7.29585 22.6892 7.29578
+           C22.6893 7.29561 22.6894 7.29544 22 7Z
+           M18.4867 10.582
+           C17.6277 11.3882 16.5739 12.1343 15.3125 12.6308
+           L15.8619 14.0266
+           C17.3355 13.4466 18.5466 12.583 19.5133 11.6757
+           L18.4867 10.582Z
+           M18.4697 11.6592L19.9697 13.1592
+           L21.0303 12.0985L19.5303 10.5985
+           L18.4697 11.6592Z
+           M11.25 14V16.5H12.75V14H11.25Z
+           M14.9586 13.7377L16.3714 15.909
+           L17.6286 15.091L16.2158 12.9197
+           L14.9586 13.7377Z
+           M4.46967 10.5985L2.96967 12.0985
+           L4.03033 13.1592L5.53033 11.6592
+           L4.46967 10.5985Z"
+        fill="currentColor"
+    />
+</svg>
+
+<svg
+    class="templo-eye-svg templo-eye-open"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+    focusable="false"
+>
+    <path
+        d="M2 12
+           C2 12 5.5 5 12 5
+           C18.5 5 22 12 22 12
+           C22 12 18.5 19 12 19
+           C5.5 19 2 12 2 12Z"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+    />
+
+    <path
+        d="M12 16
+           C10 14.8 8.5 13.5 8.5 11.8
+           C8.5 10.5 9.5 9.5 10.8 9.5
+           C11.5 9.5 12 9.9 12 10.4
+           C12 9.9 12.5 9.5 13.2 9.5
+           C14.5 9.5 15.5 10.5 15.5 11.8
+           C15.5 13.5 14 14.8 12 16Z"
+        fill="currentColor"
+    />
+</svg>
+HTML;
+
 ?>
 
 <!-- Token de seguridad para restablecer contraseñas -->
@@ -85,12 +240,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
         aria-hidden="true"
     >
         <div class="modal-dialog modal-dialog-centered">
-
             <div class="modal-content templo-modal seguridad-resultado-modal">
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="tituloResultadoRestablecimiento">
                         <?= $resultadoRestablecimiento === 'exito' ? 'Contraseña restablecida' : 'Resultado del restablecimiento'; ?>
                     </h5>
@@ -101,20 +254,13 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <!-- Mensaje del resultado -->
                 <div class="modal-body seguridad-resultado-cuerpo">
 
-                    <span
-                        class="seguridad-resultado-icono"
-                        aria-hidden="true"
-                    >
-                        <svg
-                            viewBox="0 0 64 64"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
+                    <span class="seguridad-resultado-icono" aria-hidden="true">
+                        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                             <path
                                 d="M32 6
                                    C27 8, 19 10, 13 12
@@ -170,7 +316,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Botones del modal -->
                 <div class="modal-footer seguridad-resultado-pie">
-
                     <button
                         type="button"
                         class="btn-templo-primary seguridad-resultado-aceptar"
@@ -178,11 +323,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     >
                         Aceptar
                     </button>
-
                 </div>
 
             </div>
-
         </div>
     </div>
 
@@ -197,16 +340,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
     <!-- Título del módulo -->
     <div class="module-header">
-
         <h2>
-            <span
-                class="seguridad-title-icon"
-                aria-hidden="true"
-            >
-                <svg
-                    viewBox="0 0 64 64"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
+            <span class="seguridad-title-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                     <path
                         d="M32 6
                            C27 8, 19 10, 13 12
@@ -252,7 +388,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
             Seguridad
         </h2>
-
     </div>
 
     <div class="configuracion-contenido">
@@ -262,7 +397,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
             <!-- Pestaña de gestión de usuarios -->
             <li class="nav-item" role="presentation">
-
                 <button
                     class="nav-link active"
                     id="gestion-usuarios-tab"
@@ -273,10 +407,7 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     aria-controls="gestion-usuarios"
                     aria-selected="true"
                 >
-                    <span
-                        class="gestion-usuarios-tab-icon"
-                        aria-hidden="true"
-                    >
+                    <span class="gestion-usuarios-tab-icon" aria-hidden="true">
                         <svg
                             viewBox="0 0 82 64"
                             xmlns="http://www.w3.org/2000/svg"
@@ -371,12 +502,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                     Gestión de Usuarios
                 </button>
-
             </li>
 
             <!-- Pestaña de roles -->
             <li class="nav-item" role="presentation">
-
                 <button
                     class="nav-link"
                     id="roles-tab"
@@ -390,7 +519,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     <i class="bi bi-person-heart"></i>
                     Roles
                 </button>
-
             </li>
 
         </ul>
@@ -411,7 +539,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado y registro de usuarios -->
                 <div class="config-tab-head">
-
                     <h5 class="config-title">Gestión de Usuarios</h5>
 
                     <button
@@ -423,14 +550,11 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-person-plus"></i>
                         Registrar Usuario
                     </button>
-
                 </div>
 
                 <!-- Tabla de usuarios -->
                 <div class="table-zone configuracion-table-zone">
-
                     <div class="templo-table-wrapper">
-
                         <div class="table-responsive">
 
                             <table
@@ -476,26 +600,11 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                         ?>
 
                                         <tr>
-
-                                            <td>
-                                                <?= $escaparSeguridad($cedula); ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $escaparSeguridad($nombreCompleto); ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $escaparSeguridad($telefono); ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $escaparSeguridad($correo); ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $escaparSeguridad($nombreRol); ?>
-                                            </td>
+                                            <td><?= $escaparSeguridad($cedula); ?></td>
+                                            <td><?= $escaparSeguridad($nombreCompleto); ?></td>
+                                            <td><?= $escaparSeguridad($telefono); ?></td>
+                                            <td><?= $escaparSeguridad($correo); ?></td>
+                                            <td><?= $escaparSeguridad($nombreRol); ?></td>
 
                                             <td>
                                                 <span class="badge estado-realizada">
@@ -504,7 +613,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             </td>
 
                                             <td class="columna-acciones">
-
                                                 <div class="btn-group-actions">
 
                                                     <!-- Ver detalles del usuario -->
@@ -516,14 +624,8 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#modalDetalleUsuario<?= (int) $idUsuario; ?>"
                                                     >
-                                                        <span
-                                                            class="detalle-accion-icono"
-                                                            aria-hidden="true"
-                                                        >
-                                                            <svg
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                            >
+                                                        <span class="detalle-accion-icono" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none">
                                                                 <path
                                                                     d="M2 12
                                                                        C2 12 5.5 5 12 5
@@ -602,21 +704,16 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                                     </button>
 
                                                 </div>
-
                                             </td>
-
                                         </tr>
 
                                     <?php endforeach; ?>
 
                                 </tbody>
-
                             </table>
 
                         </div>
-
                     </div>
-
                 </div>
 
             </div>
@@ -636,7 +733,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado y registro de roles -->
                 <div class="config-tab-head">
-
                     <h5 class="config-title">Gestión de Roles</h5>
 
                     <button
@@ -648,14 +744,11 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-plus-circle"></i>
                         Nuevo Rol
                     </button>
-
                 </div>
 
                 <!-- Tabla de roles -->
                 <div class="table-zone configuracion-table-zone">
-
                     <div class="templo-table-wrapper">
-
                         <div class="table-responsive">
 
                             <table
@@ -679,7 +772,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                     <?php foreach (($listaRoles ?? []) as $rol) { ?>
 
                                         <tr>
-
                                             <td>
                                                 <?php echo htmlspecialchars($rol['nombre_rol'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                                             </td>
@@ -689,7 +781,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             </td>
 
                                             <td>
-
                                                 <?php
                                                 $estadoRolVista = strtoupper(trim((string) ($rol['estado_rol'] ?? '')));
                                                 ?>
@@ -697,11 +788,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                                 <span class="badge <?php echo $estadoRolVista === 'ACTIVO' ? 'estado-registro-activo' : 'estado-registro-inactivo'; ?>">
                                                     <?php echo htmlspecialchars($estadoRolVista, ENT_QUOTES, 'UTF-8'); ?>
                                                 </span>
-
                                             </td>
 
                                             <td class="columna-acciones">
-
                                                 <div class="btn-group-actions">
 
                                                     <!-- Editar rol -->
@@ -736,27 +825,21 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                                     </button>
 
                                                 </div>
-
                                             </td>
-
                                         </tr>
 
                                     <?php } ?>
 
                                 </tbody>
-
                             </table>
 
                         </div>
-
                     </div>
-
                 </div>
 
             </div>
 
         </div>
-
     </div>
 
 </section>
@@ -792,24 +875,16 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
         aria-hidden="true"
     >
         <div class="modal-dialog modal-lg modal-dialog-centered">
-
             <div class="modal-content templo-modal detalle-ficha-modal">
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5
                         class="modal-title"
                         id="modalDetalleUsuarioLabel<?= (int) $detalleIdUsuario; ?>"
                     >
-                        <span
-                            class="detalle-ficha-title-icon"
-                            aria-hidden="true"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
+                        <span class="detalle-ficha-title-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
                                 <path
                                     d="M2 12
                                        C2 12 5.5 5 12 5
@@ -845,20 +920,14 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body detalle-ficha-modal-body">
-
                     <div class="detalle-ficha-panel">
 
                         <!-- Encabezado de la ficha -->
                         <div class="detalle-ficha-intro">
-
-                            <span
-                                class="detalle-ficha-intro-icon"
-                                aria-hidden="true"
-                            >
+                            <span class="detalle-ficha-intro-icon" aria-hidden="true">
                                 <svg
                                     class="detalle-ficha-intro-svg"
                                     viewBox="0 0 64 64"
@@ -912,7 +981,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <div class="detalle-ficha-intro-content">
                                 <p class="detalle-ficha-intro-title mb-0">Ficha del usuario</p>
                             </div>
-
                         </div>
 
                         <!-- Datos del usuario -->
@@ -921,7 +989,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <!-- Cédula -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-person-vcard"></i>
                                     </span>
@@ -932,14 +999,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleCedula !== '' ? $detalleCedula : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Nickname -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-person-badge"></i>
                                     </span>
@@ -950,14 +1015,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleNickname !== '' ? $detalleNickname : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Nombre -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-person-heart"></i>
                                     </span>
@@ -968,14 +1031,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleNombre !== '' ? $detalleNombre : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Apellido -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-person-heart"></i>
                                     </span>
@@ -986,14 +1047,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleApellido !== '' ? $detalleApellido : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Teléfono -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-telephone-fill"></i>
                                     </span>
@@ -1004,14 +1063,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleTelefono !== '' ? $detalleTelefono : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Correo electrónico -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-envelope-heart"></i>
                                     </span>
@@ -1022,14 +1079,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleCorreo !== '' ? $detalleCorreo : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Ciudad -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-geo-alt-fill"></i>
                                     </span>
@@ -1040,14 +1095,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleCiudad !== '' ? $detalleCiudad : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Rol -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-person-gear"></i>
                                     </span>
@@ -1058,14 +1111,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleRol !== '' ? $detalleRol : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Dirección -->
                             <div class="col-12">
                                 <div class="detalle-ficha-card detalle-ficha-card-wide detalle-ficha-card-emphasis">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-house-heart-fill"></i>
                                     </span>
@@ -1076,14 +1127,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleDireccion !== '' ? $detalleDireccion : 'No registrado'); ?>
                                         </p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Clave -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card detalle-ficha-card-emphasis h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-lock-fill"></i>
                                     </span>
@@ -1092,14 +1141,12 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                         <span class="detalle-ficha-label">Clave</span>
                                         <p class="detalle-ficha-value required-mark mb-0">********</p>
                                     </div>
-
                                 </div>
                             </div>
 
                             <!-- Estado -->
                             <div class="col-md-6">
                                 <div class="detalle-ficha-card detalle-ficha-card-emphasis h-100">
-
                                     <span class="detalle-ficha-card-icon" aria-hidden="true">
                                         <i class="bi bi-check-circle"></i>
                                     </span>
@@ -1110,19 +1157,15 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                             <?= $escaparSeguridad($detalleEstado); ?>
                                         </span>
                                     </div>
-
                                 </div>
                             </div>
 
                         </div>
-
                     </div>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button
                         type="button"
                         class="btn-templo-secondary"
@@ -1131,11 +1174,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cerrar
                     </button>
-
                 </div>
 
             </div>
-
         </div>
     </div>
 
@@ -1154,7 +1195,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
-
         <div class="modal-content templo-modal">
 
             <form
@@ -1170,7 +1210,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalNuevoUsuarioLabel">
                         <i class="bi bi-person-plus"></i>
                         Registrar Usuario
@@ -1182,7 +1221,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body">
@@ -1199,7 +1237,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="nuevoUsuarioCedula" class="form-label">
                                 Cédula
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1214,11 +1251,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="20"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="nuevoUsuarioNombre" class="form-label">
                                 Nombre
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1233,11 +1268,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="60"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="nuevoUsuarioApellido" class="form-label">
                                 Apellido
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1252,11 +1285,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="60"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioTelefono" class="form-label">
                                 Teléfono
                                 <span class="fw-normal">(opcional)</span>
@@ -1270,11 +1301,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 placeholder="Ingrese el teléfono"
                                 maxlength="25"
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioCorreo" class="form-label">
                                 Correo electrónico
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1293,11 +1322,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <small class="templo-help-text">
                                 Este correo quedará asociado a la cuenta del usuario.
                             </small>
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioDireccion" class="form-label">Dirección</label>
 
                             <input
@@ -1308,11 +1335,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 placeholder="Ingrese la dirección"
                                 maxlength="150"
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioCiudad" class="form-label">Ciudad</label>
 
                             <input
@@ -1323,7 +1348,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 placeholder="Ingrese la ciudad"
                                 maxlength="80"
                             >
-
                         </div>
 
                         <!-- Datos de acceso y rol -->
@@ -1335,7 +1359,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioNickname" class="form-label">Nickname (opcional)</label>
 
                             <input
@@ -1350,11 +1373,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <div class="form-text">
                                 Si se deja vacío, se mostrará el nombre completo.
                             </div>
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioRol" class="form-label">
                                 Rol
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1375,21 +1396,17 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                     </option>
 
                                 <?php endforeach; ?>
-
                             </select>
-
                         </div>
 
                         <!-- Contraseña del nuevo usuario -->
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioClave" class="form-label">
                                 Contraseña
                                 <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <div class="templo-password-field">
-
                                 <input
                                     type="password"
                                     id="nuevoUsuarioClave"
@@ -1409,172 +1426,19 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                     aria-label="Mostrar contraseña"
                                     title="Mostrar contraseña"
                                 >
-                                    <svg
-                                        class="templo-eye-svg templo-eye-closed"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                        focusable="false"
-                                    >
-                                        <path
-                                            d="M2.68936 6.70456
-                                               C2.52619 6.32384 2.08528 6.14747 1.70456 6.31064
-                                               C1.32384 6.47381 1.14747 6.91472 1.31064 7.29544
-                                               L2.68936 6.70456Z
-                                               M15.5872 13.3287L15.3125 12.6308
-                                               L15.5872 13.3287Z
-                                               M9.04145 13.7377
-                                               C9.26736 13.3906 9.16904 12.926 8.82185 12.7001
-                                               C8.47466 12.4742 8.01008 12.5725 7.78417 12.9197
-                                               L9.04145 13.7377Z
-                                               M6.37136 15.091
-                                               C6.14545 15.4381 6.24377 15.9027 6.59096 16.1286
-                                               C6.93815 16.3545 7.40273 16.2562 7.62864 15.909
-                                               L6.37136 15.091Z
-                                               M22.6894 7.29544
-                                               C22.8525 6.91472 22.6762 6.47381 22.2954 6.31064
-                                               C21.9147 6.14747 21.4738 6.32384 21.3106 6.70456
-                                               L22.6894 7.29544Z
-                                               M19 11.1288L18.4867 10.582V10.582
-                                               L19 11.1288Z
-                                               M19.9697 13.1592
-                                               C20.2626 13.4521 20.7374 13.4521 21.0303 13.1592
-                                               C21.3232 12.8663 21.3232 12.3914 21.0303 12.0985
-                                               L19.9697 13.1592Z
-                                               M11.25 16.5
-                                               C11.25 16.9142 11.5858 17.25 12 17.25
-                                               C12.4142 17.25 12.75 16.9142 12.75 16.5
-                                               H11.25Z
-                                               M16.3714 15.909
-                                               C16.5973 16.2562 17.0619 16.3545 17.409 16.1286
-                                               C17.7562 15.9027 17.8545 15.4381 17.6286 15.091
-                                               L16.3714 15.909Z
-                                               M5.53033 11.6592
-                                               C5.82322 11.3663 5.82322 10.8914 5.53033 10.5985
-                                               C5.23744 10.3056 4.76256 10.3056 4.46967 10.5985
-                                               L5.53033 11.6592Z
-                                               M2.96967 12.0985
-                                               C2.67678 12.3914 2.67678 12.8663 2.96967 13.1592
-                                               C3.26256 13.4521 3.73744 13.4521 4.03033 13.1592
-                                               L2.96967 12.0985Z
-                                               M12 13.25
-                                               C8.77611 13.25 6.46133 11.6446 4.9246 9.98966
-                                               C4.15645 9.16243 3.59325 8.33284 3.22259 7.71014
-                                               C3.03769 7.3995 2.90187 7.14232 2.8134 6.96537
-                                               C2.76919 6.87696 2.73689 6.80875 2.71627 6.76411
-                                               C2.70597 6.7418 2.69859 6.7254 2.69411 6.71533
-                                               C2.69187 6.7103 2.69036 6.70684 2.68957 6.70503
-                                               C2.68917 6.70413 2.68896 6.70363 2.68892 6.70355
-                                               C2.68891 6.70351 2.68893 6.70357 2.68901 6.70374
-                                               C2.68904 6.70382 2.68913 6.70403 2.68915 6.70407
-                                               C2.68925 6.7043 2.68936 6.70456 2 7
-                                               C1.31064 7.29544 1.31077 7.29575 1.31092 7.29609
-                                               C1.31098 7.29624 1.31114 7.2966 1.31127 7.2969
-                                               C1.31152 7.29749 1.31183 7.2982 1.31218 7.299
-                                               C1.31287 7.30062 1.31376 7.30266 1.31483 7.30512
-                                               C1.31698 7.31003 1.31988 7.31662 1.32353 7.32483
-                                               C1.33083 7.34125 1.34115 7.36415 1.35453 7.39311
-                                               C1.38127 7.45102 1.42026 7.5332 1.47176 7.63619
-                                               C1.57469 7.84206 1.72794 8.13175 1.93366 8.47736
-                                               C2.34425 9.16716 2.96855 10.0876 3.8254 11.0103
-                                               C5.53867 12.8554 8.22389 14.75 12 14.75
-                                               V13.25Z
-                                               M15.3125 12.6308
-                                               C14.3421 13.0128 13.2417 13.25 12 13.25
-                                               V14.75
-                                               C13.4382 14.75 14.7246 14.4742 15.8619 14.0266
-                                               L15.3125 12.6308Z
-                                               M7.78417 12.9197L6.37136 15.091
-                                               L7.62864 15.909L9.04145 13.7377
-                                               L7.78417 12.9197Z
-                                               M22 7
-                                               C21.3106 6.70456 21.3107 6.70441 21.3108 6.70427
-                                               C21.3108 6.70423 21.3108 6.7041 21.3109 6.70402
-                                               C21.3109 6.70388 21.311 6.70376 21.311 6.70368
-                                               C21.3111 6.70352 21.3111 6.70349 21.3111 6.7036
-                                               C21.311 6.7038 21.3107 6.70452 21.3101 6.70576
-                                               C21.309 6.70823 21.307 6.71275 21.3041 6.71924
-                                               C21.2983 6.73223 21.2889 6.75309 21.2758 6.78125
-                                               C21.2495 6.83757 21.2086 6.92295 21.1526 7.03267
-                                               C21.0406 7.25227 20.869 7.56831 20.6354 7.9432
-                                               C20.1669 8.69516 19.4563 9.67197 18.4867 10.582
-                                               L19.5133 11.6757
-                                               C20.6023 10.6535 21.3917 9.56587 21.9085 8.73646
-                                               C22.1676 8.32068 22.36 7.9668 22.4889 7.71415
-                                               C22.5533 7.58775 22.602 7.48643 22.6353 7.41507
-                                               C22.6519 7.37939 22.6647 7.35118 22.6737 7.33104
-                                               C22.6782 7.32097 22.6818 7.31292 22.6844 7.30696
-                                               C22.6857 7.30398 22.6867 7.30153 22.6876 7.2996
-                                               C22.688 7.29864 22.6883 7.29781 22.6886 7.29712
-                                               C22.6888 7.29677 22.6889 7.29646 22.689 7.29618
-                                               C22.6891 7.29604 22.6892 7.29585 22.6892 7.29578
-                                               C22.6893 7.29561 22.6894 7.29544 22 7Z
-                                               M18.4867 10.582
-                                               C17.6277 11.3882 16.5739 12.1343 15.3125 12.6308
-                                               L15.8619 14.0266
-                                               C17.3355 13.4466 18.5466 12.583 19.5133 11.6757
-                                               L18.4867 10.582Z
-                                               M18.4697 11.6592L19.9697 13.1592
-                                               L21.0303 12.0985L19.5303 10.5985
-                                               L18.4697 11.6592Z
-                                               M11.25 14V16.5H12.75V14H11.25Z
-                                               M14.9586 13.7377L16.3714 15.909
-                                               L17.6286 15.091L16.2158 12.9197
-                                               L14.9586 13.7377Z
-                                               M4.46967 10.5985L2.96967 12.0985
-                                               L4.03033 13.1592L5.53033 11.6592
-                                               L4.46967 10.5985Z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-
-                                    <svg
-                                        class="templo-eye-svg templo-eye-open"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                        focusable="false"
-                                    >
-                                        <path
-                                            d="M2 12
-                                               C2 12 5.5 5 12 5
-                                               C18.5 5 22 12 22 12
-                                               C22 12 18.5 19 12 19
-                                               C5.5 19 2 12 2 12Z"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            fill="none"
-                                        />
-
-                                        <path
-                                            d="M12 16
-                                               C10 14.8 8.5 13.5 8.5 11.8
-                                               C8.5 10.5 9.5 9.5 10.8 9.5
-                                               C11.5 9.5 12 9.9 12 10.4
-                                               C12 9.9 12.5 9.5 13.2 9.5
-                                               C14.5 9.5 15.5 10.5 15.5 11.8
-                                               C15.5 13.5 14 14.8 12 16Z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
+                                    <?= $iconosVisibilidadSeguridad; ?>
                                 </button>
-
                             </div>
-
                         </div>
 
                         <!-- Confirmación de la contraseña -->
                         <div class="col-md-6">
-
                             <label for="nuevoUsuarioConfirmarClave" class="form-label">
                                 Confirmar contraseña
                                 <span class="required-mark" aria-hidden="true">*</span>
                             </label>
 
                             <div class="templo-password-field">
-
                                 <input
                                     type="password"
                                     id="nuevoUsuarioConfirmarClave"
@@ -1594,169 +1458,16 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                     aria-label="Mostrar confirmación de contraseña"
                                     title="Mostrar confirmación de contraseña"
                                 >
-                                    <svg
-                                        class="templo-eye-svg templo-eye-closed"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                        focusable="false"
-                                    >
-                                        <path
-                                            d="M2.68936 6.70456
-                                               C2.52619 6.32384 2.08528 6.14747 1.70456 6.31064
-                                               C1.32384 6.47381 1.14747 6.91472 1.31064 7.29544
-                                               L2.68936 6.70456Z
-                                               M15.5872 13.3287L15.3125 12.6308
-                                               L15.5872 13.3287Z
-                                               M9.04145 13.7377
-                                               C9.26736 13.3906 9.16904 12.926 8.82185 12.7001
-                                               C8.47466 12.4742 8.01008 12.5725 7.78417 12.9197
-                                               L9.04145 13.7377Z
-                                               M6.37136 15.091
-                                               C6.14545 15.4381 6.24377 15.9027 6.59096 16.1286
-                                               C6.93815 16.3545 7.40273 16.2562 7.62864 15.909
-                                               L6.37136 15.091Z
-                                               M22.6894 7.29544
-                                               C22.8525 6.91472 22.6762 6.47381 22.2954 6.31064
-                                               C21.9147 6.14747 21.4738 6.32384 21.3106 6.70456
-                                               L22.6894 7.29544Z
-                                               M19 11.1288L18.4867 10.582V10.582
-                                               L19 11.1288Z
-                                               M19.9697 13.1592
-                                               C20.2626 13.4521 20.7374 13.4521 21.0303 13.1592
-                                               C21.3232 12.8663 21.3232 12.3914 21.0303 12.0985
-                                               L19.9697 13.1592Z
-                                               M11.25 16.5
-                                               C11.25 16.9142 11.5858 17.25 12 17.25
-                                               C12.4142 17.25 12.75 16.9142 12.75 16.5
-                                               H11.25Z
-                                               M16.3714 15.909
-                                               C16.5973 16.2562 17.0619 16.3545 17.409 16.1286
-                                               C17.7562 15.9027 17.8545 15.4381 17.6286 15.091
-                                               L16.3714 15.909Z
-                                               M5.53033 11.6592
-                                               C5.82322 11.3663 5.82322 10.8914 5.53033 10.5985
-                                               C5.23744 10.3056 4.76256 10.3056 4.46967 10.5985
-                                               L5.53033 11.6592Z
-                                               M2.96967 12.0985
-                                               C2.67678 12.3914 2.67678 12.8663 2.96967 13.1592
-                                               C3.26256 13.4521 3.73744 13.4521 4.03033 13.1592
-                                               L2.96967 12.0985Z
-                                               M12 13.25
-                                               C8.77611 13.25 6.46133 11.6446 4.9246 9.98966
-                                               C4.15645 9.16243 3.59325 8.33284 3.22259 7.71014
-                                               C3.03769 7.3995 2.90187 7.14232 2.8134 6.96537
-                                               C2.76919 6.87696 2.73689 6.80875 2.71627 6.76411
-                                               C2.70597 6.7418 2.69859 6.7254 2.69411 6.71533
-                                               C2.69187 6.7103 2.69036 6.70684 2.68957 6.70503
-                                               C2.68917 6.70413 2.68896 6.70363 2.68892 6.70355
-                                               C2.68891 6.70351 2.68893 6.70357 2.68901 6.70374
-                                               C2.68904 6.70382 2.68913 6.70403 2.68915 6.70407
-                                               C2.68925 6.7043 2.68936 6.70456 2 7
-                                               C1.31064 7.29544 1.31077 7.29575 1.31092 7.29609
-                                               C1.31098 7.29624 1.31114 7.2966 1.31127 7.2969
-                                               C1.31152 7.29749 1.31183 7.2982 1.31218 7.299
-                                               C1.31287 7.30062 1.31376 7.30266 1.31483 7.30512
-                                               C1.31698 7.31003 1.31988 7.31662 1.32353 7.32483
-                                               C1.33083 7.34125 1.34115 7.36415 1.35453 7.39311
-                                               C1.38127 7.45102 1.42026 7.5332 1.47176 7.63619
-                                               C1.57469 7.84206 1.72794 8.13175 1.93366 8.47736
-                                               C2.34425 9.16716 2.96855 10.0876 3.8254 11.0103
-                                               C5.53867 12.8554 8.22389 14.75 12 14.75
-                                               V13.25Z
-                                               M15.3125 12.6308
-                                               C14.3421 13.0128 13.2417 13.25 12 13.25
-                                               V14.75
-                                               C13.4382 14.75 14.7246 14.4742 15.8619 14.0266
-                                               L15.3125 12.6308Z
-                                               M7.78417 12.9197L6.37136 15.091
-                                               L7.62864 15.909L9.04145 13.7377
-                                               L7.78417 12.9197Z
-                                               M22 7
-                                               C21.3106 6.70456 21.3107 6.70441 21.3108 6.70427
-                                               C21.3108 6.70423 21.3108 6.7041 21.3109 6.70402
-                                               C21.3109 6.70388 21.311 6.70376 21.311 6.70368
-                                               C21.3111 6.70352 21.3111 6.70349 21.3111 6.7036
-                                               C21.311 6.7038 21.3107 6.70452 21.3101 6.70576
-                                               C21.309 6.70823 21.307 6.71275 21.3041 6.71924
-                                               C21.2983 6.73223 21.2889 6.75309 21.2758 6.78125
-                                               C21.2495 6.83757 21.2086 6.92295 21.1526 7.03267
-                                               C21.0406 7.25227 20.869 7.56831 20.6354 7.9432
-                                               C20.1669 8.69516 19.4563 9.67197 18.4867 10.582
-                                               L19.5133 11.6757
-                                               C20.6023 10.6535 21.3917 9.56587 21.9085 8.73646
-                                               C22.1676 8.32068 22.36 7.9668 22.4889 7.71415
-                                               C22.5533 7.58775 22.602 7.48643 22.6353 7.41507
-                                               C22.6519 7.37939 22.6647 7.35118 22.6737 7.33104
-                                               C22.6782 7.32097 22.6818 7.31292 22.6844 7.30696
-                                               C22.6857 7.30398 22.6867 7.30153 22.6876 7.2996
-                                               C22.688 7.29864 22.6883 7.29781 22.6886 7.29712
-                                               C22.6888 7.29677 22.6889 7.29646 22.689 7.29618
-                                               C22.6891 7.29604 22.6892 7.29585 22.6892 7.29578
-                                               C22.6893 7.29561 22.6894 7.29544 22 7Z
-                                               M18.4867 10.582
-                                               C17.6277 11.3882 16.5739 12.1343 15.3125 12.6308
-                                               L15.8619 14.0266
-                                               C17.3355 13.4466 18.5466 12.583 19.5133 11.6757
-                                               L18.4867 10.582Z
-                                               M18.4697 11.6592L19.9697 13.1592
-                                               L21.0303 12.0985L19.5303 10.5985
-                                               L18.4697 11.6592Z
-                                               M11.25 14V16.5H12.75V14H11.25Z
-                                               M14.9586 13.7377L16.3714 15.909
-                                               L17.6286 15.091L16.2158 12.9197
-                                               L14.9586 13.7377Z
-                                               M4.46967 10.5985L2.96967 12.0985
-                                               L4.03033 13.1592L5.53033 11.6592
-                                               L4.46967 10.5985Z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-
-                                    <svg
-                                        class="templo-eye-svg templo-eye-open"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                        focusable="false"
-                                    >
-                                        <path
-                                            d="M2 12
-                                               C2 12 5.5 5 12 5
-                                               C18.5 5 22 12 22 12
-                                               C22 12 18.5 19 12 19
-                                               C5.5 19 2 12 2 12Z"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            fill="none"
-                                        />
-
-                                        <path
-                                            d="M12 16
-                                               C10 14.8 8.5 13.5 8.5 11.8
-                                               C8.5 10.5 9.5 9.5 10.8 9.5
-                                               C11.5 9.5 12 9.9 12 10.4
-                                               C12 9.9 12.5 9.5 13.2 9.5
-                                               C14.5 9.5 15.5 10.5 15.5 11.8
-                                               C15.5 13.5 14 14.8 12 16Z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
+                                    <?= $iconosVisibilidadSeguridad; ?>
                                 </button>
-
                             </div>
-
                         </div>
 
                     </div>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Usuario
@@ -1770,13 +1481,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -1793,7 +1501,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
-
         <div class="modal-content templo-modal">
 
             <form
@@ -1810,7 +1517,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalEditarUsuarioLabel">
                         <i class="bi bi-pencil-square"></i>
                         Editar Usuario
@@ -1822,7 +1528,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body">
@@ -1839,7 +1544,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="editarUsuarioCedula" class="form-label">Cédula</label>
 
                             <input
@@ -1852,11 +1556,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <small class="templo-help-text">
                                 La cédula identifica a la persona en el sistema.
                             </small>
-
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="editarUsuarioNombre" class="form-label">
                                 Nombre
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1870,11 +1572,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="60"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-4">
-
                             <label for="editarUsuarioApellido" class="form-label">
                                 Apellido
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1888,11 +1588,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="60"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioTelefono" class="form-label">
                                 Teléfono
                                 <span class="fw-normal">(opcional)</span>
@@ -1905,11 +1603,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 class="form-control templo-input"
                                 maxlength="25"
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioCorreo" class="form-label">
                                 Correo electrónico
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -1923,11 +1619,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="100"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioDireccion" class="form-label">Dirección</label>
 
                             <input
@@ -1937,11 +1631,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 class="form-control templo-input"
                                 maxlength="150"
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioCiudad" class="form-label">Ciudad</label>
 
                             <input
@@ -1951,7 +1643,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 class="form-control templo-input"
                                 maxlength="80"
                             >
-
                         </div>
 
                         <!-- Datos de acceso y rol -->
@@ -1963,7 +1654,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioNickname" class="form-label">Nickname (opcional)</label>
 
                             <input
@@ -1977,11 +1667,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             <div class="form-text">
                                 Si se deja vacío, se mostrará el nombre completo.
                             </div>
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label for="editarUsuarioRol" class="form-label">
                                 Rol
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -2002,18 +1690,14 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                     </option>
 
                                 <?php endforeach; ?>
-
                             </select>
-
                         </div>
 
                     </div>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Cambios
@@ -2027,13 +1711,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2045,12 +1726,13 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 <div
     class="modal fade"
     id="modalEstadoUsuario"
+    data-alerta-confirmacion
+    data-alerta-aceptar="button[type='submit']"
     tabindex="-1"
     aria-labelledby="modalEstadoUsuarioLabel"
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
-
         <div class="modal-content templo-modal status-modal">
 
             <form
@@ -2066,7 +1748,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalEstadoUsuarioLabel">
                         <i class="bi bi-trash-fill" id="iconoEstadoUsuario"></i>
                         <span id="tituloEstadoUsuario">Desactivar Usuario</span>
@@ -2078,12 +1759,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <!-- Confirmación del cambio de estado -->
                 <div class="modal-body text-center">
-
                     <p class="status-question" id="preguntaEstadoUsuario">
                         ¿Deseas desactivar este usuario?
                     </p>
@@ -2094,12 +1773,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         El usuario permanecerá registrado, pero dejará de aparecer
                         en la tabla de usuarios activos.
                     </p>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button
                         type="submit"
                         class="btn-templo-danger"
@@ -2117,13 +1794,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2140,7 +1814,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
-
         <div class="modal-content templo-modal">
 
             <form action="Index.php?url=seguridad" method="POST">
@@ -2150,7 +1823,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalNuevoRolLabel">
                         <i class="bi bi-plus-circle"></i>
                         Registrar Nuevo Rol
@@ -2162,7 +1834,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body">
@@ -2171,7 +1842,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     <div class="row g-3">
 
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Nombre del rol
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -2185,11 +1855,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="40"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label class="form-label">Estado</label>
 
                             <input
@@ -2199,11 +1867,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 value="ACTIVO"
                                 readonly
                             >
-
                         </div>
 
                         <div class="col-md-12">
-
                             <label class="form-label">Descripción</label>
 
                             <textarea
@@ -2213,16 +1879,13 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="150"
                                 placeholder="Ingrese la descripción del rol"
                             ></textarea>
-
                         </div>
 
                     </div>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar
@@ -2236,13 +1899,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2259,7 +1919,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
     aria-hidden="true"
 >
     <div class="modal-dialog modal-lg modal-dialog-centered">
-
         <div class="modal-content templo-modal">
 
             <form action="Index.php?url=seguridad" method="POST">
@@ -2270,7 +1929,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalEditarRolLabel">
                         <i class="bi bi-pencil-square"></i>
                         Editar Rol
@@ -2282,7 +1940,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body">
@@ -2291,7 +1948,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     <div class="row g-3">
 
                         <div class="col-md-6">
-
                             <label class="form-label">
                                 Nombre del rol
                                 <span class="required-mark" aria-hidden="true">*</span>
@@ -2305,11 +1961,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 maxlength="40"
                                 required
                             >
-
                         </div>
 
                         <div class="col-md-6">
-
                             <label class="form-label">Estado</label>
 
                             <input
@@ -2319,11 +1973,9 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 class="form-control templo-input"
                                 readonly
                             >
-
                         </div>
 
                         <div class="col-md-12">
-
                             <label class="form-label">Descripción</label>
 
                             <textarea
@@ -2333,16 +1985,13 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 rows="3"
                                 maxlength="150"
                             ></textarea>
-
                         </div>
 
                     </div>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button type="submit" class="btn-templo-primary">
                         <i class="bi bi-save"></i>
                         Guardar Cambios
@@ -2356,13 +2005,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-x-circle"></i>
                         Cancelar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2374,12 +2020,13 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 <div
     class="modal fade"
     id="modalEstadoRol"
+    data-alerta-confirmacion
+    data-alerta-aceptar="button[type='submit']"
     tabindex="-1"
     aria-labelledby="modalEstadoRolLabel"
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
-
         <div class="modal-content templo-modal status-modal">
 
             <form action="Index.php?url=seguridad" method="POST">
@@ -2391,7 +2038,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalEstadoRolLabel">
                         <i class="bi bi-exclamation-triangle"></i>
                         Cambiar estado del rol
@@ -2403,12 +2049,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <!-- Confirmación del cambio de estado -->
                 <div class="modal-body text-center">
-
                     <p class="status-question">
                         ¿Deseas cambiar el estado de este rol?
                     </p>
@@ -2418,12 +2062,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                     <p class="status-warning">
                         El registro permanecerá guardado en el sistema.
                     </p>
-
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button
                         type="button"
                         class="btn-templo-secondary"
@@ -2437,13 +2079,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-check-circle"></i>
                         Confirmar
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2460,7 +2099,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
     aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered">
-
         <div class="modal-content templo-modal">
 
             <form
@@ -2483,7 +2121,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                 <!-- Encabezado del modal -->
                 <div class="modal-header">
-
                     <h5 class="modal-title" id="modalRestablecerClaveLabel">
                         <i class="bi bi-bag-heart"></i>
                         Restablecer Contraseña
@@ -2495,7 +2132,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         data-bs-dismiss="modal"
                         aria-label="Cerrar"
                     ></button>
-
                 </div>
 
                 <div class="modal-body">
@@ -2509,7 +2145,6 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
 
                     <!-- Usuario seleccionado -->
                     <div class="mb-3">
-
                         <label for="restablecerClaveUsuario" class="form-label">Usuario</label>
 
                         <input
@@ -2518,19 +2153,16 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             class="form-control templo-input"
                             readonly
                         >
-
                     </div>
 
                     <!-- Contraseña temporal -->
                     <div class="mb-3">
-
                         <label for="restablecerNuevaClave" class="form-label">
                             Contraseña temporal
                             <span class="required-mark" aria-hidden="true">*</span>
                         </label>
 
                         <div class="templo-password-field">
-
                             <input
                                 type="password"
                                 id="restablecerNuevaClave"
@@ -2550,172 +2182,19 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 aria-label="Mostrar contraseña temporal"
                                 title="Mostrar contraseña temporal"
                             >
-                                <svg
-                                    class="templo-eye-svg templo-eye-closed"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M2.68936 6.70456
-                                           C2.52619 6.32384 2.08528 6.14747 1.70456 6.31064
-                                           C1.32384 6.47381 1.14747 6.91472 1.31064 7.29544
-                                           L2.68936 6.70456Z
-                                           M15.5872 13.3287L15.3125 12.6308
-                                           L15.5872 13.3287Z
-                                           M9.04145 13.7377
-                                           C9.26736 13.3906 9.16904 12.926 8.82185 12.7001
-                                           C8.47466 12.4742 8.01008 12.5725 7.78417 12.9197
-                                           L9.04145 13.7377Z
-                                           M6.37136 15.091
-                                           C6.14545 15.4381 6.24377 15.9027 6.59096 16.1286
-                                           C6.93815 16.3545 7.40273 16.2562 7.62864 15.909
-                                           L6.37136 15.091Z
-                                           M22.6894 7.29544
-                                           C22.8525 6.91472 22.6762 6.47381 22.2954 6.31064
-                                           C21.9147 6.14747 21.4738 6.32384 21.3106 6.70456
-                                           L22.6894 7.29544Z
-                                           M19 11.1288L18.4867 10.582V10.582
-                                           L19 11.1288Z
-                                           M19.9697 13.1592
-                                           C20.2626 13.4521 20.7374 13.4521 21.0303 13.1592
-                                           C21.3232 12.8663 21.3232 12.3914 21.0303 12.0985
-                                           L19.9697 13.1592Z
-                                           M11.25 16.5
-                                           C11.25 16.9142 11.5858 17.25 12 17.25
-                                           C12.4142 17.25 12.75 16.9142 12.75 16.5
-                                           H11.25Z
-                                           M16.3714 15.909
-                                           C16.5973 16.2562 17.0619 16.3545 17.409 16.1286
-                                           C17.7562 15.9027 17.8545 15.4381 17.6286 15.091
-                                           L16.3714 15.909Z
-                                           M5.53033 11.6592
-                                           C5.82322 11.3663 5.82322 10.8914 5.53033 10.5985
-                                           C5.23744 10.3056 4.76256 10.3056 4.46967 10.5985
-                                           L5.53033 11.6592Z
-                                           M2.96967 12.0985
-                                           C2.67678 12.3914 2.67678 12.8663 2.96967 13.1592
-                                           C3.26256 13.4521 3.73744 13.4521 4.03033 13.1592
-                                           L2.96967 12.0985Z
-                                           M12 13.25
-                                           C8.77611 13.25 6.46133 11.6446 4.9246 9.98966
-                                           C4.15645 9.16243 3.59325 8.33284 3.22259 7.71014
-                                           C3.03769 7.3995 2.90187 7.14232 2.8134 6.96537
-                                           C2.76919 6.87696 2.73689 6.80875 2.71627 6.76411
-                                           C2.70597 6.7418 2.69859 6.7254 2.69411 6.71533
-                                           C2.69187 6.7103 2.69036 6.70684 2.68957 6.70503
-                                           C2.68917 6.70413 2.68896 6.70363 2.68892 6.70355
-                                           C2.68891 6.70351 2.68893 6.70357 2.68901 6.70374
-                                           C2.68904 6.70382 2.68913 6.70403 2.68915 6.70407
-                                           C2.68925 6.7043 2.68936 6.70456 2 7
-                                           C1.31064 7.29544 1.31077 7.29575 1.31092 7.29609
-                                           C1.31098 7.29624 1.31114 7.2966 1.31127 7.2969
-                                           C1.31152 7.29749 1.31183 7.2982 1.31218 7.299
-                                           C1.31287 7.30062 1.31376 7.30266 1.31483 7.30512
-                                           C1.31698 7.31003 1.31988 7.31662 1.32353 7.32483
-                                           C1.33083 7.34125 1.34115 7.36415 1.35453 7.39311
-                                           C1.38127 7.45102 1.42026 7.5332 1.47176 7.63619
-                                           C1.57469 7.84206 1.72794 8.13175 1.93366 8.47736
-                                           C2.34425 9.16716 2.96855 10.0876 3.8254 11.0103
-                                           C5.53867 12.8554 8.22389 14.75 12 14.75
-                                           V13.25Z
-                                           M15.3125 12.6308
-                                           C14.3421 13.0128 13.2417 13.25 12 13.25
-                                           V14.75
-                                           C13.4382 14.75 14.7246 14.4742 15.8619 14.0266
-                                           L15.3125 12.6308Z
-                                           M7.78417 12.9197L6.37136 15.091
-                                           L7.62864 15.909L9.04145 13.7377
-                                           L7.78417 12.9197Z
-                                           M22 7
-                                           C21.3106 6.70456 21.3107 6.70441 21.3108 6.70427
-                                           C21.3108 6.70423 21.3108 6.7041 21.3109 6.70402
-                                           C21.3109 6.70388 21.311 6.70376 21.311 6.70368
-                                           C21.3111 6.70352 21.3111 6.70349 21.3111 6.7036
-                                           C21.311 6.7038 21.3107 6.70452 21.3101 6.70576
-                                           C21.309 6.70823 21.307 6.71275 21.3041 6.71924
-                                           C21.2983 6.73223 21.2889 6.75309 21.2758 6.78125
-                                           C21.2495 6.83757 21.2086 6.92295 21.1526 7.03267
-                                           C21.0406 7.25227 20.869 7.56831 20.6354 7.9432
-                                           C20.1669 8.69516 19.4563 9.67197 18.4867 10.582
-                                           L19.5133 11.6757
-                                           C20.6023 10.6535 21.3917 9.56587 21.9085 8.73646
-                                           C22.1676 8.32068 22.36 7.9668 22.4889 7.71415
-                                           C22.5533 7.58775 22.602 7.48643 22.6353 7.41507
-                                           C22.6519 7.37939 22.6647 7.35118 22.6737 7.33104
-                                           C22.6782 7.32097 22.6818 7.31292 22.6844 7.30696
-                                           C22.6857 7.30398 22.6867 7.30153 22.6876 7.2996
-                                           C22.688 7.29864 22.6883 7.29781 22.6886 7.29712
-                                           C22.6888 7.29677 22.6889 7.29646 22.689 7.29618
-                                           C22.6891 7.29604 22.6892 7.29585 22.6892 7.29578
-                                           C22.6893 7.29561 22.6894 7.29544 22 7Z
-                                           M18.4867 10.582
-                                           C17.6277 11.3882 16.5739 12.1343 15.3125 12.6308
-                                           L15.8619 14.0266
-                                           C17.3355 13.4466 18.5466 12.583 19.5133 11.6757
-                                           L18.4867 10.582Z
-                                           M18.4697 11.6592L19.9697 13.1592
-                                           L21.0303 12.0985L19.5303 10.5985
-                                           L18.4697 11.6592Z
-                                           M11.25 14V16.5H12.75V14H11.25Z
-                                           M14.9586 13.7377L16.3714 15.909
-                                           L17.6286 15.091L16.2158 12.9197
-                                           L14.9586 13.7377Z
-                                           M4.46967 10.5985L2.96967 12.0985
-                                           L4.03033 13.1592L5.53033 11.6592
-                                           L4.46967 10.5985Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-
-                                <svg
-                                    class="templo-eye-svg templo-eye-open"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M2 12
-                                           C2 12 5.5 5 12 5
-                                           C18.5 5 22 12 22 12
-                                           C22 12 18.5 19 12 19
-                                           C5.5 19 2 12 2 12Z"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        fill="none"
-                                    />
-
-                                    <path
-                                        d="M12 16
-                                           C10 14.8 8.5 13.5 8.5 11.8
-                                           C8.5 10.5 9.5 9.5 10.8 9.5
-                                           C11.5 9.5 12 9.9 12 10.4
-                                           C12 9.9 12.5 9.5 13.2 9.5
-                                           C14.5 9.5 15.5 10.5 15.5 11.8
-                                           C15.5 13.5 14 14.8 12 16Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
+                                <?= $iconosVisibilidadSeguridad; ?>
                             </button>
-
                         </div>
-
                     </div>
 
                     <!-- Confirmación de la contraseña temporal -->
                     <div class="mb-3">
-
                         <label for="restablecerConfirmarClave" class="form-label">
                             Confirmar contraseña temporal
                             <span class="required-mark" aria-hidden="true">*</span>
                         </label>
 
                         <div class="templo-password-field">
-
                             <input
                                 type="password"
                                 id="restablecerConfirmarClave"
@@ -2735,167 +2214,15 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                                 aria-label="Mostrar confirmación de contraseña"
                                 title="Mostrar confirmación de contraseña"
                             >
-                                <svg
-                                    class="templo-eye-svg templo-eye-closed"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M2.68936 6.70456
-                                           C2.52619 6.32384 2.08528 6.14747 1.70456 6.31064
-                                           C1.32384 6.47381 1.14747 6.91472 1.31064 7.29544
-                                           L2.68936 6.70456Z
-                                           M15.5872 13.3287L15.3125 12.6308
-                                           L15.5872 13.3287Z
-                                           M9.04145 13.7377
-                                           C9.26736 13.3906 9.16904 12.926 8.82185 12.7001
-                                           C8.47466 12.4742 8.01008 12.5725 7.78417 12.9197
-                                           L9.04145 13.7377Z
-                                           M6.37136 15.091
-                                           C6.14545 15.4381 6.24377 15.9027 6.59096 16.1286
-                                           C6.93815 16.3545 7.40273 16.2562 7.62864 15.909
-                                           L6.37136 15.091Z
-                                           M22.6894 7.29544
-                                           C22.8525 6.91472 22.6762 6.47381 22.2954 6.31064
-                                           C21.9147 6.14747 21.4738 6.32384 21.3106 6.70456
-                                           L22.6894 7.29544Z
-                                           M19 11.1288L18.4867 10.582V10.582
-                                           L19 11.1288Z
-                                           M19.9697 13.1592
-                                           C20.2626 13.4521 20.7374 13.4521 21.0303 13.1592
-                                           C21.3232 12.8663 21.3232 12.3914 21.0303 12.0985
-                                           L19.9697 13.1592Z
-                                           M11.25 16.5
-                                           C11.25 16.9142 11.5858 17.25 12 17.25
-                                           C12.4142 17.25 12.75 16.9142 12.75 16.5
-                                           H11.25Z
-                                           M16.3714 15.909
-                                           C16.5973 16.2562 17.0619 16.3545 17.409 16.1286
-                                           C17.7562 15.9027 17.8545 15.4381 17.6286 15.091
-                                           L16.3714 15.909Z
-                                           M5.53033 11.6592
-                                           C5.82322 11.3663 5.82322 10.8914 5.53033 10.5985
-                                           C5.23744 10.3056 4.76256 10.3056 4.46967 10.5985
-                                           L5.53033 11.6592Z
-                                           M2.96967 12.0985
-                                           C2.67678 12.3914 2.67678 12.8663 2.96967 13.1592
-                                           C3.26256 13.4521 3.73744 13.4521 4.03033 13.1592
-                                           L2.96967 12.0985Z
-                                           M12 13.25
-                                           C8.77611 13.25 6.46133 11.6446 4.9246 9.98966
-                                           C4.15645 9.16243 3.59325 8.33284 3.22259 7.71014
-                                           C3.03769 7.3995 2.90187 7.14232 2.8134 6.96537
-                                           C2.76919 6.87696 2.73689 6.80875 2.71627 6.76411
-                                           C2.70597 6.7418 2.69859 6.7254 2.69411 6.71533
-                                           C2.69187 6.7103 2.69036 6.70684 2.68957 6.70503
-                                           C2.68917 6.70413 2.68896 6.70363 2.68892 6.70355
-                                           C2.68891 6.70351 2.68893 6.70357 2.68901 6.70374
-                                           C2.68904 6.70382 2.68913 6.70403 2.68915 6.70407
-                                           C2.68925 6.7043 2.68936 6.70456 2 7
-                                           C1.31064 7.29544 1.31077 7.29575 1.31092 7.29609
-                                           C1.31098 7.29624 1.31114 7.2966 1.31127 7.2969
-                                           C1.31152 7.29749 1.31183 7.2982 1.31218 7.299
-                                           C1.31287 7.30062 1.31376 7.30266 1.31483 7.30512
-                                           C1.31698 7.31003 1.31988 7.31662 1.32353 7.32483
-                                           C1.33083 7.34125 1.34115 7.36415 1.35453 7.39311
-                                           C1.38127 7.45102 1.42026 7.5332 1.47176 7.63619
-                                           C1.57469 7.84206 1.72794 8.13175 1.93366 8.47736
-                                           C2.34425 9.16716 2.96855 10.0876 3.8254 11.0103
-                                           C5.53867 12.8554 8.22389 14.75 12 14.75
-                                           V13.25Z
-                                           M15.3125 12.6308
-                                           C14.3421 13.0128 13.2417 13.25 12 13.25
-                                           V14.75
-                                           C13.4382 14.75 14.7246 14.4742 15.8619 14.0266
-                                           L15.3125 12.6308Z
-                                           M7.78417 12.9197L6.37136 15.091
-                                           L7.62864 15.909L9.04145 13.7377
-                                           L7.78417 12.9197Z
-                                           M22 7
-                                           C21.3106 6.70456 21.3107 6.70441 21.3108 6.70427
-                                           C21.3108 6.70423 21.3108 6.7041 21.3109 6.70402
-                                           C21.3109 6.70388 21.311 6.70376 21.311 6.70368
-                                           C21.3111 6.70352 21.3111 6.70349 21.3111 6.7036
-                                           C21.311 6.7038 21.3107 6.70452 21.3101 6.70576
-                                           C21.309 6.70823 21.307 6.71275 21.3041 6.71924
-                                           C21.2983 6.73223 21.2889 6.75309 21.2758 6.78125
-                                           C21.2495 6.83757 21.2086 6.92295 21.1526 7.03267
-                                           C21.0406 7.25227 20.869 7.56831 20.6354 7.9432
-                                           C20.1669 8.69516 19.4563 9.67197 18.4867 10.582
-                                           L19.5133 11.6757
-                                           C20.6023 10.6535 21.3917 9.56587 21.9085 8.73646
-                                           C22.1676 8.32068 22.36 7.9668 22.4889 7.71415
-                                           C22.5533 7.58775 22.602 7.48643 22.6353 7.41507
-                                           C22.6519 7.37939 22.6647 7.35118 22.6737 7.33104
-                                           C22.6782 7.32097 22.6818 7.31292 22.6844 7.30696
-                                           C22.6857 7.30398 22.6867 7.30153 22.6876 7.2996
-                                           C22.688 7.29864 22.6883 7.29781 22.6886 7.29712
-                                           C22.6888 7.29677 22.6889 7.29646 22.689 7.29618
-                                           C22.6891 7.29604 22.6892 7.29585 22.6892 7.29578
-                                           C22.6893 7.29561 22.6894 7.29544 22 7Z
-                                           M18.4867 10.582
-                                           C17.6277 11.3882 16.5739 12.1343 15.3125 12.6308
-                                           L15.8619 14.0266
-                                           C17.3355 13.4466 18.5466 12.583 19.5133 11.6757
-                                           L18.4867 10.582Z
-                                           M18.4697 11.6592L19.9697 13.1592
-                                           L21.0303 12.0985L19.5303 10.5985
-                                           L18.4697 11.6592Z
-                                           M11.25 14V16.5H12.75V14H11.25Z
-                                           M14.9586 13.7377L16.3714 15.909
-                                           L17.6286 15.091L16.2158 12.9197
-                                           L14.9586 13.7377Z
-                                           M4.46967 10.5985L2.96967 12.0985
-                                           L4.03033 13.1592L5.53033 11.6592
-                                           L4.46967 10.5985Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-
-                                <svg
-                                    class="templo-eye-svg templo-eye-open"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M2 12
-                                           C2 12 5.5 5 12 5
-                                           C18.5 5 22 12 22 12
-                                           C22 12 18.5 19 12 19
-                                           C5.5 19 2 12 2 12Z"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        fill="none"
-                                    />
-
-                                    <path
-                                        d="M12 16
-                                           C10 14.8 8.5 13.5 8.5 11.8
-                                           C8.5 10.5 9.5 9.5 10.8 9.5
-                                           C11.5 9.5 12 9.9 12 10.4
-                                           C12 9.9 12.5 9.5 13.2 9.5
-                                           C14.5 9.5 15.5 10.5 15.5 11.8
-                                           C15.5 13.5 14 14.8 12 16Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
+                                <?= $iconosVisibilidadSeguridad; ?>
                             </button>
-
                         </div>
-
                     </div>
 
                 </div>
 
                 <!-- Botones del modal -->
                 <div class="modal-footer">
-
                     <button
                         type="button"
                         class="btn-templo-secondary"
@@ -2909,13 +2236,10 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                         <i class="bi bi-bag-heart"></i>
                         Restablecer Contraseña
                     </button>
-
                 </div>
 
             </form>
-
         </div>
-
     </div>
 </div>
 
@@ -2938,7 +2262,13 @@ $scriptVista = 'Assets/js/seguridad.js';
             const modalElemento = document.getElementById('modalResultadoRestablecimiento');
 
             if (modalElemento && window.bootstrap && window.bootstrap.Modal) {
+                if (window.Alertas?.disponible()) {
+                    window.Alertas.desdeModal(modalElemento);
+                    return;
+                }
+
                 const modalResultado = new bootstrap.Modal(modalElemento);
+
                 modalResultado.show();
             }
         });
@@ -2946,7 +2276,14 @@ $scriptVista = 'Assets/js/seguridad.js';
 
 <?php endif; ?>
 
+<!-- ===================================================== -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
+
 <?php
+
+$scriptVista = 'Assets/js/seguridad.js?v=2';
+$scriptVistaModulo = true;
 
 require_once __DIR__ . '/Layout/Footer.php';
 

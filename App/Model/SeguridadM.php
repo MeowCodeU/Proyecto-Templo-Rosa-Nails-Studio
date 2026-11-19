@@ -2,40 +2,28 @@
 
 namespace App\Model;
 
-use App\Config\Database;
 use App\Interfaces\CrudInterface;
+use App\Traits\ValidacionUsuarioTrait;
 use PDO;
-
 
 /* ===================================================== */
 /* MODELO DE SEGURIDAD */
 /* ===================================================== */
 
-class SeguridadM extends Database implements CrudInterface
+class SeguridadM extends PersonasM implements CrudInterface
 {
+    use ValidacionUsuarioTrait;
+
     /* ================================================= */
-    /* CONEXIÓN Y ATRIBUTOS */
+    /* ATRIBUTOS */
     /* ================================================= */
 
-    /* Conexión con la base de datos */
-    private $conexionMD;
-
-    /* Atributos de la tabla usuarios */
     private $idUsuario;
     private $idPersona;
     private $idRol;
     private $nickname;
     private $clave;
-
-    /* Atributos de la tabla personas */
-    private $cedula;
-    private $nombre;
-    private $apellido;
-    private $telefono;
-    private $correo;
-    private $direccion;
-    private $ciudad;
-
+    private $estadoUsuario = 'INACTIVO';
 
     /* ================================================= */
     /* SETTERS */
@@ -46,30 +34,13 @@ class SeguridadM extends Database implements CrudInterface
     public function set_idRol($idRol) {$this->idRol = $idRol;}
     public function set_nickname($nickname) {$this->nickname = $nickname;}
     public function set_clave($clave) {$this->clave = $clave;}
-    public function set_cedula($cedula) {$this->cedula = $cedula;}
-    public function set_nombre($nombre) {$this->nombre = $nombre;}
-    public function set_apellido($apellido) {$this->apellido = $apellido;}
-    public function set_telefono($telefono) {$this->telefono = $telefono;}
-    public function set_correo($correo) {$this->correo = $correo;}
-    public function set_direccion($direccion) {$this->direccion = $direccion;}
-    public function set_ciudad($ciudad) {$this->ciudad = $ciudad;}
-
-
-    /* ================================================= */
-    /* CONSTRUCTOR */
-    /* ================================================= */
-
-    public function __construct()
-    {
-        $this->conexionMD = $this->getConnection();
-    }
-
+    public function set_estadoUsuario($estadoUsuario) {$this->estadoUsuario = $estadoUsuario;}
 
     /* ================================================= */
     /* CONSULTAR USUARIOS */
     /* ================================================= */
 
-    public function consultar()
+    public function consultar(): array
     {
         /* Obtener los usuarios activos con sus datos personales y su rol */
         $sql = "SELECT
@@ -109,13 +80,14 @@ class SeguridadM extends Database implements CrudInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-
     /* ================================================= */
     /* BUSCAR PERSONA POR CÉDULA */
     /* ================================================= */
 
     public function buscarPersonaPorCedula()
     {
+        if (!$this->validarIdentificacion()) return false;
+
         /* Recuperar los datos de la persona y comprobar si tiene una cuenta */
         $sql = "SELECT
                     p.id_persona,
@@ -146,108 +118,46 @@ class SeguridadM extends Database implements CrudInterface
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-
     /* ================================================= */
     /* REGISTRAR USUARIO */
     /* ================================================= */
 
-    public function registrar()
+    public function registrar(mixed $confirmarClave = null): bool
     {
+        if (!$this->validarDatosUsuario(true, $confirmarClave)) return false;
+
         try {
-            /* Agrupar el registro de la cuenta y los datos de la persona */
             $this->conexionMD->beginTransaction();
 
-            /* Buscar una persona existente para reutilizar su identificador */
-            $sqlBuscarPersona = "SELECT
-                                    p.id_persona,
-                                    u.id_usuario
-                                 FROM personas p
-                                 LEFT JOIN usuarios u
-                                    ON u.id_persona = p.id_persona
-                                 WHERE p.cedula = :cedula
-                                 LIMIT 1";
-
-            $stmtBuscarPersona = $this->conexionMD->prepare($sqlBuscarPersona);
-            $stmtBuscarPersona->bindParam(':cedula', $this->cedula);
-            $stmtBuscarPersona->execute();
-
-            $persona = $stmtBuscarPersona->fetch(PDO::FETCH_ASSOC);
-
-            if ($persona) {
-
-                /* Impedir que la persona tenga otra cuenta de usuario */
-                if (!empty($persona['id_usuario'])) {
-                    $this->conexionMD->rollBack();
-
-                    return false;
-                }
-
-                /* Reutilizar el identificador de la persona existente */
-                $idPersona = $persona['id_persona'];
-
-                /* Actualizar sus datos personales y de contacto */
-                $sqlActualizarPersona = "UPDATE personas
-                                         SET nombre = :nombre,
-                                             apellido = :apellido,
-                                             telefono = :telefono,
-                                             correo = :correo,
-                                             direccion = :direccion,
-                                             ciudad = :ciudad
-                                         WHERE id_persona = :id_persona";
-
-                $stmtActualizarPersona = $this->conexionMD->prepare($sqlActualizarPersona);
-
-                $stmtActualizarPersona->bindParam(':nombre', $this->nombre);
-                $stmtActualizarPersona->bindParam(':apellido', $this->apellido);
-                $stmtActualizarPersona->bindParam(':telefono', $this->telefono);
-                $stmtActualizarPersona->bindParam(':correo', $this->correo);
-                $stmtActualizarPersona->bindParam(':direccion', $this->direccion);
-                $stmtActualizarPersona->bindParam(':ciudad', $this->ciudad);
-                $stmtActualizarPersona->bindParam(':id_persona', $idPersona);
-
-                $stmtActualizarPersona->execute();
-
-            } else {
-
-                /* Registrar a la persona cuando su cédula no existe */
-                $sqlPersona = "INSERT INTO personas (
-                                    cedula,
-                                    nombre,
-                                    apellido,
-                                    telefono,
-                                    correo,
-                                    direccion,
-                                    ciudad
-                               ) VALUES (
-                                    :cedula,
-                                    :nombre,
-                                    :apellido,
-                                    :telefono,
-                                    :correo,
-                                    :direccion,
-                                    :ciudad
-                               )";
-
-                $stmtPersona = $this->conexionMD->prepare($sqlPersona);
-
-                $stmtPersona->bindParam(':cedula', $this->cedula);
-                $stmtPersona->bindParam(':nombre', $this->nombre);
-                $stmtPersona->bindParam(':apellido', $this->apellido);
-                $stmtPersona->bindParam(':telefono', $this->telefono);
-                $stmtPersona->bindParam(':correo', $this->correo);
-                $stmtPersona->bindParam(':direccion', $this->direccion);
-                $stmtPersona->bindParam(':ciudad', $this->ciudad);
-
-                $stmtPersona->execute();
-
-                /* Recuperar el identificador de la persona registrada */
-                $idPersona = $this->conexionMD->lastInsertId();
+            if (!$this->comprobarRolActivo()) {
+                $this->conexionMD->rollBack();
+                return false;
             }
 
-            /* Generar el hash de la contraseña antes de guardar la cuenta */
+            /* Impedir que una persona existente tenga dos cuentas */
+            $persona = $this->obtenerPersonaPorCedula((string) $this->cedula);
+
+            if ($persona !== null) {
+                $sqlBuscarCuenta = "SELECT id_usuario
+                                    FROM usuarios
+                                    WHERE id_persona = :id_persona
+                                    LIMIT 1";
+
+                $stmtBuscarCuenta = $this->conexionMD->prepare($sqlBuscarCuenta);
+                $stmtBuscarCuenta->bindValue(':id_persona', (int) $persona['id_persona'], PDO::PARAM_INT);
+                $stmtBuscarCuenta->execute();
+
+                if ($stmtBuscarCuenta->fetchColumn() !== false) {
+                    $this->erroresValidacion['cedula'] = 'La persona seleccionada ya tiene una cuenta de usuario.';
+                    $this->conexionMD->rollBack();
+                    return false;
+                }
+            }
+
+            /* Reutilizar la persona registrada o crearla si no existe */
+            $idPersona = $this->obtenerORegistrarPersona();
             $claveCifrada = password_hash($this->clave, PASSWORD_DEFAULT);
 
-            /* Registrar el usuario relacionado con la persona y su rol */
             $sqlUsuario = "INSERT INTO usuarios (
                                 id_persona,
                                 id_rol,
@@ -263,78 +173,77 @@ class SeguridadM extends Database implements CrudInterface
                            )";
 
             $stmtUsuario = $this->conexionMD->prepare($sqlUsuario);
-
-            $stmtUsuario->bindParam(':id_persona', $idPersona);
+            $stmtUsuario->bindValue(':id_persona', $idPersona, PDO::PARAM_INT);
             $stmtUsuario->bindParam(':id_rol', $this->idRol);
             $stmtUsuario->bindParam(':nickname', $this->nickname);
             $stmtUsuario->bindParam(':clave', $claveCifrada);
-
             $stmtUsuario->execute();
 
-            /* Confirmar todos los cambios de la operación */
             $this->conexionMD->commit();
-
             return true;
 
-        } catch (\Exception $e) {
-
-            /* Revertir la transacción si alguna parte de la operación falla */
+        } catch (\Throwable $e) {
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
-
             throw $e;
         }
     }
-
 
     /* ================================================= */
     /* MODIFICAR USUARIO */
     /* ================================================= */
 
-    public function modificar()
+    public function modificar(): bool
     {
+        if (!$this->validarDatosUsuario(false)) return false;
+
         try {
-            /* Agrupar los cambios de la persona y de su cuenta */
             $this->conexionMD->beginTransaction();
 
-            /* Actualizar los datos personales y de contacto */
-            $sqlPersona = "UPDATE personas
-                           SET nombre = :nombre,
-                               apellido = :apellido,
-                               telefono = :telefono,
-                               correo = :correo,
-                               direccion = :direccion,
-                               ciudad = :ciudad
-                           WHERE id_persona = :id_persona";
+            if (!$this->comprobarRolActivo()) {
+                $this->conexionMD->rollBack();
+                return false;
+            }
 
-            $stmtPersona = $this->conexionMD->prepare($sqlPersona);
+            /* Comprobar la persona asociada a la cuenta seleccionada */
+            $sqlBuscarPersona = "SELECT id_persona
+                                 FROM usuarios
+                                 WHERE id_usuario = :id_usuario
+                                 LIMIT 1
+                                 FOR UPDATE";
 
-            $stmtPersona->bindParam(':nombre', $this->nombre);
-            $stmtPersona->bindParam(':apellido', $this->apellido);
-            $stmtPersona->bindParam(':telefono', $this->telefono);
-            $stmtPersona->bindParam(':correo', $this->correo);
-            $stmtPersona->bindParam(':direccion', $this->direccion);
-            $stmtPersona->bindParam(':ciudad', $this->ciudad);
-            $stmtPersona->bindParam(':id_persona', $this->idPersona);
+            $stmtBuscarPersona = $this->conexionMD->prepare($sqlBuscarPersona);
+            $stmtBuscarPersona->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
+            $stmtBuscarPersona->execute();
 
-            $stmtPersona->execute();
+            $idPersona = $stmtBuscarPersona->fetchColumn();
 
-            /* Actualizar el rol y el nickname de la cuenta */
+            if ($idPersona === false) {
+                $this->erroresValidacion['id_usuario'] = 'El usuario seleccionado no se encuentra disponible.';
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            if ($this->idPersona !== null && (int) $this->idPersona !== (int) $idPersona) {
+                $this->erroresValidacion['id_persona'] = 'La persona no corresponde a la cuenta seleccionada.';
+                throw new \InvalidArgumentException('La persona no corresponde a la cuenta seleccionada.');
+            }
+
+            $this->actualizarPersona((int) $idPersona);
+
             $sqlUsuario = "UPDATE usuarios
                            SET id_rol = :id_rol,
                                nickname = :nickname
                            WHERE id_usuario = :id_usuario";
 
             $stmtUsuario = $this->conexionMD->prepare($sqlUsuario);
-
             $stmtUsuario->bindParam(':id_rol', $this->idRol);
             $stmtUsuario->bindParam(':nickname', $this->nickname);
             $stmtUsuario->bindParam(':id_usuario', $this->idUsuario);
-
             $stmtUsuario->execute();
 
-            /* Actualizar la contraseña cuando se haya suministrado una nueva */
+            /* La contraseña solo cambia cuando se proporciona una nueva */
             if (!empty($this->clave)) {
                 $claveCifrada = password_hash($this->clave, PASSWORD_DEFAULT);
 
@@ -343,66 +252,58 @@ class SeguridadM extends Database implements CrudInterface
                              WHERE id_usuario = :id_usuario";
 
                 $stmtClave = $this->conexionMD->prepare($sqlClave);
-
                 $stmtClave->bindParam(':clave', $claveCifrada);
                 $stmtClave->bindParam(':id_usuario', $this->idUsuario);
-
                 $stmtClave->execute();
             }
 
-            /* Confirmar la actualización de ambas tablas */
             $this->conexionMD->commit();
-
             return true;
 
-        } catch (\Exception $e) {
-
-            /* Revertir la transacción si alguna parte de la operación falla */
+        } catch (\Throwable $e) {
             if ($this->conexionMD->inTransaction()) {
                 $this->conexionMD->rollBack();
             }
-
             throw $e;
         }
     }
-
 
     /* ================================================= */
     /* RESTABLECER CONTRASEÑA */
     /* ================================================= */
 
-    public function restablecerClave()
+    public function restablecerClave(mixed $confirmarClave = null): bool
     {
-        /* Comprobar que se hayan asignado el usuario y la contraseña */
-        if (empty($this->idUsuario) || empty($this->clave)) return false;
+        $this->validarIdUsuarioSeguridad();
+        $this->validarClaveSeguridad($this->clave, 'nueva_clave', $confirmarClave);
 
-        /* Generar el hash de la contraseña temporal suministrada */
+        if ($this->erroresValidacion !== []) return false;
+
+        /* Generar el hash de la contraseña antes de actualizarla */
         $claveCifrada = password_hash($this->clave, PASSWORD_DEFAULT);
 
-        /* Actualizar únicamente la cuenta activa seleccionada */
         $sql = "UPDATE usuarios
                 SET clave = :clave
                 WHERE id_usuario = :id_usuario
                   AND estado_usuario = 'ACTIVO'";
 
         $stmt = $this->conexionMD->prepare($sql);
-
         $stmt->bindParam(':clave', $claveCifrada);
         $stmt->bindParam(':id_usuario', $this->idUsuario);
-
         $stmt->execute();
 
         return $stmt->rowCount() > 0;
     }
 
-
     /* ================================================= */
     /* DESACTIVAR USUARIO */
     /* ================================================= */
 
-    public function eliminar()
+    public function eliminar(): bool
     {
-        /* Cambiar el estado del usuario para conservar su registro */
+        if (!$this->validarDesactivacionUsuario()) return false;
+
+        /* Cambiar el estado del usuario sin eliminar su registro */
         $sql = "UPDATE usuarios
                 SET estado_usuario = 'INACTIVO'
                 WHERE id_usuario = :id_usuario";
@@ -411,5 +312,40 @@ class SeguridadM extends Database implements CrudInterface
         $stmt->bindParam(':id_usuario', $this->idUsuario);
 
         return $stmt->execute();
+    }
+
+    /* ================================================= */
+    /* VALIDAR LA CÉDULA ANTES DE BUSCAR UNA PERSONA */
+    /* ================================================= */
+
+    public function validarIdentificacion(): bool
+    {
+        if (!$this->validarCampos(['cedula' => $this->cedula], ['cedula'])) return false;
+
+        $this->cedula = trim($this->cedula);
+        return true;
+    }
+
+    /* ================================================= */
+    /* COMPROBAR EL ROL ASIGNADO DENTRO DE LA TRANSACCIÓN */
+    /* ================================================= */
+
+    private function comprobarRolActivo(): bool
+    {
+        $sql = "SELECT id_rol
+                FROM roles
+                WHERE id_rol = :id_rol
+                  AND estado_rol = 'ACTIVO'
+                LIMIT 1
+                FOR UPDATE";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_rol', $this->idRol, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->fetchColumn() !== false) return true;
+
+        $this->erroresValidacion['id_rol'] = 'El rol seleccionado no está activo o no existe.';
+        return false;
     }
 }

@@ -3,7 +3,6 @@
 use App\Model\SeguridadM;
 use App\Model\RolM;
 
-
 /* ===================================================== */
 /* GESTIÓN DE SEGURIDAD */
 /* ===================================================== */
@@ -11,6 +10,8 @@ use App\Model\RolM;
 $esPeticionAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 $accion = '';
 $resultadoRestablecimiento = 'error';
+$erroresValidacion = [];
+$modeloOperacion = null;
 
 $responderJson = static function (array $datos, int $estado = 200) use (&$accion): void {
 
@@ -27,7 +28,6 @@ $responderJson = static function (array $datos, int $estado = 200) use (&$accion
     echo json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 };
-
 
 /* ===================================================== */
 /* LECTURA Y COMPROBACIÓN DE LOS DATOS */
@@ -46,48 +46,27 @@ try {
         }
     }
 
-    $textoFormulario = static function (
-        string $campo,
-        bool $obligatorio = false,
-        bool $recortar = true
-    ) use ($datosFormulario): string {
-
-        $valor = $datosFormulario[$campo] ?? '';
-
-        if (!is_string($valor)) {
-            throw new \InvalidArgumentException('Los datos enviados no son válidos.');
-        }
-
-        if ($recortar) $valor = trim($valor);
-
-        if ($obligatorio && $valor === '') {
-            throw new \InvalidArgumentException('Complete los campos obligatorios del formulario.');
-        }
-
-        return $valor;
-    };
-
-    $identificadorFormulario = static function (string $campo) use ($datosFormulario): int {
-        $identificador = filter_var($datosFormulario[$campo] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1]
-        ]);
-
-        if ($identificador === false) {
-            throw new \InvalidArgumentException('Seleccione un registro válido.');
-        }
-
-        return $identificador;
-    };
-
+    if (!in_array($metodoSolicitud, ['GET', 'POST'], true)) {
+        header('Allow: GET, POST');
+        $responderJson(['ok' => false, 'mensaje' => 'El método solicitado no está permitido.'], 405);
+    }
 
     /* Crear las instancias de los modelos */
     $modeloSeguridad = new SeguridadM();
     $modeloRol = new RolM();
 
-
     /* Procesar las acciones enviadas por los formularios */
     if ($metodoSolicitud === 'POST') {
-        $accion = $textoFormulario('accion', true);
+        $accion = $datosFormulario['accion'] ?? null;
+
+        if (!is_string($accion)) {
+            $accion = '';
+            throw new \InvalidArgumentException('La acción enviada no es válida.');
+        }
+
+        $accion = trim($accion);
+        $modeloOperacion = in_array($accion, ['registrar_rol', 'modificar_rol', 'cambiar_estado_rol'], true)
+            ? $modeloRol : $modeloSeguridad;
 
         switch ($accion) {
 
@@ -149,16 +128,20 @@ try {
                 $responderJson(['ok' => true, 'usuarios' => $usuariosPublicos, 'roles' => $rolesPublicos]);
                 break;
 
-
             /* ================================================= */
             /* BUSCAR PERSONA POR CÉDULA */
             /* ================================================= */
 
             case 'buscar_persona':
 
-                $modeloSeguridad->set_cedula($textoFormulario('cedula', true));
+                $modeloSeguridad->set_cedula($datosFormulario['cedula'] ?? '');
 
                 $persona = $modeloSeguridad->buscarPersonaPorCedula();
+
+                if ($modeloSeguridad->obtenerErroresValidacion() !== []) {
+                    throw new \InvalidArgumentException('Revise la cédula ingresada.');
+                }
+
                 $personaPublica = null;
 
                 if ($persona) {
@@ -186,40 +169,27 @@ try {
                 ]);
                 break;
 
-
             /* ================================================= */
             /* REGISTRAR USUARIO */
             /* ================================================= */
 
             case 'registrar_usuario':
 
-                $clave = $textoFormulario('clave', true, false);
-                $confirmarClave = $textoFormulario('confirmar_clave', true, false);
+                $modeloSeguridad->set_cedula($datosFormulario['cedula'] ?? '');
+                $modeloSeguridad->set_nombre($datosFormulario['nombre'] ?? '');
+                $modeloSeguridad->set_apellido($datosFormulario['apellido'] ?? '');
+                $modeloSeguridad->set_telefono($datosFormulario['telefono'] ?? '');
+                $modeloSeguridad->set_correo($datosFormulario['correo'] ?? '');
+                $modeloSeguridad->set_direccion($datosFormulario['direccion'] ?? '');
+                $modeloSeguridad->set_ciudad($datosFormulario['ciudad'] ?? '');
+                $modeloSeguridad->set_idRol($datosFormulario['id_rol'] ?? null);
+                $modeloSeguridad->set_nickname($datosFormulario['nickname'] ?? '');
+                $modeloSeguridad->set_clave($datosFormulario['clave'] ?? '');
 
-                if (strlen($clave) < 8) {
-                    throw new \InvalidArgumentException('La contraseña debe contener un mínimo de ocho caracteres.');
-                }
-
-                if ($clave !== $confirmarClave) {
-                    throw new \InvalidArgumentException('Las contraseñas no coinciden.');
-                }
-
-                $modeloSeguridad->set_cedula($textoFormulario('cedula', true));
-                $modeloSeguridad->set_nombre($textoFormulario('nombre', true));
-                $modeloSeguridad->set_apellido($textoFormulario('apellido', true));
-                $modeloSeguridad->set_telefono($textoFormulario('telefono'));
-                $modeloSeguridad->set_correo($textoFormulario('correo', true));
-                $modeloSeguridad->set_direccion($textoFormulario('direccion'));
-                $modeloSeguridad->set_ciudad($textoFormulario('ciudad'));
-                $modeloSeguridad->set_idRol($identificadorFormulario('id_rol'));
-                $modeloSeguridad->set_nickname($textoFormulario('nickname'));
-                $modeloSeguridad->set_clave($clave);
-
-                $resultado = $modeloSeguridad->registrar();
+                $resultado = $modeloSeguridad->registrar($datosFormulario['confirmar_clave'] ?? '');
                 $mensaje = 'Usuario registrado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* REGISTRAR ROL */
@@ -227,14 +197,13 @@ try {
 
             case 'registrar_rol':
 
-                $modeloRol->set_nombreRol($textoFormulario('nombre_rol', true));
-                $modeloRol->set_descripcion($textoFormulario('descripcion'));
+                $modeloRol->set_nombreRol($datosFormulario['nombre_rol'] ?? '');
+                $modeloRol->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloRol->registrar();
                 $mensaje = 'Rol registrado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* MODIFICAR USUARIO */
@@ -242,22 +211,21 @@ try {
 
             case 'modificar_usuario':
 
-                $modeloSeguridad->set_idUsuario($identificadorFormulario('id_usuario'));
-                $modeloSeguridad->set_idPersona($identificadorFormulario('id_persona'));
-                $modeloSeguridad->set_nombre($textoFormulario('nombre', true));
-                $modeloSeguridad->set_apellido($textoFormulario('apellido', true));
-                $modeloSeguridad->set_telefono($textoFormulario('telefono'));
-                $modeloSeguridad->set_correo($textoFormulario('correo', true));
-                $modeloSeguridad->set_direccion($textoFormulario('direccion'));
-                $modeloSeguridad->set_ciudad($textoFormulario('ciudad'));
-                $modeloSeguridad->set_idRol($identificadorFormulario('id_rol'));
-                $modeloSeguridad->set_nickname($textoFormulario('nickname'));
+                $modeloSeguridad->set_idUsuario($datosFormulario['id_usuario'] ?? null);
+                $modeloSeguridad->set_idPersona($datosFormulario['id_persona'] ?? '');
+                $modeloSeguridad->set_nombre($datosFormulario['nombre'] ?? '');
+                $modeloSeguridad->set_apellido($datosFormulario['apellido'] ?? '');
+                $modeloSeguridad->set_telefono($datosFormulario['telefono'] ?? '');
+                $modeloSeguridad->set_correo($datosFormulario['correo'] ?? '');
+                $modeloSeguridad->set_direccion($datosFormulario['direccion'] ?? '');
+                $modeloSeguridad->set_ciudad($datosFormulario['ciudad'] ?? '');
+                $modeloSeguridad->set_idRol($datosFormulario['id_rol'] ?? null);
+                $modeloSeguridad->set_nickname($datosFormulario['nickname'] ?? '');
 
                 $resultado = $modeloSeguridad->modificar();
                 $mensaje = 'Usuario modificado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* RESTABLECER CONTRASEÑA DE USUARIO */
@@ -265,58 +233,31 @@ try {
 
             case 'restablecer_clave':
 
-                $tokenFormulario = $textoFormulario('token_csrf', false, false);
-                $tokenSesion = (string) ($_SESSION['token_restablecer_clave'] ?? '');
+                $tokenFormulario = $datosFormulario['token_csrf'] ?? '';
+                $tokenSesion = $_SESSION['token_restablecer_clave'] ?? '';
 
-                if (
-                    $tokenFormulario === '' ||
-                    $tokenSesion === '' ||
-                    !hash_equals($tokenSesion, $tokenFormulario)
-                ) {
+                if (!is_string($tokenFormulario) || !is_string($tokenSesion) ||
+                    $tokenFormulario === '' || $tokenSesion === '' ||
+                    !hash_equals($tokenSesion, $tokenFormulario)) {
                     $resultadoRestablecimiento = 'token_invalido';
-
-                    throw new \InvalidArgumentException(
-                        'La solicitud de restablecimiento no es válida. Intente nuevamente.'
-                    );
+                    throw new \InvalidArgumentException('La solicitud de restablecimiento no es válida. Intente nuevamente.');
                 }
 
-                $resultadoRestablecimiento = 'datos_incompletos';
+                $modeloSeguridad->set_idUsuario($datosFormulario['id_usuario'] ?? null);
+                $modeloSeguridad->set_clave($datosFormulario['nueva_clave'] ?? '');
+                $resultado = $modeloSeguridad->restablecerClave($datosFormulario['confirmar_clave'] ?? '');
+                $erroresClave = $modeloSeguridad->obtenerErroresValidacion();
 
-                $idUsuario = $identificadorFormulario('id_usuario');
-                $nuevaClave = $textoFormulario('nueva_clave', true, false);
-                $confirmarClave = $textoFormulario('confirmar_clave', true, false);
-
-                if (strlen($nuevaClave) < 8) {
-                    $resultadoRestablecimiento = 'clave_corta';
-
-                    throw new \InvalidArgumentException(
-                        'La contraseña temporal debe contener un mínimo de ocho caracteres.'
-                    );
+                if ($erroresClave !== []) {
+                    $resultadoRestablecimiento = isset($erroresClave['id_usuario'])
+                        ? 'datos_incompletos' : (isset($erroresClave['confirmar_clave']) ? 'no_coinciden' : 'error');
+                } elseif ($resultado) {
+                    $resultadoRestablecimiento = 'exito';
                 }
 
-                if ($nuevaClave !== $confirmarClave) {
-                    $resultadoRestablecimiento = 'no_coinciden';
-
-                    throw new \InvalidArgumentException(
-                        'La contraseña temporal y su confirmación no coinciden.'
-                    );
-                }
-
-                $resultadoRestablecimiento = 'error';
-
-                $modeloSeguridad->set_idUsuario($idUsuario);
-                $modeloSeguridad->set_clave($nuevaClave);
-
-                if (!$modeloSeguridad->restablecerClave()) {
-                    throw new \RuntimeException('No fue posible restablecer la contraseña.');
-                }
-
-                $resultado = true;
-                $resultadoRestablecimiento = 'exito';
                 $mensaje = 'La contraseña del usuario fue restablecida correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* MODIFICAR ROL */
@@ -324,15 +265,14 @@ try {
 
             case 'modificar_rol':
 
-                $modeloRol->set_idRol($identificadorFormulario('id_rol'));
-                $modeloRol->set_nombreRol($textoFormulario('nombre_rol', true));
-                $modeloRol->set_descripcion($textoFormulario('descripcion'));
+                $modeloRol->set_idRol($datosFormulario['id_rol'] ?? null);
+                $modeloRol->set_nombreRol($datosFormulario['nombre_rol'] ?? '');
+                $modeloRol->set_descripcion($datosFormulario['descripcion'] ?? '');
 
                 $resultado = $modeloRol->modificar();
                 $mensaje = 'Rol modificado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* DESACTIVAR USUARIO */
@@ -340,17 +280,13 @@ try {
 
             case 'cambiar_estado_usuario':
 
-                if (strtoupper($textoFormulario('estado_usuario', true)) !== 'INACTIVO') {
-                    throw new \InvalidArgumentException('Seleccione una desactivación válida.');
-                }
-
-                $modeloSeguridad->set_idUsuario($identificadorFormulario('id_usuario'));
+                $modeloSeguridad->set_estadoUsuario($datosFormulario['estado_usuario'] ?? '');
+                $modeloSeguridad->set_idUsuario($datosFormulario['id_usuario'] ?? null);
 
                 $resultado = $modeloSeguridad->eliminar();
                 $mensaje = 'Usuario desactivado correctamente.';
 
                 break;
-
 
             /* ================================================= */
             /* DESACTIVAR ROL */
@@ -358,18 +294,23 @@ try {
 
             case 'cambiar_estado_rol':
 
-                $modeloRol->set_idRol($identificadorFormulario('id_rol'));
+                $modeloRol->set_idRol($datosFormulario['id_rol'] ?? null);
 
                 $resultado = $modeloRol->eliminar();
                 $mensaje = 'Rol desactivado correctamente.';
 
                 break;
 
-
             default:
                 throw new \InvalidArgumentException('La acción enviada no es válida.');
         }
 
+        /* Recuperar los errores generados por las validaciones del modelo */
+        $erroresValidacion = $modeloOperacion->obtenerErroresValidacion();
+
+        if ($erroresValidacion !== []) {
+            throw new \InvalidArgumentException('Revise los campos señalados.');
+        }
 
         /* Confirmar el resultado de la operación */
         if ($resultado === false) {
@@ -379,7 +320,6 @@ try {
         if ($esPeticionAjax) {
             $responderJson(['ok' => true, 'mensaje' => $mensaje]);
         }
-
 
         /* Conservar la respuesta de los formularios tradicionales */
         if ($accion === 'restablecer_clave') {
@@ -392,18 +332,18 @@ try {
         exit;
     }
 
-
     /* Rechazar solicitudes incompletas */
     if ($esPeticionAjax) {
         $responderJson(['ok' => false, 'mensaje' => 'La solicitud enviada no es válida.'], 400);
     }
-
 
     /* Consultar los usuarios y roles activos para la vista */
     $listaUsuarios = $modeloSeguridad->consultar();
     $listaRoles = $modeloRol->consultar();
 
 } catch (\Throwable $e) {
+
+    if ($modeloOperacion !== null) $erroresValidacion = $modeloOperacion->obtenerErroresValidacion();
 
     /* Preparar un mensaje sin exponer información interna */
     $estadoRespuesta = 500;
@@ -425,8 +365,10 @@ try {
         $mensaje = 'Ya existe un registro con uno de los datos únicos ingresados. Revise los datos del formulario.';
     }
 
+    if ($estadoRespuesta === 500) error_log('SeguridadC: ' . $e->getMessage());
+
     if ($esPeticionAjax) {
-        $responderJson(['ok' => false, 'mensaje' => $mensaje], $estadoRespuesta);
+        $responderJson(['ok' => false, 'mensaje' => $mensaje, 'errores' => $erroresValidacion], $estadoRespuesta);
     }
 
     if ($accion === 'restablecer_clave') {
@@ -436,9 +378,8 @@ try {
     }
 
     http_response_code($estadoRespuesta);
-    exit($mensaje);
+    exit(htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'));
 }
-
 
 /* ===================================================== */
 /* CARGA DE LA VISTA */

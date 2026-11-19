@@ -1,6 +1,6 @@
 <?php
 
-use App\Controller\Components\Session;
+use App\Components\Session;
 use App\Model\LoginM;
 
 
@@ -10,7 +10,10 @@ use App\Model\LoginM;
 
 /* Variables utilizadas en la vista */
 $mensajeLogin = '';
+$tipoMensajeLogin = 'error';
 $cedulaLogin = '';
+$erroresLogin = [];
+$modeloLogin = null;
 
 
 /* Identificar las solicitudes asíncronas */
@@ -33,14 +36,14 @@ $responderJson = static function (array $datos, int $estado = 200): void {
 /* Mostrar mensajes temporales enviados por otros controladores */
 if (isset($_SESSION['mensaje_login'])) {
     $mensajeLogin = (string) $_SESSION['mensaje_login'];
+    $tipoMensajeLogin = $_SESSION['tipo_mensaje_login'] ?? 'info';
 
-    unset($_SESSION['mensaje_login']);
+    unset($_SESSION['mensaje_login'], $_SESSION['tipo_mensaje_login']);
 }
 
 
 /* Redirigir cuando ya existe una sesión activa */
-if (Session::estaAutenticada()) {
-
+if (Session\estaAutenticada()) {
     if ($esPeticionAjax) {
         $responderJson([
             'ok' => true,
@@ -49,14 +52,14 @@ if (Session::estaAutenticada()) {
     }
 
     header('Location: Index.php?url=inicio');
-
     exit;
 }
 
 
-/* Mostrar el mensaje de vencimiento por inactividad */
-if (($_GET['sesion'] ?? '') === 'expirada') {
+/* Conservar el motivo específico del cierre de sesión */
+if ($mensajeLogin === '' && ($_GET['sesion'] ?? '') === 'expirada') {
     $mensajeLogin = 'La sesión expiró por inactividad. Inicie sesión nuevamente.';
+    $tipoMensajeLogin = 'warning';
 }
 
 
@@ -72,12 +75,7 @@ try {
 
     /* Leer los datos enviados en el cuerpo de la solicitud */
     if ($metodoSolicitud === 'POST' && $tipoContenido === 'application/json') {
-        $datosFormulario = json_decode(
-            file_get_contents('php://input'),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        $datosFormulario = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
 
         if (!is_array($datosFormulario)) {
             throw new \InvalidArgumentException('Los datos enviados no tienen un formato válido.');
@@ -87,7 +85,6 @@ try {
 
     /* Comprobar la acción solicitada */
     if ($metodoSolicitud === 'POST') {
-
         if (($datosFormulario['accion'] ?? '') !== 'iniciar_sesion') {
             throw new \InvalidArgumentException('La solicitud enviada no es válida.');
         }
@@ -96,67 +93,42 @@ try {
         $clave = $datosFormulario['clave'] ?? '';
 
 
-        /* Comprobar el tipo de los datos recibidos */
-        if (!is_string($cedula) || !is_string($clave)) {
-            throw new \InvalidArgumentException('La cédula o la clave suministrada no es válida.');
-        }
-
-        $cedulaLogin = trim($cedula);
-        $estadoRespuesta = 401;
+        /* Conservar la cédula como texto para volver a mostrar el formulario */
+        $cedulaLogin = is_string($cedula) ? trim($cedula) : '';
 
 
-        /* Validar los datos ingresados */
-        if (!preg_match('/^[0-9]{6,20}$/', $cedulaLogin) || $clave === '') {
-            $mensajeLogin = 'La cédula o la clave suministrada no es válida.';
-
-        } else {
-            $modeloLogin = new LoginM();
-            $usuario = $modeloLogin->buscarPorCedula($cedulaLogin);
+        /* Delegar la validación y la autenticación al modelo */
+        $modeloLogin = new LoginM();
+        $usuario = $modeloLogin->autenticar($cedula, $clave);
 
 
-            /* Validar la existencia de la cuenta y la contraseña */
-            if (!$usuario || !password_verify($clave, (string) ($usuario['clave'] ?? ''))) {
-                $mensajeLogin = 'La cédula o la clave suministrada no es válida.';
+        /* Registrar la sesión únicamente después de confirmar el acceso */
+        if ($usuario !== null) {
+            Session\registrarUsuario($usuario);
 
-            /* Comprobar que la cuenta y el rol estén activos */
-            } elseif (
-                ($usuario['estado_usuario'] ?? '') !== 'ACTIVO' ||
-                ($usuario['estado_rol'] ?? '') !== 'ACTIVO'
-            ) {
-                $estadoRespuesta = 403;
-                $mensajeLogin = 'La cuenta o el rol asociado no se encuentra activo.';
-
-            } else {
-
-                /* Excluir la contraseña antes de crear la sesión */
-                unset($usuario['clave']);
-
-
-                /* Registrar los datos del usuario en la sesión */
-                Session::registrarUsuario($usuario);
-
-
-                /* Confirmar el acceso al sistema */
-                if ($esPeticionAjax) {
-                    $responderJson([
-                        'ok' => true,
-                        'redireccion' => 'Index.php?url=inicio'
-                    ]);
-                }
-
-                header('Location: Index.php?url=inicio');
-
-                exit;
+            if ($esPeticionAjax) {
+                $responderJson([
+                    'ok' => true,
+                    'redireccion' => 'Index.php?url=inicio'
+                ]);
             }
+
+            header('Location: Index.php?url=inicio');
+            exit;
         }
+
+        $mensajeLogin = $modeloLogin->obtenerMensajeAcceso();
+        $erroresLogin = $modeloLogin->obtenerErroresValidacion();
 
 
         /* Informar los errores de acceso sin cargar la vista */
         if ($esPeticionAjax) {
             $responderJson([
                 'ok' => false,
-                'mensaje' => $mensajeLogin
-            ], $estadoRespuesta);
+                'mensaje' => $mensajeLogin,
+                'campo' => array_key_first($erroresLogin),
+                'errores' => $erroresLogin
+            ], $modeloLogin->obtenerEstadoRespuesta());
         }
 
     } elseif ($esPeticionAjax) {
@@ -167,10 +139,6 @@ try {
     }
 
 } catch (\Throwable $error) {
-
-    /* Registrar el error técnico sin exponerlo en la respuesta */
-    error_log($error->getMessage());
-
     $estadoRespuesta = 500;
     $mensajeLogin = 'No fue posible validar el acceso. Intente nuevamente.';
 
@@ -183,6 +151,13 @@ try {
     } elseif ($error instanceof \InvalidArgumentException) {
         $estadoRespuesta = 422;
         $mensajeLogin = $error->getMessage();
+
+        if ($modeloLogin instanceof LoginM) {
+            $erroresLogin = $modeloLogin->obtenerErroresValidacion();
+        }
+
+    } else {
+        error_log($error->getMessage());
     }
 
 
@@ -190,7 +165,9 @@ try {
     if ($esPeticionAjax) {
         $responderJson([
             'ok' => false,
-            'mensaje' => $mensajeLogin
+            'mensaje' => $mensajeLogin,
+            'campo' => array_key_first($erroresLogin),
+            'errores' => $erroresLogin
         ], $estadoRespuesta);
     }
 }

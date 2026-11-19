@@ -42,13 +42,25 @@ $escaparClaveAdmin = static function ($valor): string {
     <!-- Bootstrap Icons -->
     <link
         rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        href="Assets/libs/bootstrap-icons/font/bootstrap-icons.min.css"
     >
 
     <!-- CSS de las vistas externas -->
     <link
         rel="stylesheet"
         href="Assets/css/login.css?v=<?= filemtime(__DIR__ . '/../../Assets/css/login.css'); ?>"
+    >
+
+    <!-- Estilos de SweetAlert2 -->
+    <link
+        rel="stylesheet"
+        href="Assets/libs/sweetalert2/sweetalert2.min.css"
+    >
+
+    <!-- Avisos y confirmaciones comunes -->
+    <link
+        rel="stylesheet"
+        href="Assets/css/alertas.css?v=<?= filemtime(__DIR__ . '/../../Assets/css/alertas.css'); ?>"
     >
 
 </head>
@@ -283,12 +295,18 @@ $escaparClaveAdmin = static function ($valor): string {
     </main>
 
 
-    <!-- ===================================================== -->
-    <!-- SCRIPTS DE LA VISTA -->
-    <!-- ===================================================== -->
+<!-- ===================================================== -->
+<!-- SCRIPT Y CIERRE DE LA VISTA -->
+<!-- ===================================================== -->
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="Assets/libs/jquery/jquery-3.7.1.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="Assets/libs/sweetalert2/sweetalert2.all.min.js"></script>
+
+    <!-- Avisos y confirmaciones comunes -->
+    <script src="Assets/js/alertas.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/alertas.js'); ?>"></script>
 
     <!-- Comportamiento del acceso -->
     <script src="Assets/js/login.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/login.js'); ?>"></script>

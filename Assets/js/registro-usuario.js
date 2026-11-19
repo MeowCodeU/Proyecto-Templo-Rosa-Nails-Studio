@@ -15,8 +15,15 @@ $(function () {
     const urlRegistro = formulario.attr("action") || "Index.php?url=registroUsuario";
 
     let enviando = false;
+    let preparandoEnvio = false;
     let redirigiendo = false;
+    let validacionesCompartidas = null;
+    let reglasRegistro = null;
     let mensaje = formulario.prevAll('p[role="alert"]').first();
+
+
+    /* Utilizar los mensajes de las validaciones compartidas */
+    formulario.prop("noValidate", true);
 
 
     /* ================================================= */
@@ -30,13 +37,14 @@ $(function () {
             hidden: true
         }).css({
             margin: "0 0 18px",
-            color: "#8a2635",
+            color: "#c40056",
             fontSize: "0.92rem",
             textAlign: "center"
         }).insertBefore(formulario);
     }
 
     mensaje.attr("id", "mensajeRegistroUsuario");
+
 
     function mostrarError(texto, campo = "") {
         mensaje.text(texto).prop("hidden", false);
@@ -53,15 +61,97 @@ $(function () {
         });
     }
 
+
     function limpiarAvisos() {
         mensaje.empty().prop("hidden", true);
-        formulario.find('[aria-invalid="true"]').removeAttr("aria-invalid");
     }
+
+
+    /* ================================================= */
+    /* VALIDACIONES COMPARTIDAS DEL REGISTRO */
+    /* ================================================= */
+
+    const cargaValidaciones = import("./validaciones/validaciones.js")
+        .then(function (modulo) {
+            const validaciones = modulo.Validaciones;
+
+            reglasRegistro = Object.freeze({
+                nombres: validaciones.reglasUsuarios.nombre,
+                apellidos: validaciones.reglasUsuarios.apellido,
+                cedula: validaciones.reglasUsuarios.cedula,
+                telefono: validaciones.reglasUsuarios.telefono,
+                correo: validaciones.reglasUsuarios.correo,
+
+                clave: {
+                    comprobar: function (valor) {
+                        if (typeof valor !== "string" || valor === "") {
+                            return "Ingrese la contraseña.";
+                        }
+
+                        if (validaciones.validarClave(valor)) return null;
+
+                        if (new TextEncoder().encode(valor).length > 72) {
+                            return "La contraseña es demasiado larga. Utilice una más corta.";
+                        }
+
+                        return "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo, sin espacios.";
+                    }
+                },
+
+                confirmar_clave: {
+                    comprobar: function (valor) {
+                        if (typeof valor !== "string" || valor === "") {
+                            return "Confirme la contraseña.";
+                        }
+
+                        return valor !== clave.val()
+                            ? "Las contraseñas no coinciden."
+                            : null;
+                    }
+                },
+
+                id_rol: validaciones.reglasUsuarios.id_rol
+            });
+
+
+            /* Mantener el límite del teléfono acorde con el modelo */
+            formulario.find("[name='telefono']").prop("maxLength", 25);
+
+            if (confirmarClave.length) confirmarClave[0].setCustomValidity("");
+
+            validaciones.activar(formulario[0], reglasRegistro);
+            validacionesCompartidas = validaciones;
+
+            return validaciones;
+
+        }).catch(function () {
+            return null;
+        });
+
+
+    /* Revisar una confirmación ya validada cuando cambie la contraseña */
+    clave.on("input", function () {
+        if (validacionesCompartidas && confirmarClave.length) {
+            confirmarClave[0].dispatchEvent(
+                new Event("input", { bubbles: true })
+            );
+        }
+    });
 
 
     /* ================================================= */
     /* MOSTRAR U OCULTAR CONTRASEÑAS */
     /* ================================================= */
+
+    formulario.find(".btnAlternarClaveRegistro").each(function () {
+        const boton = $(this);
+        const descripcion = (boton.attr("aria-label") || "Mostrar contraseña")
+            .replace(/^(Mostrar|Ocultar)\s+/i, "");
+
+        boton.data("descripcionClave", descripcion);
+        boton.attr("aria-pressed", "false");
+    });
+
 
     formulario.on("click", ".btnAlternarClaveRegistro", function () {
         const boton = $(this);
@@ -71,6 +161,8 @@ $(function () {
         if (!campo.length) return;
 
         const mostrar = campo.prop("type") !== "text";
+        const descripcion = boton.data("descripcionClave") || "contraseña";
+        const texto = (mostrar ? "Ocultar " : "Mostrar ") + descripcion;
 
         campo.prop("type", mostrar ? "text" : "password");
 
@@ -78,31 +170,10 @@ $(function () {
         boton.find(".templo-eye-closed").toggle(!mostrar);
 
         boton.attr({
-            "aria-label": (mostrar ? "Ocultar" : "Mostrar") + " contraseña",
-            title: (mostrar ? "Ocultar" : "Mostrar") + " contraseña",
+            "aria-label": texto,
+            title: texto,
             "aria-pressed": String(mostrar)
         });
-    });
-
-
-    /* ================================================= */
-    /* COINCIDENCIA DE LAS CONTRASEÑAS */
-    /* ================================================= */
-
-    function validarCoincidencia() {
-        if (!clave.length || !confirmarClave.length) return;
-
-        confirmarClave[0].setCustomValidity(
-            confirmarClave.val() !== "" && clave.val() !== confirmarClave.val()
-                ? "Las contraseñas no coinciden."
-                : ""
-        );
-    }
-
-    $("#clave, #confirmarClave").on("input", validarCoincidencia);
-
-    formulario.on("input change", "[name]", function () {
-        $(this).removeAttr("aria-invalid");
     });
 
 
@@ -171,12 +242,34 @@ $(function () {
     formulario.on("submit", async function (evento) {
         evento.preventDefault();
 
-        if (enviando || redirigiendo) return;
+        if (enviando || preparandoEnvio || redirigiendo) return;
+
+        preparandoEnvio = true;
+
+        let validaciones = null;
+
+        try {
+            validaciones = await cargaValidaciones;
+
+        } finally {
+            preparandoEnvio = false;
+        }
 
         limpiarAvisos();
-        validarCoincidencia();
 
-        if (!this.reportValidity()) return;
+        if (!validaciones) {
+            mostrarError("No fue posible cargar las validaciones. Recargue la página antes de continuar.");
+            return;
+        }
+
+        validaciones.limpiarFormulario(formulario[0]);
+
+        const resultado = validaciones.validarFormulario(formulario[0], reglasRegistro);
+
+        if (!resultado.valido) {
+            if (resultado.primerCampo) resultado.primerCampo.focus();
+            return;
+        }
 
         const datos = {};
 
@@ -222,7 +315,8 @@ $(function () {
                 texto: typeof respuesta?.mensaje === "string"
                     ? respuesta.mensaje
                     : "No se pudo confirmar el registro. Intente iniciar sesión antes de volver a registrarse.",
-                campo: typeof respuesta?.campo === "string" ? respuesta.campo : ""
+                campo: typeof respuesta?.campo === "string" ? respuesta.campo : "",
+                errores: respuesta?.errores
             };
 
         } catch (error) {
@@ -238,23 +332,42 @@ $(function () {
 
             avisoPendiente = {
                 texto: error.message || "No fue posible completar el registro. Intente nuevamente.",
-                campo: typeof respuesta?.campo === "string" ? respuesta.campo : ""
+                campo: typeof respuesta?.campo === "string" ? respuesta.campo : "",
+                errores: respuesta?.errores
             };
 
         } finally {
             if (!redirigiendo) {
 
-                /* Recuperar los controles antes de enfocar un campo con error */
+                /* Recuperar los controles antes de presentar los errores */
                 controles.forEach(control => {
                     control.elemento.prop("disabled", control.deshabilitado);
                 });
 
                 botonEnviar.html(contenidoBoton);
-                formulario.attr("aria-busy", "false");
+                formulario.removeAttr("aria-busy");
                 enviando = false;
 
                 if (avisoPendiente) {
-                    mostrarError(avisoPendiente.texto, avisoPendiente.campo);
+                    let primerCampo = null;
+
+                    if ($.isPlainObject(avisoPendiente.errores)) {
+                        primerCampo = validaciones.mostrarErrores(
+                            formulario[0],
+                            avisoPendiente.errores
+                        );
+                    }
+
+                    window.Alertas?.rechazo(
+                        avisoPendiente.texto,
+                        avisoPendiente,
+                        formulario
+                    );
+
+                    mostrarError(
+                        avisoPendiente.texto,
+                        avisoPendiente.campo || primerCampo?.name || ""
+                    );
                 }
             }
         }
