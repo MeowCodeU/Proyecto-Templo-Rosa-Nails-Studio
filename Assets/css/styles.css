@@ -1291,6 +1291,42 @@ body{
   width: 22%; white-space: normal; 
 }
 
+
+/* ===================================================== */
+/* INSUMOS QUE SUMINISTRA CADA PROVEEDOR */
+/* ===================================================== */
+
+/* Opciones de insumos dentro del modal */
+#modalInsumosProveedor .proveedor-insumo-opcion{
+  cursor: pointer;
+  border-color: rgba(216,167,177,0.50) !important;
+  background: rgba(255,244,247,0.45);
+}
+
+/* Resaltar suavemente la opción seleccionada */
+#modalInsumosProveedor .proveedor-insumo-opcion:focus-within{
+  border-color: var(--rose-pagination) !important;
+  background: rgba(249,232,238,0.75);
+}
+
+/* Bordes rosados para las casillas */
+#modalInsumosProveedor .proveedor-insumo-check{
+  border-color: rgba(216,167,177,0.70);
+}
+
+/* Casillas seleccionadas con el rosado del sistema */
+#modalInsumosProveedor .proveedor-insumo-check:checked{
+  background-color: var(--rose-pagination);
+  border-color: var(--rose-pagination);
+}
+
+/* Eliminar el foco azul predeterminado de Bootstrap */
+#modalInsumosProveedor .proveedor-insumo-check:focus{
+  border-color: var(--rose-pagination);
+  box-shadow: 0 0 0 .2rem rgba(238,187,187,0.30);
+}
+
+
 /* ===================================================== */
 /* BOTONES DE ACCIÓN EN TABLAS */
 /* ===================================================== */
@@ -2205,6 +2241,62 @@ body{
 
   font-weight: 900;
   line-height: 1;
+}
+
+
+/* ===================================================== */
+/* MENSAJES DE VALIDACIONES */
+/* ===================================================== */
+
+/* Presentación uniforme de los mensajes */
+.templo-modal .templo-validacion-feedback,
+.insumos-module .templo-validacion-feedback,
+.registro-servicio-module .templo-validacion-feedback,
+.reportes-module .templo-validacion-feedback,
+.auth-form .templo-validacion-feedback,
+.templo-modal #mensajePersonaNuevoCliente,
+.templo-modal .proveedores-mensaje-persona {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+  background: transparent;
+}
+
+/* Mensajes de error */
+.templo-modal .templo-validacion-feedback.is-invalid,
+.insumos-module .templo-validacion-feedback.is-invalid,
+.registro-servicio-module .templo-validacion-feedback.is-invalid,
+.reportes-module .templo-validacion-feedback.is-invalid,
+.reportes-module .reportes-mensaje-error,
+.auth-form .templo-validacion-feedback.is-invalid,
+#mensajeRegistroUsuario,
+.templo-modal .estado-error {
+  color: #c40056 !important;
+}
+
+/* Mensajes correctos */
+.templo-modal .templo-validacion-feedback.is-valid,
+.insumos-module .templo-validacion-feedback.is-valid,
+.registro-servicio-module .templo-validacion-feedback.is-valid,
+.reportes-module .templo-validacion-feedback.is-valid,
+.auth-form .templo-validacion-feedback.is-valid,
+.templo-modal .estado-correcto {
+  color: var(--estado-realizada-text) !important;
+}
+
+/* Avisos de agendamiento y registro de servicio */
+.templo-modal .agendamiento-aviso.alert-danger,
+.registro-servicio-module #mensajeRegistroServicio.alert-danger {
+  --bs-alert-color: #c40056;
+  --bs-alert-bg: var(--estado-programada-bg);
+  --bs-alert-border-color: #edcad5;
+}
+
+.templo-modal .agendamiento-aviso.alert-success,
+.registro-servicio-module #mensajeRegistroServicio.alert-success {
+  --bs-alert-color: var(--estado-realizada-text);
+  --bs-alert-bg: var(--estado-realizada-bg);
+  --bs-alert-border-color: var(--estado-realizada-bg);
 }
 
 .templo-modal .form-control::placeholder,
@@ -4098,7 +4190,9 @@ body{
 }
 
 
-/* Zona superior */
+/* ===================================================== */
+/* BIENVENIDA Y CALENDARIO */
+/* ===================================================== */
 
 .inicio-superior{
   width: 100%;
@@ -4112,19 +4206,16 @@ body{
   align-items: stretch;
 
   overflow: visible;
-
   padding: 0 4px 20px 0;
 }
 
 
-/* Card de bienvenida */
-
+/* Tarjeta de bienvenida */
 .inicio-bienvenida-wrap{
   position: relative;
 
   min-width: 0;
   height: 295px;
-
   padding-top: 75px;
 
   display: flex;
@@ -4138,22 +4229,18 @@ body{
 
   width: 100%;
   min-height: 220px;
-
   padding: 38px 255px 34px 34px;
 
   border-radius: 24px;
   overflow: visible;
 
-  background:
-    linear-gradient(
-      135deg,
-      rgba(232,206,216,0.96),
-      rgba(253,245,242,0.92)
-    );
+  background: linear-gradient(
+    135deg,
+    rgba(232,206,216,0.96),
+    rgba(253,245,242,0.92)
+  );
 
-  border:
-    1.5px solid
-    rgba(216,167,177,0.50);
+  border: 1.5px solid rgba(216,167,177,0.50);
 
   box-shadow:
     0 16px 34px rgba(74,60,49,0.12),
@@ -4163,22 +4250,18 @@ body{
 .inicio-bienvenida-texto{
   position: relative;
   z-index: 2;
-
   max-width: 610px;
 }
 
 .inicio-bienvenida-texto h3{
   margin-bottom: 10px;
-
   color: var(--gold-main);
-
   font-size: 2rem;
   font-weight: 800;
 }
 
 .inicio-bienvenida-texto p{
   max-width: 520px;
-
   color: rgba(122,101,91,0.82);
 
   font-size: 1rem;
@@ -4194,13 +4277,11 @@ body{
   display: flex;
   align-items: baseline;
   gap: 7px;
-
   color: var(--brown-main);
 }
 
 .inicio-bienvenida-citas strong{
   color: inherit;
-
   font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
@@ -4208,17 +4289,14 @@ body{
 
 .inicio-bienvenida-citas span{
   color: inherit;
-
   font-size: 1rem;
   font-weight: 800;
 }
 
 .inicio-bienvenida-imagen{
   position: absolute;
-
   right: 22px;
   bottom: -2px;
-
   z-index: 3;
 
   width: auto;
@@ -4226,28 +4304,31 @@ body{
   max-width: 250px;
 
   object-fit: contain;
-
   pointer-events: none;
   user-select: none;
 }
 
+/* Separar los tacones de la administradora del borde inferior */
+@media (min-width: 576px){
 
-/* Mini calendario */
+  .inicio-bienvenida-imagen[src*="TR_Administradora_Negocio.png"]{
+    bottom: 4px;
+  }
 
+}
+
+
+/* Tarjeta del mini calendario */
 .inicio-calendario-card{
   position: relative;
   isolation: isolate;
 
   height: 295px;
   min-width: 0;
-
   overflow: hidden;
 
   border-radius: 24px;
-
-  border:
-    1.5px solid
-    rgba(216,167,177,0.45);
+  border: 1.5px solid rgba(216,167,177,0.45);
 
   background: rgba(255,255,255,0.62);
 
@@ -4258,37 +4339,30 @@ body{
   backdrop-filter: blur(8px);
 }
 
-/* Mismo fondo utilizado por el calendario principal */
-
+/* Fondo compartido con el calendario principal */
 .inicio-calendario-card::before{
   content: "";
-
   position: absolute;
   inset: 50px 0 0;
+  z-index: 0;
 
-  background-image:
-    url("../img/TR_Fondo_Horizontal.png");
-
+  background-image: url("../img/TR_Fondo_Horizontal.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 
   opacity: 0.25;
-
   pointer-events: none;
-  z-index: 0;
 }
 
 .inicio-calendario-card::after{
   content: "";
-
   position: absolute;
   inset: 50px 0 0;
+  z-index: 1;
 
   background: rgba(255,255,255,0.48);
-
   pointer-events: none;
-  z-index: 1;
 }
 
 .inicio-card-header,
@@ -4299,7 +4373,6 @@ body{
 
 .inicio-card-header{
   min-height: 50px;
-
   padding: 14px 18px;
 
   display: flex;
@@ -4307,9 +4380,7 @@ body{
   gap: 8px;
 
   background: rgba(232,206,216,0.92);
-
   color: var(--brown-main);
-
   font-weight: 800;
 }
 
@@ -4322,20 +4393,21 @@ body{
   background: transparent;
 }
 
+
+/* Navegación entre meses */
 .inicio-calendario-navegacion{
   min-height: 28px;
 
   display: grid;
   grid-template-columns: 30px 1fr 30px;
   align-items: center;
-
   gap: 8px;
+
   margin-bottom: 6px;
 }
 
 .inicio-calendario-navegacion h4{
   margin: 0;
-
   color: var(--brown-main);
 
   font-size: 1rem;
@@ -4348,23 +4420,18 @@ body{
 .inicio-calendario-btn{
   width: 28px;
   height: 28px;
-
   padding: 0;
 
   display: grid;
   place-items: center;
 
-  border:
-    1px solid
-    rgba(216,167,177,0.55);
-
+  border: 1px solid rgba(216,167,177,0.55);
   border-radius: 50%;
 
   background: rgba(253,245,242,0.92);
   color: var(--brown-main);
 
   cursor: pointer;
-
   transition: 0.2s ease;
 }
 
@@ -4376,159 +4443,20 @@ body{
 
 
 /* Cuadrícula del calendario */
+.inicio-calendario-grid{
+  overflow: hidden;
+
+  border: 1px solid rgba(216,167,177,0.48);
+  border-radius: 14px;
+
+  background: rgba(255,255,255,0.45);
+}
 
 .inicio-calendario-semana,
 .inicio-calendario-dias{
   display: grid;
-  grid-template-columns:
-    repeat(7, minmax(0, 1fr));
-
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   text-align: center;
-}
-
-.inicio-calendario-semana{
-  border-top:
-    1px solid
-    rgba(216,167,177,0.48);
-
-  border-left:
-    1px solid
-    rgba(216,167,177,0.48);
-}
-
-.inicio-calendario-semana span{
-  min-height: 22px;
-
-  padding: 3px 1px;
-
-  display: grid;
-  place-items: center;
-
-  border-right:
-    1px solid
-    rgba(216,167,177,0.48);
-
-  border-bottom:
-    1px solid
-    rgba(216,167,177,0.48);
-
-  background: var(--rose-table);
-  color: var(--brown-main);
-
-  font-size: 0.69rem;
-  font-weight: 900;
-}
-
-.inicio-calendario-dias{
-  gap: 0;
-
-  border-left:
-    1px solid
-    rgba(216,167,177,0.48);
-}
-
-.inicio-calendario-dia{
-  position: relative;
-
-  min-width: 0;
-  min-height: 24px;
-
-  display: grid;
-  place-items: center;
-
-  border-right:
-    1px solid
-    rgba(216,167,177,0.48);
-
-  border-bottom:
-    1px solid
-    rgba(216,167,177,0.48);
-
-  background: rgba(255,255,255,0.44);
-  color: var(--brown-main);
-
-  font-size: 0.72rem;
-  font-weight: 700;
-
-  transition: 0.2s ease;
-}
-
-.inicio-calendario-dia:hover{
-  background: rgba(249,232,238,0.62);
-}
-
-.inicio-calendario-numero-dia{
-  line-height: 1;
-}
-
-.inicio-calendario-dia.dia-fuera-mes{
-  background: rgba(255,255,255,0.22);
-  color: rgba(122,101,91,0.32);
-}
-
-.inicio-calendario-dia.dia-hoy{
-  background: rgba(249,216,221,0.72);
-  color: var(--brown-main);
-  font-weight: 900;
-}
-
-.inicio-calendario-cantidad{
-  position: absolute;
-
-  right: 2px;
-  bottom: 1px;
-
-  min-width: 14px;
-  height: 14px;
-
-  padding: 0 3px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 999px;
-
-  background: var(--gold-main);
-  color: white;
-
-  font-size: 0.55rem;
-  font-weight: 900;
-  line-height: 1;
-
-  box-shadow:
-    0 3px 7px
-    rgba(190,148,55,0.28);
-}
-
-.inicio-calendario-ayuda{
-  margin-top: 6px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  gap: 5px;
-
-  color: rgba(122,101,91,0.72);
-
-  font-size: 0.68rem;
-  font-weight: 600;
-
-  line-height: 1.2;
-  text-align: center;
-}
-
-.inicio-calendario-ayuda i{
-  flex: 0 0 auto;
-  color: var(--gold-main);
-}
-
-.inicio-calendario-grid{
-  overflow: hidden;
-  border: 1px solid rgba(216,167,177,0.48);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.45);
 }
 
 .inicio-calendario-semana{
@@ -4564,12 +4492,25 @@ body{
 }
 
 .inicio-calendario-dia{
+  position: relative;
+
+  min-width: 0;
   min-height: 24px;
+
+  display: grid;
+  place-items: center;
 
   border-right: 1px solid rgba(216,167,177,0.48);
   border-bottom: 1px solid rgba(216,167,177,0.48);
-
   border-radius: 0;
+
+  background: rgba(255,255,255,0.44);
+  color: var(--brown-main);
+
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  transition: 0.2s ease;
 }
 
 .inicio-calendario-dia:nth-child(7n){
@@ -4580,7 +4521,75 @@ body{
   border-bottom: 0;
 }
 
-/* Tarjetas de resumen */
+.inicio-calendario-dia:hover{
+  background: rgba(249,232,238,0.62);
+}
+
+.inicio-calendario-numero-dia{
+  line-height: 1;
+}
+
+.inicio-calendario-dia.dia-fuera-mes{
+  background: rgba(255,255,255,0.22);
+  color: rgba(122,101,91,0.32);
+}
+
+.inicio-calendario-dia.dia-hoy{
+  background: rgba(249,216,221,0.72);
+  color: var(--brown-main);
+  font-weight: 900;
+}
+
+/* Cantidad de agendamientos de cada día */
+.inicio-calendario-cantidad{
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  background: var(--gold-main);
+  color: white;
+
+  font-size: 0.55rem;
+  font-weight: 900;
+  line-height: 1;
+
+  box-shadow: 0 3px 7px rgba(190,148,55,0.28);
+}
+
+.inicio-calendario-ayuda{
+  margin-top: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  color: rgba(122,101,91,0.72);
+
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.inicio-calendario-ayuda i{
+  flex: 0 0 auto;
+  color: var(--gold-main);
+}
+
+
+/* ===================================================== */
+/* TARJETAS DE RESUMEN */
+/* ===================================================== */
 
 .inicio-resumen{
   width: 100%;
@@ -4596,22 +4605,23 @@ body{
 }
 
 .inicio-resumen-card{
+  --card-accent: var(--gold-main);
+  --card-soft: rgba(253,245,242,0.88);
+
   position: relative;
 
   min-width: 0;
   min-height: 150px;
-
   padding: 42px 20px 20px;
 
   border: 1.5px solid rgba(216,167,177,0.45);
   border-radius: 22px;
 
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255,255,255,0.76),
-      rgba(253,245,242,0.72)
-    );
+  background: linear-gradient(
+    145deg,
+    var(--card-soft),
+    rgba(255,255,255,0.82)
+  );
 
   box-shadow:
     0 14px 30px rgba(74,60,49,0.10),
@@ -4621,11 +4631,23 @@ body{
   backdrop-filter: blur(7px);
 }
 
+.inicio-resumen-card::before{
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 6px;
+  border-radius: 22px 22px 0 0;
+  background: var(--card-accent);
+}
+
 .inicio-resumen-icono{
   position: absolute;
-
   top: -25px;
   left: 20px;
+  z-index: 2;
 
   width: 54px;
   height: 54px;
@@ -4644,7 +4666,6 @@ body{
     0 6px 16px rgba(190,148,55,0.18);
 
   font-size: 1.35rem;
-  z-index: 2;
 }
 
 .inicio-resumen-contenido{
@@ -4655,7 +4676,6 @@ body{
 
 .inicio-resumen-titulo{
   min-height: 42px;
-
   color: var(--brown-main);
 
   font-size: 0.96rem;
@@ -4665,7 +4685,6 @@ body{
 
 .inicio-resumen-cantidad{
   margin: 5px 0 4px;
-
   color: var(--gold-main);
 
   font-size: 2rem;
@@ -4681,33 +4700,7 @@ body{
   line-height: 1.3;
 }
 
-/* Colores individuales de las tarjetas de resumen */
-
-.inicio-resumen-card{
-  --card-accent: var(--gold-main);
-  --card-soft: rgba(253,245,242,0.88);
-
-  background:
-    linear-gradient(
-      145deg,
-      var(--card-soft),
-      rgba(255,255,255,0.82)
-    );
-}
-
-.inicio-resumen-card::before{
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-
-  height: 6px;
-
-  border-radius: 22px 22px 0 0;
-  background: var(--card-accent);
-}
-
+/* Aplicar el color particular de cada indicador */
 .inicio-resumen-card .inicio-resumen-icono{
   border-color: var(--card-accent);
   background: var(--card-soft);
@@ -4718,37 +4711,30 @@ body{
   color: var(--card-accent);
 }
 
-
 /* Agendamientos */
-
 .inicio-resumen-card:nth-child(1){
   --card-accent: #c9859f;
   --card-soft: rgba(232,206,216,0.88);
 }
 
-
 /* Servicios realizados */
-
 .inicio-resumen-card:nth-child(2){
   --card-accent: #b8903d;
   --card-soft: rgba(247,235,202,0.88);
 }
 
-
 /* Clientas registradas */
-
 .inicio-resumen-card:nth-child(3){
   --card-accent: var(--estado-activa-text);
   --card-soft: var(--estado-activa-bg);
 }
 
-
 /* Stock bajo */
-
 .inicio-resumen-card:nth-child(4){
   --card-accent: var(--estado-demorada-text);
   --card-soft: var(--estado-demorada-bg);
 }
+
 
 /* ===================================================== */
 /* PANELES INFERIORES DEL INICIO */
@@ -4771,26 +4757,22 @@ body{
 }
 
 .inicio-inferior{
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding-top: 0;
 }
 
 .inicio-panel{
   min-width: 0;
-
   overflow: hidden;
 
   border: 1.5px solid rgba(216,167,177,0.45);
   border-radius: 22px;
 
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255,255,255,0.76),
-      rgba(253,245,242,0.76)
-    );
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.76),
+    rgba(253,245,242,0.76)
+  );
 
   box-shadow:
     0 14px 30px rgba(74,60,49,0.10),
@@ -4801,7 +4783,6 @@ body{
 
 .inicio-panel-header{
   min-height: 52px;
-
   padding: 13px 18px;
 
   display: flex;
@@ -4810,7 +4791,6 @@ body{
   gap: 14px;
 
   background: rgba(232,206,216,0.92);
-
   color: var(--brown-main);
 }
 
@@ -4818,7 +4798,6 @@ body{
   display: flex;
   align-items: center;
   gap: 8px;
-
   font-weight: 800;
 }
 
@@ -4845,12 +4824,17 @@ body{
   color: var(--rose-hover);
 }
 
+/* Los meses conservan el hover visual sin actuar como enlaces */
+.inicio-module .inicio-mes-etiqueta{
+  cursor: default;
+}
+
 .inicio-panel-body{
   padding: 18px;
 }
 
-/* Movimiento de las tarjetas del Inicio */
 
+/* Movimiento de las tarjetas del Inicio */
 .inicio-bienvenida-wrap,
 .inicio-calendario-card,
 .inicio-resumen-card,
@@ -4860,20 +4844,18 @@ body{
     box-shadow 0.28s ease;
 }
 
-/* Estados de atención */
 
+/* Estados de atención */
 .inicio-estados{
   display: grid;
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
-
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+
   margin-bottom: 16px;
 }
 
 .inicio-estado{
   min-width: 0;
-
   padding: 12px 14px;
 
   display: flex;
@@ -4886,7 +4868,6 @@ body{
 
 .inicio-estado span{
   color: var(--brown-main);
-
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -4923,7 +4904,6 @@ body{
 
 
 /* Listas y estados vacíos */
-
 .inicio-lista{
   min-height: 145px;
 
@@ -4934,9 +4914,7 @@ body{
 
 .inicio-vacio{
   flex: 1;
-
   min-height: 145px;
-
   padding: 20px;
 
   display: flex;
@@ -4949,7 +4927,6 @@ body{
   border-radius: 17px;
 
   background: rgba(255,255,255,0.42);
-
   text-align: center;
 }
 
@@ -4970,21 +4947,20 @@ body{
 }
 
 
-/* Resumen mensual */
+/* ===================================================== */
+/* RESUMEN MENSUAL */
+/* ===================================================== */
 
 .inicio-metricas{
   min-height: 145px;
 
   display: grid;
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
-
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .inicio-metrica{
   min-width: 0;
-
   padding: 18px 12px;
 
   display: flex;
@@ -4996,20 +4972,17 @@ body{
   border-radius: 17px;
 
   background: rgba(253,245,242,0.72);
-
   text-align: center;
 }
 
 .inicio-metrica i{
   margin-bottom: 6px;
-
   color: var(--rose-pagination);
   font-size: 1.25rem;
 }
 
 .inicio-metrica strong{
   color: var(--gold-main);
-
   font-size: 1.7rem;
   font-weight: 900;
   line-height: 1;
@@ -5017,12 +4990,99 @@ body{
 
 .inicio-metrica span{
   margin-top: 7px;
-
   color: rgba(122,101,91,0.78);
 
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.3;
+}
+
+
+/* ===================================================== */
+/* BOTÓN ACTUALIZAR */
+/* ===================================================== */
+
+/* Alineación en la esquina inferior derecha del contenido */
+.inicio-acciones{
+  width: 100%;
+
+  display: flex;
+  justify-content: flex-end;
+
+  padding-right: 4px;
+}
+
+/* Degradado dorado–rosado del estado normal */
+.inicio-module .inicio-actualizar-btn{
+  min-height: 46px;
+  padding: 9px 18px;
+  gap: 8px;
+
+  border: 1px solid rgba(184,147,68,0.40);
+  border-radius: 999px;
+
+  background: linear-gradient(135deg, #c8a85a, var(--rose-hover));
+  color: #fff;
+
+  box-shadow: 0 6px 16px rgba(74,60,49,0.12);
+
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.2;
+
+  transform: translateY(0);
+
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+/* Fondo dorado y elevación al pasar el cursor */
+.inicio-module .inicio-actualizar-btn:not(:disabled):hover{
+  border-color: var(--gold-main);
+
+  background: linear-gradient(135deg, var(--gold-main), #c8a85a);
+  color: #fff;
+
+  box-shadow:
+    0 10px 22px rgba(74,60,49,0.16),
+    0 4px 12px rgba(184,147,68,0.20);
+
+  transform: translateY(-3px);
+}
+
+/* Identificar el botón al navegar con el teclado */
+.inicio-module .inicio-actualizar-btn:focus-visible{
+  outline: 2px solid var(--brown-main);
+  outline-offset: 3px;
+}
+
+/* Impedir el efecto mientras la consulta está en curso */
+.inicio-module .inicio-actualizar-btn:disabled{
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+
+.inicio-actualizar-btn .icono-recargar-corazon{
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 28px;
+  display: block;
+}
+
+/* Respetar la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce){
+
+  .inicio-module .inicio-actualizar-btn{
+    transition: none;
+  }
+
+  .inicio-module .inicio-actualizar-btn:not(:disabled):hover{
+    transform: none;
+  }
 }
 
 /* ===================================================== */
@@ -5155,6 +5215,7 @@ body{
 }
 
 
+
 /* ===================================================== */
 /* MÓDULO INSUMOS */
 /* ===================================================== */
@@ -5174,10 +5235,549 @@ body{
   color: var(--brown-main) !important;
 }
 
-/* Hover rosadito un poco más marcado */
-.insumos-module .templo-table tbody tr:hover > *{
-  background-color: rgba(249, 232, 238, 0.86) !important;
+
+/* ===================================================== */
+/* INSUMOS - COLORES DEL STOCK ACTUAL */
+/* ===================================================== */
+
+/* Cantidad numérica sin etiquetas ni fondos adicionales */
+.insumos-module .templo-table .insumos-stock-numero{
+  display: inline-block;
+  min-width: 2ch;
+
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+
+  text-align: center;
 }
+
+
+/* Sin existencias: rosa intenso */
+.insumos-module .templo-table .insumos-stock-agotado{
+  color: #c40056;
+}
+
+
+/* Existencias iguales o inferiores al mínimo: dorado */
+.insumos-module .templo-table .insumos-stock-bajo{
+  color: #b58630;
+}
+
+
+/* Existencias superiores al mínimo: verde agua */
+.insumos-module .templo-table .insumos-stock-disponible{
+  color: var(--estado-realizada-text);
+}
+
+
+/* ===================================================== */
+/* PESTAÑAS E HISTORIAL DE MOVIMIENTOS */
+/* ===================================================== */
+
+/* Mantener la identidad visual de las pestañas del sistema */
+.insumos-module .insumos-tabs{
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid rgba(216,167,177,0.36);
+}
+
+.insumos-module .insumos-tabs .nav-link{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 43px;
+  padding: 10px 15px;
+  border: 1px solid transparent !important;
+  border-radius: 14px 14px 0 0;
+  background: transparent !important;
+  color: var(--brown-main) !important;
+  font-weight: 800;
+}
+
+.insumos-module .insumos-tabs .nav-link i{
+  color: var(--gold-main);
+}
+
+.insumos-module .insumos-tabs .nav-link:hover{
+  background: rgba(249,232,238,0.55) !important;
+  border-color: rgba(216,167,177,0.35) !important;
+}
+
+.insumos-module .insumos-tabs .nav-link.active{
+  background: var(--rose-table) !important;
+  border-color: rgba(216,167,177,0.50) !important;
+}
+
+/* Cada pestaña utiliza el mismo espacio disponible para la tabla */
+.insumos-module .insumos-tab-content{
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 16px;
+}
+
+.insumos-module .insumos-tab-content > .tab-pane{
+  height: 100%;
+  min-height: 0;
+}
+
+.insumos-module .insumos-tab-content > .tab-pane.active{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+
+/* ===================================================== */
+/* FILTROS DEL HISTORIAL DENTRO DE DATATABLES */
+/* ===================================================== */
+
+/* Mostrar registros, filtros y buscador comparten la misma franja */
+.insumos-module .insumos-historial-barra{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Conservar los controles originales de DataTables */
+.insumos-module .insumos-historial-barra .dataTables_length,
+.insumos-module .insumos-historial-barra .dataTables_filter{
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+}
+
+.insumos-module .insumos-historial-barra .dataTables_length label,
+.insumos-module .insumos-historial-barra .dataTables_filter label{
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Espacio donde JavaScript coloca el formulario sin duplicarlo */
+.insumos-module .insumos-historial-filtros-espacio{
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Buscar de DataTables permanece al extremo derecho */
+.insumos-module .insumos-historial-barra .dataTables_filter{
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* Mantener el resumen y la paginación alineados debajo de la tabla */
+.insumos-module .insumos-historial-pie{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.insumos-module .insumos-historial-pie .dataTables_info,
+.insumos-module .insumos-historial-pie .dataTables_paginate{
+  margin: 0;
+  padding-top: 10px !important;
+}
+
+/* No agregar un segundo recuadro dentro de la tabla floral */
+.insumos-module .insumos-historial-filtros{
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Campos compactos entre Mostrar registros y Buscar */
+.insumos-module .insumos-historial-fila{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.insumos-module .insumos-historial-campo{
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.insumos-module .insumos-historial-fecha{
+  flex: 0 0 150px;
+}
+
+.insumos-module .insumos-historial-tipo{
+  flex: 0 0 198px;
+}
+
+/* Etiquetas exactamente al ras del campo correspondiente */
+.insumos-module .insumos-historial-filtros .form-label{
+  display: block;
+  width: 100%;
+  margin: 0 0 5px !important;
+  padding: 0 !important;
+  color: var(--brown-main);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+}
+
+/* Campos con foco rosado en lugar del azul de Bootstrap */
+.insumos-module .insumos-historial-filtros .form-control,
+.insumos-module .insumos-historial-filtros .form-select{
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  margin: 0;
+  border: 1px solid rgba(216,167,177,0.60);
+  border-radius: 10px;
+  background-color: rgba(255,255,255,0.94);
+  color: var(--brown-main);
+  font-size: 0.88rem;
+}
+
+.insumos-module .insumos-historial-filtros .form-control:focus,
+.insumos-module .insumos-historial-filtros .form-select:focus{
+  border-color: var(--rose-pagination);
+  outline: 0;
+  box-shadow: 0 0 0 .2rem rgba(238,187,187,0.30);
+}
+
+/* Flecha centrada dentro de Tipo de movimiento */
+.insumos-module .insumos-historial-filtros .form-select{
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding-right: 29px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a655b' d='M1 1l5 5 5-5' stroke='%237a655b' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 12px 8px !important;
+}
+
+/* Botones solo con iconos y sin texto */
+.insumos-module .insumos-historial-acciones{
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+}
+
+.insumos-module .insumos-historial-acciones button{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+/* Lupa de corazón en rosado */
+.insumos-module .insumos-historial-acciones .insumos-historial-buscar{
+  border: 1px solid var(--rose-pagination) !important;
+  background: var(--rose-pagination) !important;
+  color: white !important;
+}
+
+.insumos-module .insumos-historial-acciones .insumos-historial-buscar:hover{
+  background: var(--rose-hover) !important;
+  border-color: var(--rose-hover) !important;
+}
+
+/* Borrador: acción secundaria de limpieza */
+.insumos-module .insumos-historial-acciones .insumos-historial-limpiar{
+  border: 1px solid rgba(216,167,177,0.60);
+  background: rgba(253,245,242,0.96);
+  color: var(--brown-main);
+}
+
+.insumos-module .insumos-historial-acciones button i{
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.insumos-module .insumos-historial-mensaje{
+  flex: 0 0 auto;
+}
+
+
+/* ===================================================== */
+/* TABLA DEL HISTORIAL DE MOVIMIENTOS */
+/* ===================================================== */
+
+/* Conservar las ocho columnas y el desplazamiento horizontal */
+.insumos-module #tablaHistorialInsumos{
+  min-width: 1050px;
+}
+
+/* Alinear las cantidades y existencias */
+.insumos-module #tablaHistorialInsumos tbody td:nth-child(4),
+.insumos-module #tablaHistorialInsumos tbody td:nth-child(5),
+.insumos-module #tablaHistorialInsumos tbody td:nth-child(6){
+  text-align: center;
+  white-space: nowrap;
+}
+
+
+
+/* ===================================================== */
+/* INSUMOS - ETIQUETAS DE ESTADO */
+/* ===================================================== */
+
+/* Conservar la presentación de las etiquetas de Agendamiento */
+.insumos-module .insumos-alerta-stock,
+.insumos-module .insumos-alerta-vencimiento,
+.insumos-module #tablaHistorialInsumos .badge,
+#modalDetalleInsumo .badge{
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+
+/* ===================================================== */
+/* ESTADOS DEL STOCK */
+/* ===================================================== */
+
+/* Normal: verde agua de Realizada */
+#modalDetalleInsumo #detalleEstadoStock.text-bg-success{
+  background: var(--estado-realizada-bg) !important;
+  color: var(--estado-realizada-text) !important;
+}
+
+/* Bajo: amarillo de En espera */
+.insumos-module .insumos-alerta-stock.text-bg-warning,
+#modalDetalleInsumo #detalleEstadoStock.text-bg-warning{
+  background: var(--estado-en-espera-bg) !important;
+  color: var(--estado-en-espera-text) !important;
+}
+
+/* Agotado: rosa de Cancelada */
+.insumos-module .insumos-alerta-stock.text-bg-danger,
+#modalDetalleInsumo #detalleEstadoStock.text-bg-danger{
+  background: var(--estado-cancelada-bg) !important;
+  color: var(--estado-cancelada-text) !important;
+}
+
+
+/* ===================================================== */
+/* ESTADOS DEL VENCIMIENTO */
+/* ===================================================== */
+
+/* Vigente: verde agua de Realizada */
+#modalDetalleInsumo #detalleEstadoVencimiento.text-bg-success{
+  background: var(--estado-realizada-bg) !important;
+  color: var(--estado-realizada-text) !important;
+}
+
+/* Próximo: beige dorado de Demorada */
+.insumos-module .insumos-alerta-vencimiento.text-bg-warning,
+#modalDetalleInsumo #detalleEstadoVencimiento.text-bg-warning{
+  background: var(--estado-demorada-bg) !important;
+  color: var(--estado-demorada-text) !important;
+}
+
+/* Urgente o vencido: rosa de Cancelada */
+.insumos-module .insumos-alerta-vencimiento.text-bg-danger,
+#modalDetalleInsumo #detalleEstadoVencimiento.text-bg-danger{
+  background: var(--estado-cancelada-bg) !important;
+  color: var(--estado-cancelada-text) !important;
+}
+
+/* Sin fecha: rosa tenue de Programada */
+#modalDetalleInsumo #detalleEstadoVencimiento.text-bg-secondary{
+  background: var(--estado-programada-bg) !important;
+  color: var(--estado-programada-text) !important;
+}
+
+
+/* ===================================================== */
+/* ESTADOS DEL INSUMO */
+/* ===================================================== */
+
+/* Activo: verde agua */
+#modalDetalleInsumo .detalle-ficha-status.estado-registro-activo{
+  background: var(--registro-activo-bg) !important;
+  color: var(--registro-activo-text) !important;
+}
+
+/* Inactivo: rosa de Cancelada */
+#modalDetalleInsumo .detalle-ficha-status.estado-registro-inactivo{
+  background: var(--registro-inactivo-bg) !important;
+  color: var(--registro-inactivo-text) !important;
+}
+
+
+/* ===================================================== */
+/* HISTORIAL DE MOVIMIENTOS */
+/* ===================================================== */
+
+/* Incremento: verde agua de Realizada */
+.insumos-module #tablaHistorialInsumos .badge.text-bg-success{
+  background: var(--estado-realizada-bg) !important;
+  color: var(--estado-realizada-text) !important;
+}
+
+/* Descuento: rosa de Cancelada */
+.insumos-module #tablaHistorialInsumos .badge.text-bg-danger{
+  background: var(--estado-cancelada-bg) !important;
+  color: var(--estado-cancelada-text) !important;
+}
+
+
+/* ===================================================== */
+/* INSUMOS - FICHAS DE LOTES */
+/* ===================================================== */
+
+/* Conservar el molde visual de Clientes y Proveedores */
+#modalDetalleInsumo #detalleLotesInsumo .detalle-ficha-card{
+  min-height: 100%;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px;
+
+  border: 1px solid rgba(184,147,68,0.65);
+  border-radius: 13px;
+
+  background: linear-gradient(
+    135deg,
+    var(--estado-programada-bg),
+    rgba(255,250,248,0.94)
+  );
+}
+
+#modalDetalleInsumo #detalleLotesInsumo .detalle-ficha-card-content{
+  min-width: 0;
+}
+
+/* Separación de los datos internos de cada lote */
+#modalDetalleInsumo #detalleLotesInsumo .detalle-ficha-value{
+  line-height: 1.45;
+}
+
+/* Lote disponible: verde agua de Realizada */
+#modalDetalleInsumo #detalleLotesInsumo .badge.text-bg-success{
+  background: var(--estado-realizada-bg) !important;
+  color: var(--estado-realizada-text) !important;
+}
+
+/* Lote agotado: rosa de Cancelada */
+#modalDetalleInsumo #detalleLotesInsumo .badge.text-bg-secondary{
+  background: var(--estado-cancelada-bg) !important;
+  color: var(--estado-cancelada-text) !important;
+}
+
+
+/* ===================================================== */
+/* INSUMOS - PROVEEDORES ASOCIADOS */
+/* ===================================================== */
+
+/* Proveedores: rosa de Confirmada */
+#modalDetalleInsumo #detalleProveedoresInsumo .insumos-detalle-proveedor{
+  max-width: 100%;
+  border: 1px solid rgba(122,83,98,0.20);
+
+  background: var(--estado-confirmada-bg);
+  color: var(--estado-confirmada-text) !important;
+
+  font-size: 0.88rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+/* Icono y nombre de la empresa */
+#modalDetalleInsumo #detalleProveedoresInsumo .insumos-detalle-proveedor i,
+#modalDetalleInsumo #detalleProveedoresInsumo .insumos-detalle-proveedor span{
+  color: var(--estado-confirmada-text) !important;
+}
+
+/* Aviso de proveedor inactivo */
+#modalDetalleInsumo #detalleProveedoresInsumo .insumos-detalle-proveedor-inactivo{
+  color: var(--estado-cancelada-text) !important;
+  font-weight: 800;
+}
+
+
+/* ===================================================== */
+/* INSUMOS - MODAL GESTIONAR EXISTENCIAS */
+/* ===================================================== */
+
+/* Identificación del insumo seleccionado */
+#modalGestionarExistencias #movimientoNombreInsumo{
+  color: var(--brown-main) !important;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+/* Existencias actuales: rosa de Confirmada */
+#modalGestionarExistencias #movimientoStockActual{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 35px;
+  padding: 4px 11px;
+
+  border-radius: 999px;
+
+  background: var(--estado-confirmada-bg);
+  color: var(--estado-confirmada-text) !important;
+
+  font-weight: 900;
+}
+
+/* Existencias resultantes: verde agua de Realizada */
+#modalGestionarExistencias #movimientoStockResultante{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 35px;
+  padding: 4px 11px;
+
+  border-radius: 999px;
+
+  background: var(--estado-realizada-bg);
+  color: var(--estado-realizada-text) !important;
+
+  font-weight: 900;
+}
+
+/* Casilla No aplica con el verde agua del sistema */
+#modalGestionarExistencias .form-check-input:checked{
+  background-color: var(--estado-realizada-text);
+  border-color: var(--estado-realizada-text);
+}
+
+/* Mantener el foco en armonía con los formularios */
+#modalGestionarExistencias .form-check-input:focus{
+  border-color: var(--estado-realizada-text);
+  box-shadow: 0 0 0 4px rgba(79,127,120,0.16);
+}
+
 
 
 /* ===================================================== */
@@ -5736,9 +6336,9 @@ body{
   gap: 8px;
   min-height: 42px;
   padding: 9px 13px;
-  border: 1px solid transparent;
+  border: 1px solid var(--gold-main);
   border-radius: 14px;
-  background: rgba(255,250,248,.55);
+  background: rgba(253,245,242,.95);
   color: var(--brown-main);
   font: inherit;
   font-size: 13px;
@@ -5763,12 +6363,12 @@ body{
 
 .reportes-categoria:hover{
   background: var(--rose-row-hover);
-  border-color: rgba(216,167,177,.45);
+  border-color: var(--gold-main);
 }
 
 .reportes-categoria.active{
   background: var(--rose-table);
-  border-color: var(--rose-pagination);
+  border-color: var(--gold-main);
   color: #7a5362;
   box-shadow: 0 4px 10px rgba(216,167,177,.15);
 }
@@ -5803,6 +6403,8 @@ body{
 }
 
 .reportes-panel{
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   min-height: 0;
   padding: 20px;
@@ -5954,6 +6556,7 @@ body{
 .reportes-resultados-cabecera{
   justify-content: space-between;
   flex: 0 0 auto;
+  margin-bottom: 12px;
 }
 
 .reportes-resultados-titulo,
@@ -6136,6 +6739,312 @@ body{
   font-size: 10.5px;
   line-height: 1.45;
 }
+
+/* ===================================================== */
+/* FONDOS DE LOS FILTROS Y RESULTADOS */
+/* ===================================================== */
+
+/* Mismas capas de fondo utilizadas en las tablas del sistema */
+.reportes-filtros::before,
+.reportes-filtros::after,
+.reportes-resultados::before,
+.reportes-resultados::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.reportes-filtros::before,
+.reportes-resultados::before{
+  z-index: 0;
+  background-repeat: repeat;
+  background-position: center center;
+}
+
+.reportes-filtros::after,
+.reportes-resultados::after{
+  z-index: 1;
+}
+
+.reportes-panel > *{
+  position: relative;
+  z-index: 2;
+}
+
+/* Fondo de Agendamientos para atender, en Registro del Servicio */
+.reportes-filtros{
+  background: rgba(255,255,255,.38);
+}
+
+.reportes-filtros::before{
+  background-image: url("../img/ManicureIns_H.png");
+  background-size: 650px auto;
+  opacity: .30;
+}
+
+.reportes-filtros::after{
+  background: rgba(255,255,255,.24);
+}
+
+/* Fondo de cerezos compartido con Clientes, Insumos y Proveedores */
+.reportes-resultados{
+  background: rgba(255,255,255,.70);
+}
+
+.reportes-resultados::before{
+  background-image: url("../img/Cerezos en Flor GDE.png");
+  background-size: 620px auto;
+  opacity: .28;
+}
+
+.reportes-resultados::after{
+  background: rgba(255,255,255,.42);
+}
+
+.reportes-resultados .reportes-tabla-contenedor{
+  background: rgba(255,255,255,.45);
+}
+
+
+/* ===================================================== */
+/* TIPOGRAFÍA DE LAS INDICACIONES */
+/* ===================================================== */
+
+/* Indicaciones más pequeñas para respetar la jerarquía del formulario */
+.reportes-module .reportes-mensaje,
+.reportes-module .reportes-descripcion{
+  font-family: inherit;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.reportes-module .reportes-mensaje:not(.reportes-mensaje-error),
+.reportes-module .reportes-descripcion{
+  color: #827972;
+}
+
+/* Conservar la identificación de los mensajes de error */
+.reportes-module .reportes-mensaje-error{
+  color: #8a2635;
+  font-weight: 700;
+}
+
+/* La etiqueta principal queda un poco mayor que las indicaciones */
+.reportes-module label[for="reporteTipo"]{
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
+/* Conservar el tamaño y la negrita anteriores de los selectores */
+.reportes-module .reportes-campo select{
+  font-family: inherit;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Se conserva el texto del estado vacío que ya fue aprobado */
+.reportes-module .reportes-vacio p{
+  font-family: inherit;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+
+/* Mantener la indicación inicial completa en una sola línea */
+.reportes-module .reportes-filtros:has(#reporteTipo option:checked[value=""]) .reportes-descripcion{
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Compensar el panel de filtros más estrecho de la distribución intermedia */
+@media (min-width: 769px) and (max-width: 1200px){
+
+  .reportes-module .reportes-filtros:has(#reporteTipo option:checked[value=""]) .reportes-descripcion{
+    font-size: 10px;
+  }
+}
+
+
+/* ===================================================== */
+/* ICONO DEL BOTÓN LIMPIAR */
+/* ===================================================== */
+
+/* El corazón permanece dentro de la vista */
+#limpiarReporte .icono-recargar-corazon{
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  display: block;
+}
+
+
+/* ===================================================== */
+/* SELECCIÓN DE TEXTO Y FOCO DEL SISTEMA */
+/* ===================================================== */
+
+/* Aplicar el rosado de la marca al seleccionar texto */
+::selection{
+  background: var(--rose-hover);
+  color: var(--chocolate-deep);
+  text-shadow: none;
+}
+
+/* Mantener el halo rosado en los selectores */
+body select:not(.is-invalid):focus{
+  border-color: var(--rose-hover);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 .2rem rgba(238,187,187,.30);
+}
+
+/* Aplicar el halo rosado a los campos sin estado de validación */
+body :is(.auth-input, .templo-input, .form-control):focus:not(.is-invalid):not(.is-valid):not([aria-invalid="true"]):not(.was-validated *){
+  border-color: var(--rose-hover);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(238,187,187,0.22);
+}
+
+/* Conservar el foco de los selectores con validación nativa */
+.was-validated select:invalid:focus{
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+  box-shadow: 0 0 0 .2rem rgba(220,53,69,.25);
+}
+
+/* Aplicar el fondo rosado al autollenado del navegador */
+body input:is(:autofill, :-webkit-autofill){
+  --autollenado-fondo: var(--rose-row-hover);
+  --autollenado-texto: var(--brown-main);
+
+  -webkit-text-fill-color: var(--autollenado-texto);
+  caret-color: var(--autollenado-texto);
+
+  -webkit-box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset !important;
+  box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset !important;
+}
+
+/* Conservar el verde agua en los campos marcados como válidos */
+body input:is(:autofill, :-webkit-autofill).is-valid{
+  --autollenado-fondo: #cfe7e3;
+  --autollenado-texto: #4f7f78;
+}
+
+/* Conservar el rosado intenso en los campos marcados con error */
+body input:is(:autofill, :-webkit-autofill):is(.is-invalid, [aria-invalid="true"]){
+  --autollenado-texto: #c40056;
+}
+
+/* Mantener el halo rosado al enfocar un campo autollenado */
+body input:is(:autofill, :-webkit-autofill):focus:not(.is-invalid):not(.is-valid):not([aria-invalid="true"]):not(.was-validated *){
+  -webkit-box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset, 0 0 0 4px rgba(238,187,187,0.22) !important;
+  box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset, 0 0 0 4px rgba(238,187,187,0.22) !important;
+}
+
+/* Conservar la tipografía del selector de cantidad de registros */
+.dataTables_length select{
+  font-family: inherit;
+  font-weight: 600;
+}
+
+/* Aplicar el halo rosado a la paginación */
+.pagination{
+  --bs-pagination-focus-color: var(--brown-main);
+  --bs-pagination-focus-bg: var(--cream-1);
+  --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(238,187,187,.35);
+}
+
+.page-link:focus{
+  border-color: var(--rose-hover) !important;
+  box-shadow: 0 0 0 .2rem rgba(238,187,187,.35);
+}
+
+/* Personalizar la sombra de foco de los botones Bootstrap */
+.btn{
+  --bs-btn-focus-shadow-rgb: 238,187,187;
+}
+
+/* Mantener visible el foco de teclado en enlaces y botones */
+:where(a, button, [role="button"]):focus-visible{
+  outline: 2px solid var(--rose-hover);
+  outline-offset: 2px;
+}
+
+
+/* ===================================================== */
+/* LISTAS DESPLEGABLES EN NAVEGADORES COMPATIBLES */
+/* ===================================================== */
+
+/* Mantener el select original y personalizar su menú cuando sea posible */
+@supports (appearance: base-select) and selector(select::picker(select)){
+
+  select:not([multiple]):not([size]),
+  select:not([multiple]):not([size])::picker(select){
+    appearance: base-select;
+  }
+
+  /* Mantener el valor y la flecha juntos, incluso en DataTables */
+  body select:not([multiple]):not([size]),
+  body .dataTables_wrapper .dataTables_length select:not([multiple]):not([size]){
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    white-space: nowrap;
+    padding-inline-end: 10px;
+    background-image: none;
+  }
+
+  /* Fondo blanco del selector sin alterar el estado deshabilitado */
+  body select:not([multiple]):not([size]):not(:disabled){
+    background-color: #fff;
+  }
+
+  body .dataTables_wrapper .dataTables_length select:not([multiple]):not([size]){
+    width: auto;
+    min-width: 60px;
+    height: 36px;
+    padding: 6px 10px;
+    vertical-align: middle;
+  }
+
+  select:not([multiple]):not([size])::picker-icon{
+    flex-shrink: 0;
+    margin-inline-start: auto;
+    align-self: center;
+    color: var(--brown-main);
+    line-height: 1;
+  }
+
+  select:not([multiple]):not([size])::picker(select){
+    padding: 4px;
+    border: 1px solid var(--rose-pagination);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--brown-main);
+    font-family: inherit;
+    box-shadow: 0 8px 20px rgba(74,60,49,.12);
+  }
+
+  select:not([multiple]):not([size]) option{
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--brown-main);
+    font-family: inherit;
+  }
+
+  /* Rosado claro de las flechas del calendario */
+  select:not([multiple]):not([size]) option:hover,
+  select:not([multiple]):not([size]) option:focus,
+  select:not([multiple]):not([size]) option:checked{
+    background: var(--rose-hover);
+    color: var(--chocolate-deep);
+  }
+}
+
 
 /* ===================================================== */
 /* RESPONSIVE */
@@ -7049,24 +7958,21 @@ and (pointer: fine){
 }
 
 
+
 @media (max-width: 768px){
 
   .insumos-module .module-header{
     --insumos-action-size: 40px;
-
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-
     gap: 10px;
     margin-bottom: 18px;
   }
 
   .insumos-module .module-header h2{
     min-width: 0;
-
     margin: 0;
-
     font-size: 1.30rem;
     line-height: 1.15;
   }
@@ -7085,11 +7991,8 @@ and (pointer: fine){
     flex-wrap: nowrap !important;
     align-items: center !important;
     justify-content: flex-end !important;
-
     align-self: center;
-
     gap: 8px !important;
-
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -7101,42 +8004,30 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-secondary,
-
   .insumos-module
   .module-header
   .btn-templo-primary{
     position: relative;
-
     width: var(--insumos-action-size) !important;
     height: var(--insumos-action-size) !important;
-
     min-width: var(--insumos-action-size) !important;
     min-height: var(--insumos-action-size) !important;
-
     max-width: var(--insumos-action-size) !important;
     max-height: var(--insumos-action-size) !important;
-
     flex:
       0
       0
       var(--insumos-action-size);
-
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-
     margin: 0 !important;
     padding: 0 !important;
-
     border-radius: 50% !important;
-
     font-size: 0 !important;
     line-height: 0 !important;
-
     vertical-align: middle;
-
     transform: none;
-
     box-shadow:
       0 6px 14px rgba(74,60,49,0.08),
       0 3px 10px rgba(216,167,177,0.16);
@@ -7149,7 +8040,6 @@ and (pointer: fine){
   .module-header
   .btn-templo-secondary{
     border: 1px solid rgba(216,167,177,0.58);
-
     background: rgba(249,232,238,0.78);
     color: var(--brown-main);
   }
@@ -7161,7 +8051,6 @@ and (pointer: fine){
   .module-header
   .btn-templo-primary{
     border: 1px solid rgba(184,147,68,0.48);
-
     background: rgba(253,245,242,0.96);
     color: var(--gold-main);
   }
@@ -7172,27 +8061,20 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-secondary i,
-
   .insumos-module
   .module-header
   .btn-templo-primary i{
     position: absolute;
-
     top: 50%;
     left: 50%;
-
     display: block !important;
-
     width: auto;
     height: auto;
-
     margin: 0 !important;
     padding: 0 !important;
-
     font-style: normal;
     font-size: 1.08rem !important;
     line-height: 1 !important;
-
     transform: translate(-50%, -50%) !important;
   }
 
@@ -7202,17 +8084,13 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-secondary i::before,
-
   .insumos-module
   .module-header
   .btn-templo-primary i::before{
     display: block !important;
-
     margin: 0 !important;
     padding: 0 !important;
-
     line-height: 1 !important;
-
     transform: none !important;
   }
 
@@ -7222,7 +8100,6 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-secondary i,
-
   .insumos-module
   .module-header
   .btn-templo-secondary i::before{
@@ -7232,13 +8109,151 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-primary i,
-
   .insumos-module
   .module-header
   .btn-templo-primary i::before{
     color: var(--gold-main) !important;
   }
+
+
+  /* ===================================================== */
+  /* PESTAÑAS E HISTORIAL DE MOVIMIENTOS */
+  /* ===================================================== */
+
+  /* Ajustar las pestañas al ancho disponible */
+  .insumos-module .insumos-tabs .nav-item{
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+
+  .insumos-module .insumos-tabs .nav-link{
+    width: 100%;
+    height: 100%;
+    padding: 10px 8px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+  }
+
+
+  /* ===================================================== */
+  /* BARRA DEL HISTORIAL EN PANTALLAS PEQUEÑAS */
+  /* ===================================================== */
+
+  /*
+   * Mostrar registros y Buscar permanecen arriba.
+   * Los filtros se organizan en una fila inferior.
+   */
+  .insumos-module .insumos-historial-barra{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /*
+   * Mostrar registros conserva la primera posición.
+   */
+  .insumos-module
+  .insumos-historial-barra
+  .dataTables_length{
+    order: 1;
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  /*
+   * El buscador de DataTables permanece a la derecha.
+   */
+  .insumos-module
+  .insumos-historial-barra
+  .dataTables_filter{
+    order: 2;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  /*
+   * El formulario del historial ocupa la siguiente fila.
+   */
+  .insumos-module .insumos-historial-filtros-espacio{
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /*
+   * Los filtros se acomodan sin desbordarse.
+   */
+  .insumos-module .insumos-historial-fila{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /*
+   * Desde y Hasta comparten el espacio disponible.
+   */
+  .insumos-module .insumos-historial-fecha{
+    flex: 1 1 calc(50% - 6px);
+    min-width: 135px;
+  }
+
+  /*
+   * Tipo de movimiento se adapta al espacio restante.
+   */
+  .insumos-module .insumos-historial-tipo{
+    flex: 1 1 190px;
+    min-width: 160px;
+  }
+
+  /*
+   * Los botones de Buscar y Limpiar se mantienen
+   * agrupados y alineados hacia la derecha.
+   */
+  .insumos-module .insumos-historial-acciones{
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-left: auto;
+    gap: 7px;
+  }
+
+  /*
+   * Conservar los botones circulares y sus iconos
+   * sin ocupar todo el ancho de la pantalla.
+   */
+  .insumos-module .insumos-historial-acciones button{
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /*
+   * El resumen y la paginación pueden acomodarse
+   * en filas distintas cuando no haya espacio.
+   */
+  .insumos-module .insumos-historial-pie{
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .insumos-module
+  .insumos-historial-pie
+  .dataTables_info,
+  .insumos-module
+  .insumos-historial-pie
+  .dataTables_paginate{
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
 }
+
 
 
 /*
@@ -7254,9 +8269,7 @@ and (pointer: fine){
   .module-header
   .btn-templo-secondary:hover{
     transform: translateY(-1px);
-
     border-color: var(--rose-pagination);
-
     background: rgba(232,206,216,0.74);
     color: var(--brown-main);
   }
@@ -7265,9 +8278,7 @@ and (pointer: fine){
   .module-header
   .btn-templo-primary:hover{
     transform: translateY(-1px);
-
     border-color: var(--gold-main);
-
     background: rgba(249,232,238,0.86);
     color: var(--gold-main);
   }
@@ -7275,12 +8286,12 @@ and (pointer: fine){
   .insumos-module
   .module-header
   .btn-templo-primary:hover i,
-
   .insumos-module
   .module-header
   .btn-templo-primary:hover i::before{
     color: var(--gold-main) !important;
   }
+
 }
 
 
@@ -7299,6 +8310,25 @@ and (pointer: fine){
   .insumos-module .module-header h2{
     font-size: 1.18rem;
   }
+
+
+  /* ===================================================== */
+  /* DETALLES DE LOTES EN TELÉFONOS */
+  /* ===================================================== */
+
+  #modalDetalleInsumo #detalleLotesInsumo .detalle-ficha-card{
+    padding: 10px 11px;
+    gap: 9px;
+  }
+
+  #modalDetalleInsumo #detalleLotesInsumo .detalle-ficha-value{
+    font-size: 0.90rem;
+  }
+
+  #modalDetalleInsumo #detalleProveedoresInsumo .insumos-detalle-proveedor{
+    font-size: 0.83rem;
+  }
+
 }
 
 

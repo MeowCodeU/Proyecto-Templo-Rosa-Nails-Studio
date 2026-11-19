@@ -4,8 +4,8 @@ namespace App\Model;
 
 use App\Config\Database;
 use App\Interfaces\CrudInterface;
+use App\Traits\ValidacionConfiguracionTrait;
 use PDO;
-
 
 /* ===================================================== */
 /* MODELO DE SERVICIOS */
@@ -13,6 +13,8 @@ use PDO;
 
 class ServicioM extends Database implements CrudInterface
 {
+    use ValidacionConfiguracionTrait;
+
     /* ================================================= */
     /* CONEXIÓN Y ATRIBUTOS */
     /* ================================================= */
@@ -28,7 +30,6 @@ class ServicioM extends Database implements CrudInterface
     private $duracionEstimada;
     private $estadoServicio;
 
-
     /* ================================================= */
     /* SETTERS */
     /* ================================================= */
@@ -40,7 +41,6 @@ class ServicioM extends Database implements CrudInterface
     public function set_duracionEstimada($duracionEstimada) {$this->duracionEstimada = $duracionEstimada;}
     public function set_estadoServicio($estadoServicio) {$this->estadoServicio = $estadoServicio;}
 
-
     /* ================================================= */
     /* CONSTRUCTOR */
     /* ================================================= */
@@ -50,12 +50,11 @@ class ServicioM extends Database implements CrudInterface
         $this->conexionMD = $this->getConnection();
     }
 
-
     /* ================================================= */
     /* CONSULTAR SERVICIOS */
     /* ================================================= */
 
-    public function consultar()
+    public function consultar(): array
     {
         /* Obtener los servicios activos ordenados por su nombre */
         $sql = "SELECT
@@ -75,13 +74,14 @@ class ServicioM extends Database implements CrudInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-
     /* ================================================= */
     /* REGISTRAR SERVICIO */
     /* ================================================= */
 
-    public function registrar()
+    public function registrar(): bool
     {
+        if (!$this->validarDatosCatalogo(false)) return false;
+
         /* Registrar el servicio con su precio, duración y estado ACTIVO */
         $sql = "INSERT INTO servicios (
                     nombre_servicio,
@@ -102,11 +102,10 @@ class ServicioM extends Database implements CrudInterface
         $stmt->bindParam(':nombre_servicio', $this->nombreServicio);
         $stmt->bindParam(':descripcion', $this->descripcion);
         $stmt->bindParam(':precio', $this->precio);
-        $stmt->bindParam(':duracion_estimada', $this->duracionEstimada);
+        $stmt->bindValue(':duracion_estimada', $this->duracionEstimada, $this->duracionEstimada === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
 
         return $stmt->execute();
     }
-
 
     /* ================================================= */
     /* BUSCAR SERVICIO */
@@ -114,6 +113,8 @@ class ServicioM extends Database implements CrudInterface
 
     public function buscar()
     {
+        if (!$this->validarIdentificacion()) return false;
+
         /* Obtener un servicio mediante su identificador */
         $sql = "SELECT
                     id_servicio,
@@ -133,13 +134,14 @@ class ServicioM extends Database implements CrudInterface
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-
     /* ================================================= */
     /* MODIFICAR SERVICIO */
     /* ================================================= */
 
-    public function modificar()
+    public function modificar(): bool
     {
+        if (!$this->validarDatosCatalogo(true)) return false;
+
         /* Actualizar los datos, el precio y la duración del servicio */
         $sql = "UPDATE servicios SET
                     nombre_servicio = :nombre_servicio,
@@ -153,19 +155,20 @@ class ServicioM extends Database implements CrudInterface
         $stmt->bindParam(':nombre_servicio', $this->nombreServicio);
         $stmt->bindParam(':descripcion', $this->descripcion);
         $stmt->bindParam(':precio', $this->precio);
-        $stmt->bindParam(':duracion_estimada', $this->duracionEstimada);
+        $stmt->bindValue(':duracion_estimada', $this->duracionEstimada, $this->duracionEstimada === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(':id_servicio', $this->idServicio);
 
         return $stmt->execute();
     }
 
-
     /* ================================================= */
     /* DESACTIVAR SERVICIO */
     /* ================================================= */
 
-    public function eliminar()
+    public function eliminar(): bool
     {
+        if (!$this->validarIdentificacion()) return false;
+
         /* Cambiar el estado del servicio para conservar su registro */
         $sql = "UPDATE servicios
                 SET estado_servicio = 'INACTIVO'
@@ -175,5 +178,39 @@ class ServicioM extends Database implements CrudInterface
         $stmt->bindParam(':id_servicio', $this->idServicio);
 
         return $stmt->execute();
+    }
+
+    /* ================================================= */
+    /* VALIDAR LOS DATOS ANTES DE CONSULTAR O GUARDAR */
+    /* ================================================= */
+
+    public function validarIdentificacion(): bool
+    {
+        $id = $this->validarIdConfiguracion($this->idServicio, 'id_servicio');
+        if ($id === null) return false;
+
+        $this->idServicio = $id;
+        return true;
+    }
+
+    private function validarDatosCatalogo(bool $esModificacion): bool
+    {
+        $datos = $this->validarDatosConfiguracion([
+            'id_servicio' => $this->idServicio,
+            'nombre_servicio' => $this->nombreServicio,
+            'descripcion' => $this->descripcion,
+            'precio' => $this->precio,
+            'duracion_estimada' => $this->duracionEstimada
+        ], 'nombre_servicio', 120, 255, $esModificacion ? 'id_servicio' : null);
+
+        if ($this->obtenerErroresValidacion() !== []) return false;
+
+        $this->nombreServicio = $datos['nombre_servicio'];
+        $this->descripcion = $datos['descripcion'];
+        $this->precio = $datos['precio'];
+        $this->duracionEstimada = $datos['duracion_estimada'];
+        if ($esModificacion) $this->idServicio = $datos['id_servicio'];
+
+        return true;
     }
 }

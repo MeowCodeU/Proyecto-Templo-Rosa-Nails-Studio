@@ -1,3 +1,9 @@
+<?php
+
+use App\Components\RestriccionesRol;
+
+?>
+
 </main>
 
 <!-- ===================================================== -->
@@ -6,8 +12,13 @@
 
 <div class="quick-actions">
 
+    <?php if (RestriccionesRol\puedeAcceder('manual')): ?>
     <!-- Manual de usuario -->
-    <a href="#" class="quick-btn" title="Manual de usuario">
+    <a
+        href="Index.php?url=manual"
+        class="quick-btn"
+        title="Manual de usuario"
+    >
         <svg
             class="quick-svg-icon"
             viewBox="0 0 64 64"
@@ -103,7 +114,10 @@
 
         </svg>
     </a>
+    <?php endif; ?>
 
+
+    <?php if (RestriccionesRol\puedeAcceder('seguridad')): ?>
     <!-- Seguridad -->
     <a
         href="Index.php?url=seguridad"
@@ -190,7 +204,10 @@
 
         </svg>
     </a>
+    <?php endif; ?>
 
+
+    <?php if (RestriccionesRol\puedeAcceder('configuracion')): ?>
     <!-- Configuración -->
     <a
         href="Index.php?url=configuracion"
@@ -199,11 +216,15 @@
     >
         <i class="bi bi-gear-wide-connected"></i>
     </a>
+    <?php endif; ?>
 
+
+    <?php if (RestriccionesRol\puedeAcceder('reportes')): ?>
     <!-- Reportes -->
     <a href="Index.php?url=reportes" class="quick-btn" title="Reportes">
         <i class="bi bi-bar-chart-line"></i>
     </a>
+    <?php endif; ?>
 
 </div>
 
@@ -220,19 +241,19 @@
 <!-- ===================================================== -->
 
 <!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="Assets/libs/jquery/jquery-3.7.1.min.js"></script>
 
 <!-- Bootstrap: componentes interactivos -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="Assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <!-- DataTables: tablas e integración con Bootstrap -->
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="Assets/libs/datatables/js/jquery.dataTables.min.js"></script>
+<script src="Assets/libs/datatables/js/dataTables.bootstrap5.min.js"></script>
 
 <!-- FullCalendar: carga opcional para las vistas que lo utilizan -->
 <?php if (!empty($usarFullCalendar)): ?>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+    <script src="Assets/libs/fullcalendar/main.min.js"></script>
+    <script src="Assets/libs/fullcalendar/locales-all.min.js"></script>
 <?php endif; ?>
 
 
@@ -240,18 +261,24 @@
 <!-- SCRIPTS DEL SISTEMA Y DE LA VISTA -->
 <!-- ===================================================== -->
 
+<!-- Avisos y confirmaciones comunes -->
+<script src="Assets/libs/sweetalert2/sweetalert2.all.min.js"></script>
+<script src="Assets/js/alertas.js?v=<?= filemtime(__DIR__ . '/../../../Assets/js/alertas.js'); ?>"></script>
+
 <!-- Script general del sistema -->
 <script src="Assets/js/script.js"></script>
 
+<!-- Las vistas importan las validaciones compartidas como módulos -->
+
 <!-- Script particular de una vista -->
 <?php if (!empty($scriptVista)): ?>
-    <script src="<?= htmlspecialchars($scriptVista, ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script type="module" src="<?= htmlspecialchars($scriptVista, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php endif; ?>
 
 <!-- Varios scripts particulares de una vista -->
 <?php if (!empty($scriptsVista) && is_array($scriptsVista)): ?>
     <?php foreach ($scriptsVista as $script): ?>
-        <script src="<?= htmlspecialchars($script, ENT_QUOTES, 'UTF-8'); ?>"></script>
+        <script type="module" src="<?= htmlspecialchars($script, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php endforeach; ?>
 <?php endif; ?>
 

@@ -95,8 +95,16 @@ $(function () {
     let lectorFoto = null;
     let versionFoto = 0;
     let enviando = false;
+    let preparandoEnvio = false;
     let formularioEnviado = null;
     let redirigiendo = false;
+    let validacionesCompartidas = null;
+    let reglasPerfil = null;
+    let reglasClave = null;
+
+
+    /* Utilizar los mensajes de las validaciones compartidas */
+    formularioPerfil.add(formularioClave).prop("noValidate", true);
 
 
     /* ================================================= */
@@ -109,6 +117,13 @@ $(function () {
             .removeClass("alert-success alert-warning")
             .addClass("alert-danger")
             .text("");
+    }
+
+
+    function limpiarValidaciones(formulario) {
+        if (validacionesCompartidas && formulario.length) {
+            validacionesCompartidas.limpiarFormulario(formulario[0]);
+        }
 
         formulario.find("[aria-invalid]").removeAttr("aria-invalid");
     }
@@ -131,6 +146,188 @@ $(function () {
         formulario.closest(".modal").scrollTop(0);
 
         aviso.trigger("focus");
+    }
+
+
+    /* Mostrar los errores enviados por el modelo junto a sus campos */
+    function mostrarRechazo(formulario, respuesta, mensaje) {
+        window.Alertas?.rechazo(mensaje, respuesta, formulario);
+
+        if (
+            validacionesCompartidas &&
+            formulario.length &&
+            respuesta &&
+            $.isPlainObject(respuesta.errores)
+        ) {
+            validacionesCompartidas.mostrarErrores(
+                formulario[0],
+                respuesta.errores
+            );
+        }
+
+        mostrarAviso(
+            formulario,
+            mensaje,
+            respuesta && respuesta.campo,
+            respuesta?.ambiguo ? "warning" : "danger"
+        );
+    }
+
+
+    /* ================================================= */
+    /* VALIDACIONES COMPARTIDAS DEL PERFIL */
+    /* ================================================= */
+
+    function prepararValidaciones() {
+        if (!formularioPerfil.length && !formularioClave.length) {
+            return Promise.resolve(null);
+        }
+
+        return import("./validaciones/validaciones.js")
+            .then(function (modulo) {
+                const validaciones = modulo.Validaciones;
+
+
+                /* Reutilizar las reglas de los datos personales */
+                reglasPerfil = Object.freeze({
+                    nickname: validaciones.reglasUsuarios.nickname,
+                    telefono: validaciones.reglasClientes.telefono,
+                    correo: validaciones.reglasClientes.correo
+                });
+
+
+                /* Comprobar las contraseñas sin eliminar sus espacios */
+                reglasClave = Object.freeze({
+                    clave_actual: {
+                        comprobar: function (valor) {
+                            return typeof valor !== "string" || valor === ""
+                                ? "Ingrese su contraseña actual."
+                                : null;
+                        }
+                    },
+
+                    nueva_clave: {
+                        comprobar: function (valor) {
+                            if (typeof valor !== "string" || valor === "") {
+                                return "Ingrese la nueva contraseña.";
+                            }
+
+                            if (validaciones.validarClave(valor)) {
+                                return null;
+                            }
+
+                            if (new TextEncoder().encode(valor).length > 72) {
+                                return "La contraseña es demasiado larga. Utilice una más corta.";
+                            }
+
+                            return "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo, sin espacios.";
+                        }
+                    },
+
+                    confirmar_clave: {
+                        comprobar: function (valor) {
+                            if (typeof valor !== "string" || valor === "") {
+                                return "Confirme la nueva contraseña.";
+                            }
+
+                            const nuevaClave = formularioClave
+                                .find("[name='nueva_clave']")
+                                .val();
+
+                            return valor !== nuevaClave
+                                ? "Las contraseñas no coinciden."
+                                : null;
+                        }
+                    }
+                });
+
+
+                /* Mantener los límites de los campos acordes con el modelo */
+                formularioPerfil.find("[name='nickname']").prop("maxLength", 50);
+                formularioPerfil.find("[name='telefono']").prop("maxLength", 25);
+                formularioPerfil.find("[name='correo']").prop("maxLength", 100);
+
+
+                /* Retirar mensajes nativos anteriores de confirmación */
+                formularioClave.find("[name='confirmar_clave']").each(function () {
+                    this.setCustomValidity("");
+                });
+
+
+                /* Activar los mensajes compartidos en ambos formularios */
+                if (formularioPerfil.length) {
+                    validaciones.activar(formularioPerfil[0], reglasPerfil);
+                }
+
+                if (formularioClave.length) {
+                    validaciones.activar(formularioClave[0], reglasClave);
+                }
+
+                validacionesCompartidas = validaciones;
+
+                return validaciones;
+
+            }).catch(function () {
+                return null;
+            });
+    }
+
+
+    const cargaValidaciones = prepararValidaciones();
+
+
+    /* Comprobar el archivo antes de previsualizarlo o enviarlo */
+    function validarFotoSeleccionada() {
+        const archivos = inputFotoPerfil.prop("files");
+        const archivo = archivos && archivos[0];
+
+        if (!archivo) {
+            return null;
+        }
+
+        const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+        const tamanoMaximo = 2 * 1024 * 1024;
+
+        if (archivo.type && !tiposPermitidos.includes(archivo.type)) {
+            return "Seleccione una imagen JPEG, PNG o WebP.";
+        }
+
+        if (archivo.size <= 0 || archivo.size > tamanoMaximo) {
+            return "Seleccione una fotografía de hasta 2 MB.";
+        }
+
+        return null;
+    }
+
+
+    /* Validar los campos con las reglas correspondientes */
+    function validarFormularioPerfil(formulario, esPerfil) {
+        const reglas = esPerfil ? reglasPerfil : reglasClave;
+
+        limpiarValidaciones(formulario);
+
+        const resultado = validacionesCompartidas.validarFormulario(
+            formulario[0],
+            reglas
+        );
+
+        if (esPerfil) {
+            const errorFoto = validarFotoSeleccionada();
+
+            if (errorFoto) {
+                validacionesCompartidas.mostrarErrores(
+                    formulario[0],
+                    { foto: errorFoto }
+                );
+
+                resultado.valido = false;
+                resultado.primerCampo = resultado.primerCampo || inputFotoPerfil[0];
+
+                mostrarAviso(formulario, errorFoto, "foto");
+            }
+        }
+
+        return resultado;
     }
 
 
@@ -157,11 +354,25 @@ $(function () {
     }
 
 
+    function mostrarErrorFoto(mensaje) {
+        restaurarFotoGuardada();
+
+        if (validacionesCompartidas && formularioPerfil.length) {
+            validacionesCompartidas.mostrarErrores(
+                formularioPerfil[0],
+                { foto: mensaje }
+            );
+        }
+
+        mostrarAviso(formularioPerfil, mensaje, "foto");
+    }
+
+
     if (inputFotoPerfil.length && previewFoto.length) {
 
         /* Abrir el selector desde la fotografía */
         previewFoto.on("click", function () {
-            if (!enviando) {
+            if (!enviando && !preparandoEnvio) {
                 inputFotoPerfil.trigger("click");
             }
         });
@@ -172,7 +383,12 @@ $(function () {
             cancelarLecturaFoto();
             limpiarAviso(formularioPerfil);
 
-            const archivo = inputFotoPerfil.prop("files")[0];
+            inputFotoPerfil.removeAttr("aria-invalid")
+                .next(".templo-validacion-feedback")
+                .remove();
+
+            const archivos = inputFotoPerfil.prop("files");
+            const archivo = archivos && archivos[0];
             const versionActual = versionFoto;
 
             if (!archivo) {
@@ -180,34 +396,10 @@ $(function () {
                 return;
             }
 
-            const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
-            const tamanoMaximo = 2 * 1024 * 1024;
+            const errorFoto = validarFotoSeleccionada();
 
-
-            /* Comprobar el formato informado por el navegador */
-            if (archivo.type && !tiposPermitidos.includes(archivo.type)) {
-                restaurarFotoGuardada();
-
-                mostrarAviso(
-                    formularioPerfil,
-                    "Seleccione una imagen JPEG, PNG o WebP.",
-                    "foto"
-                );
-
-                return;
-            }
-
-
-            /* Comprobar el tamaño antes de leer la fotografía */
-            if (archivo.size <= 0 || archivo.size > tamanoMaximo) {
-                restaurarFotoGuardada();
-
-                mostrarAviso(
-                    formularioPerfil,
-                    "Seleccione una fotografía de hasta 2 MB.",
-                    "foto"
-                );
-
+            if (errorFoto) {
+                mostrarErrorFoto(errorFoto);
                 return;
             }
 
@@ -233,16 +425,19 @@ $(function () {
                     return;
                 }
 
-                restaurarFotoGuardada();
-
-                mostrarAviso(
-                    formularioPerfil,
-                    "No fue posible leer la fotografía. Selecciónela nuevamente.",
-                    "foto"
+                mostrarErrorFoto(
+                    "No fue posible leer la fotografía. Selecciónela nuevamente."
                 );
             };
 
-            lector.readAsDataURL(archivo);
+            try {
+                lector.readAsDataURL(archivo);
+
+            } catch (error) {
+                mostrarErrorFoto(
+                    "No fue posible leer la fotografía. Selecciónela nuevamente."
+                );
+            }
         });
     }
 
@@ -298,25 +493,18 @@ $(function () {
     });
 
 
-    /* Comprobar la coincidencia sin modificar las contraseñas */
-    function validarCoincidenciaClave() {
-        const nuevaClave = formularioClave.find("[name='nueva_clave']").first();
-        const confirmarClave = formularioClave.find("[name='confirmar_clave']").first();
+    /* Revisar una confirmación ya validada cuando cambie la nueva contraseña */
+    formularioClave.find("[name='nueva_clave']").on("input", function () {
+        const confirmarClave = formularioClave
+            .find("[name='confirmar_clave']")
+            .first();
 
-        if (!nuevaClave.length || !confirmarClave.length) {
-            return;
+        if (validacionesCompartidas && confirmarClave.length) {
+            confirmarClave[0].dispatchEvent(
+                new Event("input", { bubbles: true })
+            );
         }
-
-        const noCoinciden = confirmarClave.val() !== "" && nuevaClave.val() !== confirmarClave.val();
-
-        confirmarClave[0].setCustomValidity(
-            noCoinciden ? "Las contraseñas no coinciden." : ""
-        );
-    }
-
-
-    formularioClave.find("[name='nueva_clave'], [name='confirmar_clave']")
-        .on("input", validarCoincidenciaClave);
+    });
 
 
     /* Limpiar los campos y recuperar la visibilidad inicial */
@@ -325,8 +513,8 @@ $(function () {
             formularioClave[0].reset();
         }
 
-        validarCoincidenciaClave();
         limpiarAviso(formularioClave);
+        limpiarValidaciones(formularioClave);
 
         botonesClavePerfil.each(function () {
             actualizarVisibilidadClave($(this), false);
@@ -374,6 +562,8 @@ $(function () {
         /* Actualizar la cabecera después de confirmar el guardado */
         $(".user-session-photo").first().attr("src", fotoGuardada);
         $(".user-session-name").first().text(nombreVisible);
+
+        limpiarValidaciones(formularioPerfil);
     }
 
 
@@ -405,6 +595,7 @@ $(function () {
 
         restaurarFotoGuardada();
         limpiarAviso(formularioPerfil);
+        limpiarValidaciones(formularioPerfil);
     });
 
 
@@ -432,18 +623,29 @@ $(function () {
 
         const instanciaResultado = window.bootstrap.Modal.getOrCreateInstance(modalResultado[0]);
 
+        function presentarResultado() {
+            if (window.Alertas?.disponible()) {
+                window.Alertas.notificar(respuesta.mensaje, "success", { titulo })
+                    .then(function (mostrado) {
+                        if (!mostrado) instanciaResultado.show();
+                    });
+            } else {
+                instanciaResultado.show();
+            }
+        }
+
 
         /* Esperar el cierre del formulario antes de mostrar el resultado */
         function cerrarYMostrar() {
             if (modalOrigen.hasClass("show")) {
                 modalOrigen.one("hidden.bs.modal", function () {
-                    instanciaResultado.show();
+                    presentarResultado();
                 });
 
                 window.bootstrap.Modal.getOrCreateInstance(modalOrigen[0]).hide();
 
             } else {
-                instanciaResultado.show();
+                presentarResultado();
             }
         }
 
@@ -469,6 +671,21 @@ $(function () {
         }
 
         const elemento = resultadosIniciales.shift();
+
+        if (window.Alertas?.disponible()) {
+            $(elemento).attr("data-mostrar-inicial", "0");
+
+            window.Alertas.desdeModal(elemento).then(function (mostrado) {
+                if (mostrado) {
+                    mostrarSiguienteResultado();
+                } else {
+                    $(elemento).one("hidden.bs.modal", mostrarSiguienteResultado);
+                    window.bootstrap.Modal.getOrCreateInstance(elemento).show();
+                }
+            });
+
+            return;
+        }
 
         $(elemento).attr("data-mostrar-inicial", "0")
             .one("hidden.bs.modal", mostrarSiguienteResultado);
@@ -506,6 +723,7 @@ $(function () {
 
                     error.status = solicitud.status;
                     error.respuesta = respuesta;
+                    error.ambiguo = sinConfirmacion;
 
                     reject(error);
                 }
@@ -521,24 +739,56 @@ $(function () {
     formularioPerfil.add(formularioClave).on("submit", async function (evento) {
         evento.preventDefault();
 
-        if (enviando || redirigiendo) {
+        if (enviando || preparandoEnvio || redirigiendo) {
             return;
         }
 
         const formulario = $(this);
         const esPerfil = formulario.attr("id") === "formPerfil";
+        const modalOrigen = formulario.closest(".modal");
+        const estabaAbierto = modalOrigen.hasClass("show");
 
+        preparandoEnvio = true;
 
-        /* Comprobar la confirmación antes de enviar la contraseña */
-        if (!esPerfil) {
-            validarCoincidenciaClave();
+        let validaciones = null;
+
+        try {
+            validaciones = await cargaValidaciones;
+
+        } finally {
+            preparandoEnvio = false;
         }
 
-        if (!this.reportValidity()) {
+
+        /* Respetar el cierre del formulario durante la carga inicial */
+        if (estabaAbierto && !modalOrigen.hasClass("show")) {
             return;
         }
 
         limpiarAviso(formulario);
+
+
+        /* Evitar el envío si no se pudieron cargar las reglas compartidas */
+        if (!validaciones) {
+            mostrarAviso(
+                formulario,
+                "No fue posible cargar las validaciones. Recargue la página antes de continuar.",
+                null,
+                "warning"
+            );
+
+            return;
+        }
+
+        const resultado = validarFormularioPerfil(formulario, esPerfil);
+
+        if (!resultado.valido) {
+            if (resultado.primerCampo && resultado.primerCampo.type !== "hidden") {
+                resultado.primerCampo.focus();
+            }
+
+            return;
+        }
 
         const opciones = {
             url: formulario.attr("action"),
@@ -574,6 +824,8 @@ $(function () {
         const estadosControles = [];
 
         let respuestaExitosa = null;
+        let respuestaRechazada = null;
+        let mensajeError = null;
 
         controles.each(function () {
             const elemento = $(this);
@@ -598,19 +850,17 @@ $(function () {
             actualizarToken(formulario, respuesta);
 
 
-            /* Mantener los datos cuando el controlador rechace la solicitud */
+            /* Conservar los errores sin borrar los datos del formulario */
             if (!respuesta || respuesta.ok !== true) {
-                mostrarAviso(
-                    formulario,
-                    respuesta && respuesta.mensaje ||
-                        "No fue posible completar la operación. Intente nuevamente.",
-                    respuesta && respuesta.campo
-                );
+                respuestaRechazada = respuesta;
 
-                return;
+                mensajeError = respuesta && typeof respuesta.mensaje === "string"
+                    ? respuesta.mensaje
+                    : "No fue posible completar la operación. Intente nuevamente.";
+
+            } else {
+                respuestaExitosa = respuesta;
             }
-
-            respuestaExitosa = respuesta;
 
         } catch (error) {
             const respuesta = error.respuesta;
@@ -626,11 +876,14 @@ $(function () {
                 return;
             }
 
-            mostrarAviso(
-                formulario,
-                error.message || "No fue posible completar la operación. Intente nuevamente.",
-                respuesta && respuesta.campo
-            );
+            respuestaRechazada = {
+                ...respuesta,
+                status: error.status,
+                ambiguo: error.ambiguo === true
+            };
+
+            mensajeError = error.message ||
+                "No fue posible completar la operación. Intente nuevamente.";
 
         } finally {
             if (!redirigiendo) {
@@ -648,6 +901,13 @@ $(function () {
         }
 
 
+        /* Mostrar los errores después de recuperar los controles */
+        if (mensajeError && !redirigiendo) {
+            mostrarRechazo(formulario, respuestaRechazada, mensajeError);
+            return;
+        }
+
+
         /* Presentar el resultado después de recuperar los controles */
         if (respuestaExitosa && !redirigiendo) {
             try {
@@ -662,12 +922,10 @@ $(function () {
                 mostrarResultado(formulario, respuestaExitosa, esPerfil);
 
             } catch (error) {
-                mostrarAviso(
-                    formulario,
-                    "La operación fue confirmada, pero no se pudo actualizar la vista. Recargue la página para ver los datos guardados.",
-                    null,
-                    "warning"
-                );
+                const mensaje = "La operación fue confirmada, pero no se pudo actualizar la vista. Recargue la página para ver los datos guardados.";
+
+                mostrarAviso(formulario, mensaje, null, "warning");
+                window.Alertas?.notificar(mensaje, "warning");
             }
         }
     });
