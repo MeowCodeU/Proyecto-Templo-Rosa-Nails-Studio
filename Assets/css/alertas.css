@@ -1,0 +1,158 @@
+/* ===================================================== */
+/* AVISOS Y CONFIRMACIONES DEL SISTEMA */
+/* ===================================================== */
+
+.templo-alerta-contenedor{
+  z-index: 1090;
+}
+
+.templo-alerta{
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 32px));
+  max-width: 100%;
+  padding: 28px 24px 24px;
+
+  border: 1px solid rgba(216,167,177,0.55);
+  border-radius: 24px;
+
+  background: #FDF5F2;
+  color: #7a655b;
+
+  font-family: "Segoe UI", Arial, sans-serif;
+
+  box-shadow: 0 18px 48px rgba(74,60,49,0.18);
+}
+
+
+/* ===================================================== */
+/* TÍTULO Y MENSAJE */
+/* ===================================================== */
+
+.templo-alerta .templo-alerta-titulo{
+  margin: 0;
+  padding: 0 8px;
+
+  color: #7a655b;
+
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+}
+
+.templo-alerta .templo-alerta-texto{
+  margin: 18px 0 0;
+  padding: 0;
+
+  color: #7a655b;
+
+  font-size: 0.96rem;
+  line-height: 1.6;
+
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+
+/* ===================================================== */
+/* ICONOS E IMÁGENES */
+/* ===================================================== */
+
+.templo-alerta .swal2-icon{
+  margin: 0 auto 22px;
+}
+
+.templo-alerta .swal2-image{
+  max-width: 100%;
+  object-fit: contain;
+
+  margin: 0 auto 22px;
+}
+
+
+/* ===================================================== */
+/* BOTONES DE LOS AVISOS */
+/* ===================================================== */
+
+.templo-alerta .templo-alerta-acciones{
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  margin: 24px 0 0;
+}
+
+.templo-alerta-aceptar,
+.templo-alerta-cancelar{
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 20px;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+
+/* Botón principal */
+
+.templo-alerta-aceptar{
+  background: #B89344;
+  color: #ffffff;
+}
+
+.templo-alerta-aceptar:hover{
+  background: #a58036;
+}
+
+
+/* Botón de cancelación */
+
+.templo-alerta-cancelar{
+  border-color: #D8A7B1;
+
+  background: #f9e8ee;
+  color: #7a655b;
+}
+
+.templo-alerta-cancelar:hover{
+  background: #e8ced8;
+}
+
+
+/* Foco visible al utilizar el teclado */
+
+.templo-alerta-aceptar:focus-visible,
+.templo-alerta-cancelar:focus-visible{
+  outline: 3px solid rgba(198,122,139,0.45);
+  outline-offset: 3px;
+}
+
+
+/* Controles deshabilitados */
+
+.templo-alerta-aceptar:disabled,
+.templo-alerta-cancelar:disabled{
+  opacity: 0.65;
+  cursor: wait;
+}
+
+
+/* ===================================================== */
+/* PREFERENCIA DE MOVIMIENTO REDUCIDO */
+/* ===================================================== */
+
+@media (prefers-reduced-motion: reduce){
+  .templo-alerta,
+  .templo-alerta-contenedor{
+    animation: none !important;
+  }
+}
