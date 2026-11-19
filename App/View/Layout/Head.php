@@ -41,7 +41,7 @@
 
     <!-- Bootstrap CSS -->
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        href="Assets/libs/bootstrap/css/bootstrap.min.css"
         rel="stylesheet"
     >
 
@@ -49,14 +49,14 @@
     <!-- Bootstrap Icons -->
     <link
         rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        href="Assets/libs/bootstrap-icons/font/bootstrap-icons.min.css"
     >
 
 
     <!-- DataTables CSS -->
     <link
         rel="stylesheet"
-        href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css"
+        href="Assets/libs/datatables/css/dataTables.bootstrap5.min.css"
     >
 
 
@@ -65,7 +65,7 @@
 
         <link
             rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css"
+            href="Assets/libs/fullcalendar/main.min.css"
         >
 
     <?php endif; ?>
@@ -75,6 +75,20 @@
     <link
         rel="stylesheet"
         href="Assets/css/styles.css"
+    >
+
+
+    <!-- SweetAlert2 CSS -->
+    <link
+        rel="stylesheet"
+        href="Assets/libs/sweetalert2/sweetalert2.min.css"
+    >
+
+
+    <!-- Estilos propios de los avisos y confirmaciones -->
+    <link
+        rel="stylesheet"
+        href="Assets/css/alertas.css?v=<?= filemtime(__DIR__ . '/../../../Assets/css/alertas.css'); ?>"
     >
 
 </head>
