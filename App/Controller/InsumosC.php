@@ -1,6 +1,7 @@
 <?php
 
 use App\Model\InsumosM;
+use App\Components\Session;
 
 
 /* ================================================= */
@@ -112,7 +113,7 @@ try {
             !is_string($accionInsumos) ||
             !in_array(
                 $accionInsumos,
-                ['consultar', 'registrar', 'modificar', 'desactivar'],
+                ['consultar', 'consultar_historial', 'consultar_proveedores', 'consultar_lotes', 'registrar', 'modificar', 'gestionar_existencias', 'desactivar'],
                 true
             )
         ) {
@@ -134,86 +135,132 @@ try {
 
 
         /* ================================================= */
-        /* COMPROBAR DATOS */
+        /* CONSULTAR PROVEEDORES DEL INSUMO */
         /* ================================================= */
 
-        $erroresInsumos = [];
+        /* Mostrar las empresas asociadas sin modificar los datos */
+        if ($accionInsumos === 'consultar_proveedores') {
 
-        /* Comprobar el identificador para modificar o desactivar */
-        if ($accionInsumos !== 'registrar') {
-
-            $idInsumo = $datosInsumos['id_insumo'] ?? '';
-
-            if (
-                (!is_string($idInsumo) && !is_int($idInsumo)) ||
-                !ctype_digit((string) $idInsumo) ||
-                (float) $idInsumo < 1 ||
-                (float) $idInsumo > 4294967295
-            ) {
-                $erroresInsumos['id_insumo'] =
-                    'Seleccione un insumo válido.';
+            if (!$esAjaxInsumos) {
+                throw new InvalidArgumentException('La solicitud enviada no es válida.');
             }
+
+            $idInsumoConsulta = $modeloInsumos->validarIdInsumo($datosInsumos['id_insumo'] ?? null);
+
+            if (!is_int($idInsumoConsulta)) {
+                throw new InvalidArgumentException('Seleccione un insumo válido.');
+            }
+
+            $responderInsumos([
+                'ok' => true,
+                'proveedores' => $modeloInsumos->consultarProveedoresInsumo($idInsumoConsulta)
+            ]);
         }
 
-        if (
-            in_array(
-                $accionInsumos,
-                ['registrar', 'modificar'],
-                true
-            )
-        ) {
 
-            /* Comprobar el nombre obligatorio */
-            $nombreInsumo = $datosInsumos['nombre_insumo'] ?? '';
+        /* ================================================= */
+        /* CONSULTAR LOTES DEL INSUMO */
+        /* ================================================= */
 
-            if (
-                !is_string($nombreInsumo) ||
-                trim($nombreInsumo) === ''
-            ) {
-                $erroresInsumos['nombre_insumo'] =
-                    'El nombre del insumo es obligatorio.';
+        /* Obtener las cantidades y fechas de vencimiento de cada lote */
+        if ($accionInsumos === 'consultar_lotes') {
+
+            if (!$esAjaxInsumos) {
+                throw new InvalidArgumentException('La solicitud enviada no es válida.');
             }
 
-            /* Comprobar los campos de texto recibidos */
-            foreach (
-                ['descripcion', 'presentacion', 'tipo_control', 'fecha_vencimiento']
-                as $campo
-            ) {
-                if (
-                    isset($datosInsumos[$campo]) &&
-                    !is_string($datosInsumos[$campo])
-                ) {
-                    $erroresInsumos[$campo] =
-                        'El valor del campo no es válido.';
-                }
+            $idInsumoConsulta = $modeloInsumos->validarIdInsumo($datosInsumos['id_insumo'] ?? null);
+
+            if (!is_int($idInsumoConsulta)) {
+                throw new InvalidArgumentException('Seleccione un insumo válido.');
             }
 
-            /* Conservar las cantidades enteras y no negativas de la vista */
-            foreach (['stock_actual', 'stock_minimo'] as $campo) {
-
-                $cantidad = $datosInsumos[$campo] ?? 0;
-
-                if (
-                    (!is_string($cantidad) && !is_int($cantidad)) ||
-                    !ctype_digit((string) $cantidad) ||
-                    (float) $cantidad > 4294967295
-                ) {
-                    $erroresInsumos[$campo] =
-                        'Indique una cantidad entera no negativa válida.';
-                }
-            }
+            $responderInsumos([
+                'ok' => true,
+                'lotes' => $modeloInsumos->consultarLotes($idInsumoConsulta)
+            ]);
         }
 
-        /* Devolver los errores antes de guardar */
-        if ($erroresInsumos) {
+
+        /* ================================================= */
+        /* CONSULTAR HISTORIAL DE MOVIMIENTOS */
+        /* ================================================= */
+
+        /* Consultar fechas, tipo de movimiento y responsable */
+        if ($accionInsumos === 'consultar_historial') {
+
+            $filtros = $modeloInsumos->validarFiltrosHistorial($datosInsumos);
+            $fechaDesde = $filtros['fecha_desde'] ?? '';
+            $fechaHasta = $filtros['fecha_hasta'] ?? '';
+            $tipoMovimiento = $filtros['tipo_movimiento'] ?? '';
+            $erroresHistorial = $modeloInsumos->obtenerErroresValidacion();
+
+            if ($erroresHistorial) {
+                $responderInsumos(
+                    [
+                        'ok' => false,
+                        'mensaje' => 'Revise los filtros del historial.',
+                        'errores' => $erroresHistorial
+                    ],
+                    422
+                );
+            }
+
             $responderInsumos(
                 [
-                    'ok' => false,
-                    'mensaje' => 'Revise los campos señalados.',
-                    'errores' => $erroresInsumos
-                ],
-                422
+                    'ok' => true,
+                    'movimientos' => $modeloInsumos->consultarHistorial(
+                        $fechaDesde !== '' ? $fechaDesde : null,
+                        $fechaHasta !== '' ? $fechaHasta : null,
+                        $tipoMovimiento !== '' ? $tipoMovimiento : null
+                    )
+                ]
             );
+        }
+
+
+        /* ================================================= */
+        /* SOLICITAR LA VALIDACIÓN AL MODELO */
+        /* ================================================= */
+
+        $datosInsumos = $modeloInsumos->validarSolicitudInsumos($datosInsumos, $accionInsumos);
+        $erroresInsumos = $modeloInsumos->obtenerErroresValidacion();
+
+        if ($erroresInsumos) {
+            $responderInsumos([
+                'ok' => false,
+                'mensaje' => 'Revise los campos señalados.',
+                'errores' => $erroresInsumos
+            ], 422);
+        }
+
+        $idProveedorInsumos = $datosInsumos['id_proveedor'] ?? null;
+        $idLoteMovimiento = $datosInsumos['id_lote'] ?? null;
+        $fechaVencimientoLote = $datosInsumos['fecha_vencimiento'] ?? null;
+        $tipoMovimientoBD = $datosInsumos['tipo_movimiento_bd'] ?? null;
+        $motivoMovimiento = $datosInsumos['motivo_movimiento'] ?? null;
+        $operacionExistencias = $datosInsumos['tipo_movimiento'] ?? null;
+
+
+        /* Obtener el usuario responsable de los movimientos de existencias */
+        if ($accionInsumos === 'gestionar_existencias') {
+            $usuarioAutenticado = Session\obtenerUsuario();
+
+            $idUsuario = filter_var(
+                $usuarioAutenticado['id_usuario'] ?? null,
+                FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 1]]
+            );
+
+            if (!is_int($idUsuario)) {
+                $responderInsumos(
+                    [
+                        'ok' => false,
+                        'mensaje' => 'La sesión no tiene un usuario válido. Inicie sesión nuevamente.'
+                    ],
+                    401
+                );
+            }
         }
 
 
@@ -224,22 +271,16 @@ try {
         /* Registrar un nuevo insumo */
         if ($accionInsumos === 'registrar') {
 
-            $tipoControl = strtoupper(
-                trim($datosInsumos['tipo_control'] ?? 'UNITARIO')
-            );
+            $tipoControl = $datosInsumos['tipo_control'];
 
-            if (!in_array($tipoControl, ['UNITARIO', 'POR_ENVASE'], true)) {
-                $tipoControl = 'UNITARIO';
-            }
-
-            $modeloInsumos->set_nombreInsumo(trim($datosInsumos['nombre_insumo'] ?? ''));
+            $modeloInsumos->set_nombreInsumo($datosInsumos['nombre_insumo']);
             $modeloInsumos->set_descripcion($datosInsumos['descripcion'] ?? '');
             $modeloInsumos->set_presentacion($datosInsumos['presentacion'] ?? '');
             $modeloInsumos->set_tipoControl($tipoControl);
-            $modeloInsumos->set_stockActual($datosInsumos['stock_actual'] ?? 0);
+            $modeloInsumos->set_stockActual(0);
             $modeloInsumos->set_stockMinimo($datosInsumos['stock_minimo'] ?? 0);
-            $modeloInsumos->set_fechaVencimiento($datosInsumos['fecha_vencimiento'] ?? '');
 
+            /* Crear el catálogo sin proveedor, vencimiento ni movimiento inicial */
             $resultadoInsumos = $modeloInsumos->registrar();
 
             $mensajeInsumos =
@@ -272,26 +313,49 @@ try {
                 );
             }
 
-            $tipoControl = strtoupper(
-                trim($datosInsumos['tipo_control'] ?? 'UNITARIO')
-            );
+            $tipoControl = $datosInsumos['tipo_control'];
 
-            if (!in_array($tipoControl, ['UNITARIO', 'POR_ENVASE'], true)) {
-                $tipoControl = 'UNITARIO';
-            }
-
-            $modeloInsumos->set_nombreInsumo(trim($datosInsumos['nombre_insumo'] ?? ''));
+            $modeloInsumos->set_nombreInsumo($datosInsumos['nombre_insumo']);
             $modeloInsumos->set_descripcion($datosInsumos['descripcion'] ?? '');
             $modeloInsumos->set_presentacion($datosInsumos['presentacion'] ?? '');
             $modeloInsumos->set_tipoControl($tipoControl);
             $modeloInsumos->set_stockActual($datosInsumos['stock_actual'] ?? 0);
+            $modeloInsumos->set_stockOriginal($datosInsumos['stock_original']);
             $modeloInsumos->set_stockMinimo($datosInsumos['stock_minimo'] ?? 0);
-            $modeloInsumos->set_fechaVencimiento($datosInsumos['fecha_vencimiento'] ?? '');
 
             $resultadoInsumos = $modeloInsumos->modificar();
 
             $mensajeInsumos =
                 'Insumo actualizado correctamente.';
+        }
+
+
+        /* ================================================= */
+        /* GESTIONAR EXISTENCIAS */
+        /* ================================================= */
+
+        /* Agregar, reponer o descontar con un único método centralizado */
+        if ($accionInsumos === 'gestionar_existencias') {
+
+            $modeloInsumos->set_idInsumo($datosInsumos['id_insumo']);
+
+            $datosMovimiento = $modeloInsumos->gestionarExistencias(
+                $tipoMovimientoBD,
+                (int) $datosInsumos['cantidad_movimiento'],
+                $motivoMovimiento,
+                (int) $idUsuario,
+                $idProveedorInsumos,
+                $fechaVencimientoLote,
+                $idLoteMovimiento
+            );
+
+            $resultadoInsumos = true;
+
+            $mensajeInsumos = match ($operacionExistencias) {
+                'AGREGAR' => 'Existencias agregadas correctamente.',
+                'REPONER' => 'Existencias repuestas correctamente.',
+                'DESCONTAR' => 'Existencias descontadas correctamente.'
+            };
         }
 
 
@@ -331,6 +395,16 @@ try {
         /* CONFIRMAR OPERACIÓN */
         /* ================================================= */
 
+        $erroresInsumos = $modeloInsumos->obtenerErroresValidacion();
+
+        if ($erroresInsumos) {
+            $responderInsumos([
+                'ok' => false,
+                'mensaje' => 'Revise los campos señalados.',
+                'errores' => $erroresInsumos
+            ], 422);
+        }
+
         /* Comprobar el resultado del modelo */
         if ($resultadoInsumos !== true) {
             throw new RuntimeException(
@@ -340,12 +414,16 @@ try {
 
         /* Devolver el resultado de la operación AJAX */
         if ($esAjaxInsumos) {
-            $responderInsumos(
-                [
-                    'ok' => true,
-                    'mensaje' => $mensajeInsumos
-                ]
-            );
+            $respuestaInsumos = [
+                'ok' => true,
+                'mensaje' => $mensajeInsumos
+            ];
+
+            if (isset($datosMovimiento)) {
+                $respuestaInsumos['movimiento'] = $datosMovimiento;
+            }
+
+            $responderInsumos($respuestaInsumos);
         }
 
         /* Redirigir cuando se utiliza un formulario sin AJAX */
@@ -356,6 +434,7 @@ try {
 
     /* Consultar los datos iniciales para cargar la vista */
     $listaInsumos = $modeloInsumos->consultar();
+    $listaProveedoresInsumos = $modeloInsumos->consultarProveedoresActivos();
 
 } catch (JsonException | InvalidArgumentException $e) {
 
@@ -365,10 +444,42 @@ try {
             'ok' => false,
             'mensaje' => $e instanceof JsonException
                 ? 'Los datos enviados no contienen un JSON válido.'
-                : $e->getMessage()
+                : $e->getMessage(),
+            'errores' => isset($modeloInsumos) ? $modeloInsumos->obtenerErroresValidacion() : []
         ],
         422
     );
+
+} catch (DomainException $e) {
+
+    /* Informar si las existencias cambiaron durante la edición */
+    $respuestaInsumos = [
+        'ok' => false,
+        'mensaje' => $e->getMessage()
+    ];
+
+    if (str_starts_with($e->getMessage(), 'Las existencias cambiaron')) {
+        $respuestaInsumos['errores'] = [
+            'stock_actual' => $e->getMessage()
+        ];
+    }
+
+    if (
+        str_starts_with($e->getMessage(), 'No hay existencias suficientes') ||
+        str_starts_with($e->getMessage(), 'El lote seleccionado no tiene existencias')
+    ) {
+        $respuestaInsumos['errores'] = [
+            'cantidad_movimiento' => $e->getMessage()
+        ];
+    }
+
+    if (str_starts_with($e->getMessage(), 'Seleccione el lote afectado')) {
+        $respuestaInsumos['errores'] = [
+            'id_lote' => $e->getMessage()
+        ];
+    }
+
+    $responderInsumos($respuestaInsumos, 409);
 
 } catch (Throwable $e) {
 
