@@ -11,6 +11,49 @@ trait ValidacionConfiguracionTrait
     use ValidacionTrait;
 
     /* ================================================= */
+    /* VALIDAR INSUMOS REQUERIDOS POR SERVICIO */
+    /* ================================================= */
+
+    protected function validarInsumosServicio(mixed $idServicio, mixed $insumos): array
+    {
+        $id = $this->validarIdConfiguracion($idServicio, 'id_servicio');
+        $seleccionados = [];
+
+        if (!is_array($insumos) || !array_is_list($insumos) || count($insumos) > 200) {
+            $this->erroresValidacion['insumos'] = 'Seleccione una lista válida de hasta 200 insumos.';
+        } else {
+            foreach ($insumos as $insumo) {
+                if (!is_array($insumo)) {
+                    $this->erroresValidacion['insumos'] = 'Seleccione insumos válidos.';
+                    break;
+                }
+
+                $idInsumo = $this->validarIdentificador(
+                    $insumo['id_insumo'] ?? null, 'insumos', 'Seleccione un insumo válido.'
+                );
+                $cantidad = $insumo['cantidad'] ?? null;
+                $valida = (is_int($cantidad) || is_string($cantidad)) &&
+                    preg_match('/\A[1-9][0-9]{0,7}\z/D', (string) $cantidad) === 1;
+
+                if (!$valida || $idInsumo === null || isset($seleccionados[$idInsumo])) {
+                    $this->erroresValidacion['insumos'] = 'Use cantidades enteras de 1 a 99999999, sin repetir insumos.';
+                    break;
+                }
+
+                $seleccionados[$idInsumo] = (int) $cantidad;
+            }
+        }
+
+        if ($this->erroresValidacion !== []) {
+            throw new \InvalidArgumentException(implode(' ', $this->erroresValidacion));
+        }
+
+        ksort($seleccionados, SORT_NUMERIC);
+        return ['id_servicio' => $id, 'insumos' => $seleccionados];
+    }
+
+
+    /* ================================================= */
     /* VALIDAR LOS DATOS DE UN CATÁLOGO */
     /* ================================================= */
 

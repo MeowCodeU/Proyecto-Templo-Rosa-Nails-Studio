@@ -27,6 +27,9 @@ class RegistroServicioM extends Database
 
     private PDO $conexionMD;
 
+    /* Especialista identificada por la sesión del servidor */
+    private int $idEspecialista;
+
     /* Reglas de transición de las citas */
     private FlujoCita $flujoCita;
 
@@ -35,8 +38,9 @@ class RegistroServicioM extends Database
     /* CONSTRUCTOR */
     /* ================================================= */
 
-    public function __construct()
+    public function __construct(int $idEspecialista)
     {
+        $this->idEspecialista = $this->validarIdRegistroServicio($idEspecialista, 'id_usuario_asignado');
         $this->conexionMD = $this->getConnection();
         $this->flujoCita = new FlujoCita();
     }
@@ -48,7 +52,7 @@ class RegistroServicioM extends Database
 
     public function consultar(): array
     {
-        /* Recuperar las citas que todavía pueden atenderse */
+        /* Recuperar las citas del día que corresponde atender a esta especialista */
         $sql = "SELECT
                     a.id_agendamiento,
                     a.id_cliente,
@@ -102,11 +106,15 @@ class RegistroServicioM extends Database
                 INNER JOIN personas pe
                     ON pe.id_persona = u.id_persona
 
-                WHERE ea.nombre_estado NOT IN ('REALIZADA', 'CANCELADA')
+                WHERE a.fecha = :fecha
+                    AND a.id_usuario_asignado = :id_especialista
+                    AND ea.nombre_estado IN ('EN ESPERA', 'DEMORADA', 'EN ATENCIÓN')
 
                 ORDER BY a.fecha ASC, a.hora ASC, a.id_agendamiento ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':fecha', substr($this->fechaHoraActualAtencion(), 0, 10), PDO::PARAM_STR);
+        $stmt->bindValue(':id_especialista', $this->idEspecialista, PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -165,11 +173,16 @@ class RegistroServicioM extends Database
                     ON pe.id_persona = u.id_persona
 
                 WHERE a.id_agendamiento = :id_agendamiento
+                    AND a.id_usuario_asignado = :id_especialista
+                    AND a.fecha = :fecha
+                    AND ea.nombre_estado IN ('EN ESPERA', 'DEMORADA', 'EN ATENCIÓN', 'REALIZADA')
 
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
         $stmt->bindValue(':id_agendamiento', $idAgendamiento, PDO::PARAM_INT);
+        $stmt->bindValue(':id_especialista', $this->idEspecialista, PDO::PARAM_INT);
+        $stmt->bindValue(':fecha', substr($this->fechaHoraActualAtencion(), 0, 10), PDO::PARAM_STR);
         $stmt->execute();
 
         $atencion = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -250,6 +263,8 @@ class RegistroServicioM extends Database
         $stmt->execute();
 
         $atencion['insumos'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $atencion['insumos_requeridos'] = (new ReservaInsumosM($this->conexionMD))
+            ->consultarRequerimientos((int) $idAgendamiento);
 
         $atencion['historial'] = $this->consultarHistorial(
             (int) ($atencion['id_cliente'] ?? 0),
@@ -447,9 +462,12 @@ class RegistroServicioM extends Database
 
             /* No repetir la actualización si la atención ya fue iniciada */
             if ($agendamiento['estado'] !== 'EN ATENCIÓN') {
-                if (!$this->flujoCita->permiteTransicion($agendamiento['estado'], 'EN ATENCIÓN')) {
+                if (
+                    !in_array($agendamiento['estado'], ['EN ESPERA', 'DEMORADA'], true) ||
+                    !$this->flujoCita->permiteTransicion($agendamiento['estado'], 'EN ATENCIÓN')
+                ) {
                     throw new InvalidArgumentException(
-                        'El estado actual de la cita no permite iniciar la atención.'
+                        'Solo puede iniciar la atención de una cita EN ESPERA o DEMORADA.'
                     );
                 }
 
@@ -1022,6 +1040,7 @@ class RegistroServicioM extends Database
                 }
             }
 
+            (new ReservaInsumosM($this->conexionMD))->comprobarConsumos($idAgendamiento);
             $this->actualizarTotal($idAgendamiento);
 
             /* Registrar el cierre con la fecha y hora del negocio */
@@ -1069,16 +1088,20 @@ class RegistroServicioM extends Database
         int $idAgendamiento,
         bool $permitirRealizada = false
     ): array {
-        /* Evitar cambios simultáneos sobre una misma atención */
+        /* Comprobar la asignación y el día dentro del bloqueo de la atención */
         $sql = "SELECT id_agendamiento, id_estado_agendamiento,
                        inicio_atencion, fin_atencion
                 FROM agendamientos
                 WHERE id_agendamiento = :id_agendamiento
+                    AND id_usuario_asignado = :id_especialista
+                    AND fecha = :fecha
                 LIMIT 1
                 FOR UPDATE";
 
         $stmt = $this->conexionMD->prepare($sql);
         $stmt->bindValue(':id_agendamiento', $idAgendamiento, PDO::PARAM_INT);
+        $stmt->bindValue(':id_especialista', $this->idEspecialista, PDO::PARAM_INT);
+        $stmt->bindValue(':fecha', substr($this->fechaHoraActualAtencion(), 0, 10), PDO::PARAM_STR);
         $stmt->execute();
 
         $agendamiento = $stmt->fetch(PDO::FETCH_ASSOC);

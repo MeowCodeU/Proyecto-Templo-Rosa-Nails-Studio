@@ -1,6 +1,7 @@
 <?php
 
 use App\Model\ServicioM;
+use App\Model\ReservaInsumosM;
 use App\Model\EstadoAgendamientoM;
 use App\Model\TipoAgendamientoM;
 
@@ -43,6 +44,12 @@ try {
         $responderJson(['ok' => false, 'mensaje' => 'El método solicitado no está permitido.'], 405);
     }
 
+    /* Proteger el formulario de asignación de insumos */
+    if (empty($_SESSION['token_reserva_insumos']) || !is_string($_SESSION['token_reserva_insumos'])) {
+        $_SESSION['token_reserva_insumos'] = bin2hex(random_bytes(32));
+    }
+    $tokenReservaInsumos = $_SESSION['token_reserva_insumos'];
+
     /* Modelos de Configuración */
     $modeloServicio = new ServicioM();
     $modeloEstadoAgendamiento = new EstadoAgendamientoM();
@@ -59,6 +66,29 @@ try {
         $accion = trim($accion);
 
         switch ($accion) {
+
+            /* Consultar o guardar el conjunto de insumos de un servicio */
+            case 'consultar_insumos_servicio':
+                $modeloReserva = new ReservaInsumosM();
+                $responderJson([
+                    'ok' => true,
+                    'insumos' => $modeloReserva->consultarConfiguracion($datosFormulario['id_servicio'] ?? null)
+                ]);
+                break;
+
+            case 'guardar_insumos_servicio':
+                $tokenFormulario = $datosFormulario['token_csrf'] ?? null;
+                if (!is_string($tokenFormulario) || !hash_equals($tokenReservaInsumos, $tokenFormulario)) {
+                    $responderJson(['ok' => false, 'mensaje' => 'El formulario expiró. Recargue la página antes de guardar.'], 403);
+                }
+
+                $modeloReserva = new ReservaInsumosM();
+                $modeloReserva->guardarConfiguracion(
+                    $datosFormulario['id_servicio'] ?? null, $datosFormulario['insumos'] ?? null
+                );
+                $responderJson(['ok' => true, 'mensaje' => 'Insumos del servicio actualizados. Se recalcularon las reservas de sus citas pendientes.']);
+                break;
+
 
             /* ================================================= */
             /* CONSULTAR */

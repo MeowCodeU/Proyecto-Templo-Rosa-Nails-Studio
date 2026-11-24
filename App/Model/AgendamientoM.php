@@ -44,6 +44,9 @@ class AgendamientoM extends Database implements CrudInterface, DisponibilidadInt
     /* Servicios seleccionados */
     private $servicios = [];
 
+    /* Aviso de reposición después de guardar la cita */
+    private string $advertenciaReserva = '';
+
 
     /* ================================================= */
     /* ASIGNACIÓN DE DATOS */
@@ -74,6 +77,16 @@ class AgendamientoM extends Database implements CrudInterface, DisponibilidadInt
     {
         $this->conexionMD = $this->getConnection();
         $this->flujoCita = new FlujoCita();
+    }
+
+
+    /* ================================================= */
+    /* ADVERTENCIAS DE INSUMOS */
+    /* ================================================= */
+
+    public function obtenerAdvertenciaReserva(): string
+    {
+        return $this->advertenciaReserva;
     }
 
 
@@ -387,6 +400,9 @@ class AgendamientoM extends Database implements CrudInterface, DisponibilidadInt
 
             $this->registrarServicios($idAgendamiento);
 
+            $this->advertenciaReserva = (new ReservaInsumosM($this->conexionMD))
+                ->advertenciaAgendamiento((int) $idAgendamiento);
+
             $this->conexionMD->commit();
 
             return true;
@@ -454,6 +470,9 @@ class AgendamientoM extends Database implements CrudInterface, DisponibilidadInt
 
             /* Conservar los detalles de los servicios que permanecen seleccionados */
             $this->actualizarServicios((int) $this->idAgendamiento);
+
+            $this->advertenciaReserva = (new ReservaInsumosM($this->conexionMD))
+                ->advertenciaAgendamiento((int) $this->idAgendamiento);
 
             $this->conexionMD->commit();
 

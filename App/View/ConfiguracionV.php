@@ -181,6 +181,20 @@ require_once __DIR__ . '/Layout/Header.php';
                                             <td>
                                                 <div class="btn-group-actions">
 
+                                                    <!-- Insumos requeridos por cada servicio -->
+                                                    <button
+                                                        type="button"
+                                                        class="btn-action btn-detail btnInsumosServicio"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalInsumosServicio"
+                                                        data-id-servicio="<?= (int) $servicio['id_servicio']; ?>"
+                                                        data-nombre-servicio="<?= htmlspecialchars($servicio['nombre_servicio'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                        title="Insumos del servicio"
+                                                        aria-label="Insumos del servicio"
+                                                    >
+                                                        <i class="bi bi-box-seam" aria-hidden="true"></i>
+                                                    </button>
+
                                                     <!-- Botón Editar -->
                                                     <button
                                                         type="button"
@@ -1207,6 +1221,80 @@ require_once __DIR__ . '/Layout/Header.php';
                     <button type="submit" class="btn-templo-danger">
                         <i class="bi bi-check-circle"></i>
                         Confirmar
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ===================================================== -->
+<!-- INSUMOS REQUERIDOS POR SERVICIO -->
+<!-- ===================================================== -->
+
+<div
+    class="modal fade"
+    id="modalInsumosServicio"
+    tabindex="-1"
+    aria-labelledby="tituloInsumosServicio"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content templo-modal">
+
+            <form id="formInsumosServicio" action="Index.php?url=configuracion" method="POST">
+
+                <!-- Datos del servicio y protección del formulario -->
+                <input type="hidden" name="id_servicio" id="reservaIdServicio">
+                <input type="hidden" name="token_csrf" value="<?= htmlspecialchars($tokenReservaInsumos, ENT_QUOTES, 'UTF-8'); ?>">
+
+                <!-- Encabezado del modal -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloInsumosServicio">
+                        <i class="bi bi-box-seam"></i>
+                        Insumos por servicio
+                    </h5>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <!-- Insumos existentes y cantidades necesarias -->
+                <div class="modal-body">
+                    <p class="fw-bold" id="reservaNombreServicio"></p>
+                    <p>Indique las unidades necesarias para realizar este servicio una vez. Use 0 cuando el insumo no corresponda.</p>
+                    <p>Guantes: 1 unidad representa un par. Una caja de 100 guantes equivale a 50 pares.</p>
+                    <p>Los cambios recalculan las reservas de todas las citas pendientes de este servicio. El mínimo de aviso será 5 unidades o el mínimo del insumo si es mayor.</p>
+
+                    <div id="mensajeInsumosServicio" class="alert alert-warning" role="alert" hidden></div>
+
+                    <div class="table-responsive">
+                        <table class="table templo-table">
+                            <thead>
+                                <tr>
+                                    <th>Insumo</th>
+                                    <th>Presentación</th>
+                                    <th>Unidades por servicio</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="filasInsumosServicio"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Botones del formulario -->
+                <div class="modal-footer">
+                    <button type="button" class="btn-templo-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar
+                    </button>
+
+                    <button type="submit" class="btn-templo-primary" id="guardarInsumosServicio" disabled>
+                        <i class="bi bi-save"></i>
+                        Guardar insumos
                     </button>
                 </div>
 

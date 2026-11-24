@@ -89,12 +89,14 @@ $finalizarOperacion = static function (
     string $codigo,
     string $mensaje,
     int $estadoHttp = 200,
-    array $errores = []
+    array $errores = [],
+    string $tipoAviso = 'success'
 ) use ($requiereRespuestaJson, $responderJson): void {
     $respuesta = [
         'ok' => $correcto,
         'codigo' => $codigo,
-        'mensaje' => $mensaje
+        'mensaje' => $mensaje,
+        'tipo_aviso' => $correcto ? $tipoAviso : 'error'
     ];
 
     if ($errores !== []) {
@@ -246,9 +248,13 @@ try {
             $finalizarOperacion(
                 true,
                 $esModificacion ? 'agendamiento_modificado' : 'agendamiento_registrado',
-                $esModificacion
+                ($esModificacion
                     ? 'El agendamiento fue modificado correctamente.'
-                    : 'El agendamiento fue registrado correctamente.'
+                    : 'El agendamiento fue registrado correctamente.') .
+                    $modeloAgendamiento->obtenerAdvertenciaReserva(),
+                200,
+                [],
+                $modeloAgendamiento->obtenerAdvertenciaReserva() === '' ? 'success' : 'warning'
             );
         }
 

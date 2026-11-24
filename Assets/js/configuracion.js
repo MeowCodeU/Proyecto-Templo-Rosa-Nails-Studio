@@ -342,6 +342,19 @@ $(function () {
             crearBoton(catalogo, registro, true)
         );
 
+        if (catalogo.clave === "servicios") {
+            $("<button>", {
+                type: "button",
+                class: "btn-action btn-detail btnInsumosServicio",
+                "data-bs-toggle": "modal",
+                "data-bs-target": "#modalInsumosServicio",
+                "data-id-servicio": registro.id_servicio,
+                "data-nombre-servicio": registro.nombre_servicio,
+                title: "Insumos del servicio",
+                "aria-label": "Insumos del servicio"
+            }).append($("<i>", { class: "bi bi-box-seam", "aria-hidden": "true" })).prependTo(acciones);
+        }
+
         $("<td>").append(acciones).appendTo(fila);
 
         return fila[0];
@@ -624,4 +637,144 @@ $(function () {
             mostrarMensaje(catalogo, error.message, true, true);
         });
     });
+
+
+    /* ================================================= */
+    /* CONFIGURAR LA RESERVA DE INSUMOS POR SERVICIO */
+    /* ================================================= */
+
+    const modalInsumosServicio = $("#modalInsumosServicio");
+    const formularioReserva = $("#formInsumosServicio");
+    const avisoReserva = $("#mensajeInsumosServicio");
+    const filasReserva = $("#filasInsumosServicio");
+    const guardarReserva = $("#guardarInsumosServicio");
+
+    let versionReserva = 0;
+    let guardandoReserva = false;
+
+    modalInsumosServicio.on("show.bs.modal", async function (evento) {
+        if (operacionEnCurso || guardandoReserva || redirigiendo) {
+            evento.preventDefault();
+            return;
+        }
+
+        const turno = ++versionReserva;
+        const boton = $(evento.relatedTarget);
+        const id = boton.attr("data-id-servicio");
+
+        $("#reservaIdServicio").val(id);
+        $("#reservaNombreServicio").text(boton.attr("data-nombre-servicio") || "");
+
+        filasReserva.empty();
+        avisoReserva.empty().prop("hidden", true);
+        guardarReserva.prop("disabled", true);
+
+        try {
+            const respuesta = await solicitarConfiguracion({
+                accion: "consultar_insumos_servicio",
+                id_servicio: id
+            });
+
+            if (turno !== versionReserva) return;
+
+            if (!Array.isArray(respuesta.insumos)) {
+                throw new Error("No se pudieron consultar los insumos.");
+            }
+
+            respuesta.insumos.forEach(function (insumo) {
+                const fila = $("<tr>");
+                const etiqueta = insumo.nombre_insumo +
+                    (insumo.estado_insumo !== "ACTIVO" ? " (inactivo)" : "");
+
+                $("<td>").text(etiqueta).appendTo(fila);
+                $("<td>").text(insumo.presentacion || "—").appendTo(fila);
+
+                $("<td>").append($("<input>", {
+                    type: "number",
+                    class: "form-control templo-input",
+                    min: 0,
+                    max: 99999999,
+                    step: 1,
+                    value: insumo.cantidad,
+                    "data-insumo-reserva": insumo.id_insumo,
+                    "aria-label": "Unidades de " + etiqueta,
+                    required: true
+                })).appendTo(fila);
+
+                filasReserva.append(fila);
+            });
+
+            if (!respuesta.insumos.length) {
+                avisoReserva.text("Registre primero los insumos del negocio.").prop("hidden", false);
+            } else {
+                guardarReserva.prop("disabled", false);
+            }
+
+        } catch (error) {
+            if (turno === versionReserva) {
+                avisoReserva.text(error.message).prop("hidden", false);
+            }
+        }
+    });
+
+
+    modalInsumosServicio.on("hide.bs.modal", function (evento) {
+        if (guardandoReserva) evento.preventDefault();
+        else versionReserva++;
+    });
+
+
+    formularioReserva.on("submit", async function (evento) {
+        evento.preventDefault();
+
+        if (guardandoReserva || operacionEnCurso || redirigiendo || guardarReserva.prop("disabled")) return;
+        if (!this.reportValidity()) return;
+
+        const insumos = [];
+
+        filasReserva.find("[data-insumo-reserva]").each(function () {
+            if (Number(this.value) > 0) {
+                insumos.push({
+                    id_insumo: this.getAttribute("data-insumo-reserva"),
+                    cantidad: this.value
+                });
+            }
+        });
+
+        guardandoReserva = true;
+        operacionEnCurso = true;
+
+        guardarReserva.prop("disabled", true);
+        formularioReserva.attr("aria-busy", "true");
+        avisoReserva.empty().prop("hidden", true);
+        filasReserva.find("input").prop("disabled", true);
+
+        let respuestaGuardada = null;
+
+        try {
+            respuestaGuardada = await solicitarConfiguracion({
+                accion: "guardar_insumos_servicio",
+                token_csrf: formularioReserva.find('[name="token_csrf"]').val(),
+                id_servicio: $("#reservaIdServicio").val(),
+                insumos: insumos
+            });
+
+        } catch (error) {
+            avisoReserva.text(error.message).prop("hidden", false);
+
+        } finally {
+            guardandoReserva = false;
+            operacionEnCurso = false;
+
+            guardarReserva.prop("disabled", false);
+            filasReserva.find("input").prop("disabled", false);
+            formularioReserva.removeAttr("aria-busy");
+        }
+
+        if (respuestaGuardada) {
+            bootstrap.Modal.getOrCreateInstance(modalInsumosServicio[0]).hide();
+            window.Alertas?.notificar(respuestaGuardada.mensaje, "success");
+        }
+    });
+
 });

@@ -2189,6 +2189,11 @@ if (
     ];
 }
 
+/* Conservar la advertencia de insumos en los envíos sin AJAX */
+if ($mensajeAgendamiento !== null && ($mensajeGuardadoAgendamiento['tipo_aviso'] ?? '') === 'warning') {
+    $mensajeAgendamiento['icono'] = 'bi-exclamation-triangle-fill';
+}
+
 $mostrarMensajeAgendamiento = $mensajeAgendamiento !== null;
 
 $mensajeAgendamiento = $mensajeAgendamiento ?? [

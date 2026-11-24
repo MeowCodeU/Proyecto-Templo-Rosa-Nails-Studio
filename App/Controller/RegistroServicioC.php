@@ -156,7 +156,11 @@ try {
         );
     }
 
-    $modeloRegistroServicio = new RegistroServicioM();
+    /* Obtener la especialista desde la sesión, sin aceptar su identidad del formulario */
+    $usuarioAutenticado = Session\obtenerUsuario();
+    $idEspecialista = (int) ($usuarioAutenticado['id_usuario'] ?? 0);
+
+    $modeloRegistroServicio = new RegistroServicioM($idEspecialista);
 
 
     /* ================================================= */

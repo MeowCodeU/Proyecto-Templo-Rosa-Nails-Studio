@@ -532,7 +532,7 @@ $(function () {
                 ? mensaje
                 : mensaje +
                     " No fue posible actualizar el calendario. Recargue la página para ver los cambios; la operación ya fue guardada.",
-            calendarioActualizado ? "success" : "warning"
+            calendarioActualizado && respuesta.tipo_aviso !== "warning" ? "success" : "warning"
         );
 
         return true;

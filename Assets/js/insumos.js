@@ -529,8 +529,8 @@ $(function () {
         /* ================================================= */
 
         /* Calcular el estado desde las cantidades para mantenerlo actualizado con AJAX */
-        const stockActual = Number(insumo.stock_actual ?? 0);
-        const stockMinimo = Number(insumo.stock_minimo ?? 0);
+        const stockActual = Number(insumo.stock_disponible ?? insumo.stock_actual ?? 0);
+        const stockMinimo = Number(insumo.minimo_disponible ?? insumo.stock_minimo ?? 0);
 
         let claseNumeroStock = "insumos-stock-disponible";
         let etiquetaStock = "Disponible";
@@ -557,6 +557,15 @@ $(function () {
             class: "visually-hidden",
             text: etiquetaStock + ": " + stockActual + " unidades."
         }).appendTo($celdaStock);
+
+        $("<small>", { class: "d-block" }).text(
+            "Físico: " + Number(insumo.stock_actual || 0) + " · Reservado: " + Number(insumo.stock_reservado || 0)
+        ).appendTo($celdaStock);
+
+        if (Number(insumo.faltante_reserva || 0) > 0) {
+            $("<strong>", { class: "d-block insumos-stock-agotado" })
+                .text("Faltan " + insumo.faltante_reserva + " para las reservas").appendTo($celdaStock);
+        }
 
         $celdaStock.appendTo($fila);
 
@@ -1439,6 +1448,7 @@ $(function () {
             if (operacion !== "DESCONTAR" && stock + cantidad > 4294967295) {
                 mostrarErrores($formulario, {
                     message: "La cantidad supera el límite de existencias permitido.",
+
                     errores: {
                         cantidad_movimiento: "El stock resultante no puede superar 4294967295."
                     }
@@ -1456,6 +1466,7 @@ $(function () {
                 if (!$opcionLote.val() || cantidad > disponibles || cantidad > stock) {
                     mostrarErrores($formulario, {
                         message: "Seleccione un lote que tenga unidades suficientes para este descuento.",
+
                         errores: {
                             id_lote: "El lote seleccionado no tiene suficientes existencias."
                         }

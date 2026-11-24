@@ -138,20 +138,15 @@ class InicioM extends Database
                     (
                         SELECT COUNT(*)
                         FROM clientes
-                    ) AS clientas_registradas,
-
-                    (
-                        SELECT COUNT(*)
-                        FROM insumos
-                        WHERE estado_insumo = 'ACTIVO'
-                            AND stock_actual <= stock_minimo
-                    ) AS insumos_stock_bajo";
+                    ) AS clientas_registradas";
 
         $stmt = $this->conexionMD->prepare($sql);
         $stmt->bindValue(':fecha', $fecha, PDO::PARAM_STR);
         $stmt->execute();
 
         $resumen = array_merge($resumen, $stmt->fetch(PDO::FETCH_ASSOC));
+
+        $resumen['insumos_stock_bajo'] = count($this->consultarStockBajo());
 
         return array_map('intval', $resumen);
     }
@@ -253,27 +248,7 @@ class InicioM extends Database
 
     private function consultarStockBajo(): array
     {
-        /* Incluir los insumos agotados y los que alcanzaron su stock mínimo */
-        $sql = "SELECT
-                    id_insumo,
-                    nombre_insumo,
-                    presentacion,
-                    tipo_control,
-                    stock_actual,
-                    stock_minimo
-                FROM insumos
-                WHERE estado_insumo = 'ACTIVO'
-                    AND stock_actual <= stock_minimo
-                ORDER BY
-                    (stock_actual = 0) DESC,
-                    stock_actual ASC,
-                    nombre_insumo ASC,
-                    id_insumo ASC";
-
-        $stmt = $this->conexionMD->prepare($sql);
-        $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return (new ReservaInsumosM($this->conexionMD))->consultarAlertas();
     }
 
 

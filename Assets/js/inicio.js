@@ -396,7 +396,7 @@ $(async function () {
         }
 
         return insumos.map(function (insumo) {
-            const agotado = Number(insumo.stock_actual) === 0;
+            const agotado = Number(insumo.stock_disponible ?? insumo.stock_actual) === 0;
 
             const contenido = $("<div>", {
                 class: "flex-grow-1 text-break"
@@ -410,8 +410,11 @@ $(async function () {
                     .text(insumo.presentacion || "Sin presentación"),
 
                 $("<small>").text(
-                    "Disponible: " + formatearCantidad(insumo.stock_actual) +
-                    " · Mínimo: " + formatearCantidad(insumo.stock_minimo)
+                    "Disponible: " + formatearCantidad(insumo.stock_disponible ?? insumo.stock_actual) +
+                    " · Reservado: " + formatearCantidad(insumo.stock_reservado || 0) +
+                    " · Físico: " + formatearCantidad(insumo.stock_actual) +
+                    " · Mínimo: " + formatearCantidad(insumo.minimo_disponible ?? insumo.stock_minimo) +
+                    (Number(insumo.faltante_reserva || 0) > 0 ? " · Faltan: " + insumo.faltante_reserva : "")
                 )
             );
 

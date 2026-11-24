@@ -154,18 +154,19 @@ class ReportesM extends Database
             'titulo' => 'Existencias actuales de insumos',
             'grupo' => 'Insumos',
             'fechas' => false,
-            'descripcion' => 'Existencias actuales, mínimo registrado, próximo vencimiento y proveedores vinculados.',
+            'descripcion' => 'Existencias físicas, reservas, disponibilidad, mínimo de aviso y proveedores vinculados.',
             'filtros' => ['insumo', 'proveedor', 'estado_registro', 'disponibilidad'],
             'nota' =>
-                'El stock corresponde a las unidades registradas en inventario, ' .
-                'incluidos los lotes vencidos que aún tengan existencias.'
+                'El stock físico incluye los lotes vencidos. La disponibilidad descuenta ' .
+                'los lotes vencidos y las reservas pendientes. El faltante indica ' .
+                'unidades comprometidas sin existencias vigentes suficientes.'
         ],
 
         'reposicion' => [
             'titulo' => 'Insumos en mínimo o agotados',
             'grupo' => 'Insumos',
             'fechas' => false,
-            'descripcion' => 'Insumos cuyo stock actual es igual o inferior al mínimo registrado.',
+            'descripcion' => 'Insumos cuya disponibilidad, descontando reservas y vencidos, alcanzó el mínimo de aviso.',
             'filtros' => ['insumo', 'proveedor', 'estado_registro'],
             'nota' =>
                 'Es un listado para revisión y reposición; no genera órdenes de compra.'
@@ -887,11 +888,9 @@ class ReportesM extends Database
         }
 
         $p = [];
-        $where = $this->condicionesInsumos($f, $p, 'i');
-
-        if ($f['reporte'] === 'reposicion') {
-            $where .= ' AND i.stock_actual <= i.stock_minimo';
-        }
+        $filtrosFisicos = $f;
+        unset($filtrosFisicos['disponibilidad']);
+        $where = $this->condicionesInsumos($filtrosFisicos, $p, 'i');
 
         /* Recuperar únicamente el vencimiento más próximo con unidades disponibles */
         $filas = $this->seleccionar(
@@ -920,6 +919,24 @@ class ReportesM extends Database
             $p
         );
 
+        /* Utilizar la misma disponibilidad que Inicio e Insumos */
+        $filas = (new ReservaInsumosM($this->conexionMD))->agregarDisponibilidad($filas);
+        foreach ($filas as &$fila) $fila['minimo'] = $fila['minimo_disponible'];
+        unset($fila);
+
+        $filas = array_values(array_filter($filas, static function (array $fila) use ($f): bool {
+            $disponible = $fila['stock_disponible'];
+            $minimo = $fila['minimo'];
+            if ($f['reporte'] === 'reposicion' && $disponible > $minimo) return false;
+
+            return match ($f['disponibilidad'] ?? '') {
+                'BAJO' => $disponible <= $minimo,
+                'AGOTADO' => $disponible === 0,
+                'DISPONIBLE' => $disponible > $minimo,
+                default => true
+            };
+        }));
+
         $filas = $this->anexarLista(
             $filas,
             'id_insumo',
@@ -935,7 +952,7 @@ class ReportesM extends Database
             array_filter(
                 $filas,
                 static function ($fila) {
-                    return (int) $fila['stock'] <= (int) $fila['minimo'];
+                    return (int) $fila['stock_disponible'] <= (int) $fila['minimo'];
                 }
             )
         );
@@ -944,7 +961,7 @@ class ReportesM extends Database
             array_filter(
                 $filas,
                 static function ($fila) {
-                    return (int) $fila['stock'] === 0;
+                    return (int) $fila['stock_disponible'] === 0;
                 }
             )
         );
@@ -954,7 +971,10 @@ class ReportesM extends Database
                 $this->columna('insumo', 'Insumo', 44),
                 $this->columna('presentacion', 'Presentación', 32),
                 $this->columna('control', 'Control', 29),
-                $this->columna('stock', 'Stock', 16, 'entero'),
+                $this->columna('stock', 'Físico', 16, 'entero'),
+                $this->columna('stock_reservado', 'Reservado', 22, 'entero'),
+                $this->columna('stock_disponible', 'Disponible', 22, 'entero'),
+                $this->columna('faltante_reserva', 'Faltante', 20, 'entero'),
                 $this->columna('minimo', 'Mínimo', 17, 'entero'),
                 $this->columna('vencimiento', 'Próx. vencimiento', 27, 'fecha'),
                 $this->columna('estado', 'Estado', 23),

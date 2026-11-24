@@ -110,7 +110,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                     <th>Insumo</th>
                                     <th>Presentación</th>
                                     <th>Tipo de control</th>
-                                    <th>Stock actual</th>
+                                    <th>Disponible / reservas</th>
                                     <th>Vencimiento</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -142,14 +142,15 @@ require_once __DIR__ . '/Layout/Header.php';
                                     /* ================================================= */
 
                                     $stockActualInsumo = (int) ($insumo['stock_actual'] ?? 0);
-                                    $stockMinimoInsumo = (int) ($insumo['stock_minimo'] ?? 0);
+                                    $stockDisponibleInsumo = (int) ($insumo['stock_disponible'] ?? $stockActualInsumo);
+                                    $stockMinimoInsumo = (int) ($insumo['minimo_disponible'] ?? $insumo['stock_minimo'] ?? 0);
 
-                                    if ($stockActualInsumo === 0) {
+                                    if ($stockDisponibleInsumo === 0) {
                                         $estadoStockInsumo = 'AGOTADO';
                                         $etiquetaStockInsumo = 'Agotado';
                                         $claseNumeroStock = 'insumos-stock-agotado';
 
-                                    } elseif ($stockActualInsumo <= $stockMinimoInsumo) {
+                                    } elseif ($stockDisponibleInsumo <= $stockMinimoInsumo) {
                                         $estadoStockInsumo = 'BAJO';
                                         $etiquetaStockInsumo = 'Stock bajo';
                                         $claseNumeroStock = 'insumos-stock-bajo';
@@ -174,15 +175,21 @@ require_once __DIR__ . '/Layout/Header.php';
                                         <td><?php echo htmlspecialchars($tipoControlInsumoTexto, ENT_QUOTES, 'UTF-8'); ?></td>
 
                                         <!-- La cantidad indica el nivel de existencias mediante su color -->
-                                        <td data-order="<?php echo $stockActualInsumo; ?>">
+                                        <td data-order="<?php echo $stockDisponibleInsumo; ?>">
                                             <span
                                                 class="insumos-stock-numero <?php echo $claseNumeroStock; ?>"
                                                 title="<?php echo htmlspecialchars($etiquetaStockInsumo, ENT_QUOTES, 'UTF-8'); ?>"
-                                            ><?php echo $stockActualInsumo; ?></span>
+                                            ><?php echo $stockDisponibleInsumo; ?></span>
+                                            <small class="d-block">
+                                                Físico: <?= $stockActualInsumo; ?> · Reservado: <?= (int) ($insumo['stock_reservado'] ?? 0); ?>
+                                            </small>
+                                            <?php if (($insumo['faltante_reserva'] ?? 0) > 0): ?>
+                                                <strong class="d-block insumos-stock-agotado">Faltan <?= (int) $insumo['faltante_reserva']; ?> para las reservas</strong>
+                                            <?php endif; ?>
 
                                             <span class="visually-hidden">
                                                 <?php echo htmlspecialchars($etiquetaStockInsumo, ENT_QUOTES, 'UTF-8'); ?>:
-                                                <?php echo $stockActualInsumo; ?> unidades.
+                                                <?php echo $stockDisponibleInsumo; ?> unidades disponibles.
                                             </span>
                                         </td>
 
@@ -465,7 +472,11 @@ require_once __DIR__ . '/Layout/Header.php';
                     <span class="detalle-ficha-title-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                             <path
-                                d="M2 12 C2 12 5.5 5 12 5 C18.5 5 22 12 22 12 C22 12 18.5 19 12 19 C5.5 19 2 12 2 12Z"
+                                d="M2 12
+                                   C2 12 5.5 5 12 5
+                                   C18.5 5 22 12 22 12
+                                   C22 12 18.5 19 12 19
+                                   C5.5 19 2 12 2 12Z"
                                 stroke="currentColor"
                                 stroke-width="2"
                                 stroke-linecap="round"
@@ -473,7 +484,13 @@ require_once __DIR__ . '/Layout/Header.php';
                             />
 
                             <path
-                                d="M12 16 C10 14.8 8.5 13.5 8.5 11.8 C8.5 10.5 9.5 9.5 10.8 9.5 C11.5 9.5 12 9.9 12 10.4 C12 9.9 12.5 9.5 13.2 9.5 C14.5 9.5 15.5 10.5 15.5 11.8 C15.5 13.5 14 14.8 12 16Z"
+                                d="M12 16
+                                   C10 14.8 8.5 13.5 8.5 11.8
+                                   C8.5 10.5 9.5 9.5 10.8 9.5
+                                   C11.5 9.5 12 9.9 12 10.4
+                                   C12 9.9 12.5 9.5 13.2 9.5
+                                   C14.5 9.5 15.5 10.5 15.5 11.8
+                                   C15.5 13.5 14 14.8 12 16Z"
                                 fill="currentColor"
                             />
                         </svg>

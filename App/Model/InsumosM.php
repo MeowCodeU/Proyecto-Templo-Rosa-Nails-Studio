@@ -98,7 +98,9 @@ class InsumosM extends Database implements CrudInterface
 
         $insumos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map([$this, 'agregarControlInventario'], $insumos);
+        return array_map([$this, 'agregarControlInventario'],
+            (new ReservaInsumosM($this->conexionMD))->agregarDisponibilidad($insumos)
+        );
     }
 
 
@@ -311,8 +313,8 @@ class InsumosM extends Database implements CrudInterface
     private function agregarControlInventario(array $insumo): array
     {
         $stock = $this->controlInventario->controlStock(
-            (int) $insumo['stock_actual'],
-            (int) $insumo['stock_minimo']
+            (int) ($insumo['stock_disponible'] ?? $insumo['stock_actual']),
+            (int) ($insumo['minimo_disponible'] ?? $insumo['stock_minimo'])
         );
 
         $vencimiento = $this->controlInventario->controlVencimiento(

@@ -298,7 +298,9 @@ $(function () {
 
                 const error = new Error(
                     ambiguo
-                        ? "No se pudo confirmar el guardado. Actualice la atención y revise el resultado antes de enviarlo nuevamente."
+                        ? datos.accion === "iniciarAtencion"
+                            ? "No se pudo confirmar el inicio de la atención. Pulse Refrescar y revise el estado de la cita antes de intentarlo nuevamente."
+                            : "No se pudo confirmar el guardado. Actualice la atención y revise el resultado antes de enviarlo nuevamente."
                         : typeof respuesta?.mensaje === "string"
                             ? respuesta.mensaje
                             : "No fue posible completar la solicitud. Intente nuevamente."
@@ -713,7 +715,7 @@ $(function () {
                 type: "button",
                 class: "btn-templo-secondary btn-registrar-servicio",
                 "data-id-agendamiento": cita.id_agendamiento,
-                text: "Atender"
+                text: cita.estado === "EN ATENCIÓN" ? "Continuar atención" : "Atender"
             })
         ).appendTo(fila);
 
@@ -731,7 +733,10 @@ $(function () {
         comprobarLista(respuesta.insumos);
 
         /* Validar la lista antes de sustituir las filas existentes */
-        if (!citas.every(cita => enteroPositivo(cita.id_agendamiento))) {
+        if (!citas.every(cita =>
+            enteroPositivo(cita.id_agendamiento) &&
+            ["EN ESPERA", "DEMORADA", "EN ATENCIÓN"].includes(cita.estado)
+        )) {
             throw new Error("No fue posible comprobar los agendamientos recibidos.");
         }
 
@@ -1294,7 +1299,11 @@ $(function () {
         prepararInventario(respuesta.insumos, datos.insumos);
 
         if (!conservarInsumos) {
-            insumosSeleccionados = datos.insumos.map(insumo => ({
+            /* Proponer el conjunto requerido sin registrarlo como consumo hasta guardar */
+            const insumosIniciales = !datos.insumos.length && !atencionCerrada()
+                ? (datos.insumos_requeridos || []) : datos.insumos;
+
+            insumosSeleccionados = insumosIniciales.map(insumo => ({
                 id_insumo: Number(insumo.id_insumo),
                 cantidad: Number(insumo.cantidad)
             }));
@@ -1345,25 +1354,36 @@ $(function () {
         const restaurar = bloquearControles($(this), "Cargando...");
 
         try {
-            /* Consultar la cita antes de comenzar su atención */
-            await solicitar({
+            /* Recuperar el estado vigente antes de decidir si corresponde iniciar */
+            let respuesta = await solicitar({
                 accion: "buscar",
                 id_agendamiento: idAgendamiento
             });
 
-            /* Cambiar a EN ATENCIÓN al pulsar Atender, sin guardar servicios */
-            await solicitar({
-                accion: "iniciarAtencion",
-                id_agendamiento: idAgendamiento
-            }, {
-                escritura: true
-            });
+            const datosAtencion = respuesta.atencion;
 
-            /* Actualizar la ficha con el estado de atención vigente */
-            const respuesta = await solicitar({
-                accion: "buscar",
-                id_agendamiento: idAgendamiento
-            });
+            if (
+                !$.isPlainObject(datosAtencion) ||
+                String(datosAtencion.id_agendamiento) !== String(idAgendamiento) ||
+                !["EN ESPERA", "DEMORADA", "EN ATENCIÓN"].includes(datosAtencion.estado)
+            ) {
+                throw new Error("La cita ya no está disponible para atender. Pulse Refrescar para actualizar la lista.");
+            }
+
+            /* Continuar una atención abierta no vuelve a solicitar su inicio */
+            if (datosAtencion.estado !== "EN ATENCIÓN") {
+                await solicitar({
+                    accion: "iniciarAtencion",
+                    id_agendamiento: idAgendamiento
+                }, {
+                    escritura: true
+                });
+
+                respuesta = await solicitar({
+                    accion: "buscar",
+                    id_agendamiento: idAgendamiento
+                });
+            }
 
             detalleSeleccionado = "";
 
@@ -1386,7 +1406,7 @@ $(function () {
             }
 
         } catch (error) {
-            mostrarMensaje(error.message, "danger", true);
+            mostrarMensaje(error.message, error.ambiguo ? "warning" : "danger", true);
 
         } finally {
             cargando = false;
