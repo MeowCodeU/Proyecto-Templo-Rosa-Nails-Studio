@@ -97,7 +97,7 @@ try {
         $responderClientes(
             [
                 'ok' => true,
-                'clientes' => $modeloClientes->consultar()
+                'clientes' => $modeloClientes->consultar($_GET['estado'] ?? 'ACTIVO')
             ]
         );
     }
@@ -120,6 +120,7 @@ try {
                     'registrar',
                     'modificar',
                     'desactivar',
+                    'reactivar',
                     'eliminar'
                 ],
                 true
@@ -135,7 +136,7 @@ try {
             $responderClientes(
                 [
                     'ok' => true,
-                    'clientes' => $modeloClientes->consultar()
+                    'clientes' => $modeloClientes->consultar($datosClientes['estado'] ?? 'ACTIVO')
                 ]
             );
         }
@@ -185,7 +186,7 @@ try {
             );
 
             $clienteExistente = $personaClientes
-                ? $modeloClientes->buscar()
+                ? $modeloClientes->buscar(true)
                 : false;
 
             $responderClientes(
@@ -193,23 +194,26 @@ try {
                     'ok' => true,
                     'encontrada' => $personaClientes !== null,
                     'ya_es_cliente' => $clienteExistente !== false,
+                    'estado_cliente' => $clienteExistente['estado'] ?? null,
                     'persona' => $personaClientes
                 ]
             );
         }
 
 
-        /* Comprobar que el cliente siga activo antes de operar sobre él */
+        /* Permitir la consulta y reactivación de una ficha inactiva */
         if ($accionClientes !== 'registrar') {
 
-            $clienteActual = $modeloClientes->buscar();
+            $clienteActual = $modeloClientes->buscar(
+                in_array($accionClientes, ['buscar', 'historial', 'reactivar'], true)
+            );
 
             if (!$clienteActual) {
                 $responderClientes(
                     [
                         'ok' => false,
                         'mensaje' =>
-                            'El cliente no se encuentra activo. Actualice la lista.'
+                            'El cliente no está disponible para esta operación. Actualice la lista.'
                     ],
                     404
                 );
@@ -287,6 +291,14 @@ try {
                     'Cliente actualizado correctamente.';
             }
 
+        } elseif ($accionClientes === 'reactivar') {
+
+            /* Recuperar la misma ficha sin registrar nuevamente al cliente */
+            $resultadoClientes = $modeloClientes->reactivar();
+
+            $mensajeClientes =
+                'Cliente reactivado correctamente.';
+
         } else {
 
             /* ================================================= */
@@ -357,6 +369,17 @@ try {
                 : $e->getMessage()
         ],
         422
+    );
+
+} catch (DomainException $e) {
+
+    /* Informar cambios de estado realizados desde otra solicitud */
+    $responderClientes(
+        [
+            'ok' => false,
+            'mensaje' => $e->getMessage()
+        ],
+        409
     );
 
 } catch (PDOException $e) {

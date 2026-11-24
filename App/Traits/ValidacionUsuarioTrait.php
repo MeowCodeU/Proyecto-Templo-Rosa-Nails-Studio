@@ -79,6 +79,69 @@ trait ValidacionUsuarioTrait
 
 
     /* ================================================= */
+    /* VALIDAR LA SOLICITUD DE RECUPERACIÓN */
+    /* ================================================= */
+
+    protected function validarSolicitudRecuperacion(mixed $cedula, mixed $correo): ?array
+    {
+        $this->validarCampos(
+            ['cedula' => $cedula, 'correo' => $correo],
+            ['cedula', 'correo']
+        );
+
+        /* Rechazar caracteres nulos antes de normalizar la identificación */
+        if (is_string($cedula) && str_contains($cedula, "\0")) {
+            $this->erroresValidacion['cedula'] = 'La cédula debe contener solo números (6 a 20 dígitos).';
+        }
+
+        if (is_string($correo) && str_contains($correo, "\0")) {
+            $this->erroresValidacion['correo'] = 'Ingrese un correo electrónico válido.';
+        }
+
+        if ($this->erroresValidacion !== []) return null;
+
+        return [
+            'cedula' => trim($cedula),
+            'correo' => trim($correo)
+        ];
+    }
+
+
+    /* ================================================= */
+    /* VALIDAR EL CÓDIGO Y LA NUEVA CONTRASEÑA */
+    /* ================================================= */
+
+    protected function validarRestablecimientoRecuperacion(
+        mixed $codigo,
+        mixed $nuevaClave,
+        mixed $confirmarClave
+    ): ?array {
+        $this->erroresValidacion = [];
+        $codigoNormalizado = is_string($codigo) ? trim($codigo) : '';
+
+        /* Conservar el código como texto para respetar los ceros iniciales */
+        if (!is_string($codigo) || str_contains($codigo, "\0") ||
+            preg_match('/\A[0-9]{6}\z/', $codigoNormalizado) !== 1) {
+            $this->erroresValidacion['codigo_recuperacion'] = 'Ingrese el código de recuperación de seis dígitos.';
+        }
+
+        /* Reutilizar las mismas reglas de las contraseñas nuevas del sistema */
+        $this->validarClaveSeguridad($nuevaClave, 'nueva_clave', $confirmarClave ?? '');
+
+        if (!is_string($confirmarClave) || $confirmarClave === '') {
+            $this->erroresValidacion['confirmar_clave'] = 'Confirme la nueva contraseña.';
+        }
+
+        if ($this->erroresValidacion !== []) return null;
+
+        return [
+            'codigo_recuperacion' => $codigoNormalizado,
+            'nueva_clave' => $nuevaClave
+        ];
+    }
+
+
+    /* ================================================= */
     /* VALIDAR DATOS PERSONALES Y DATOS DE LA CUENTA */
     /* ================================================= */
 
@@ -220,7 +283,7 @@ trait ValidacionUsuarioTrait
     {
         $this->erroresValidacion = [];
         $this->codigoResultado = 'datos_invalidos';
-        $id = $this->validarIdentificador($idUsuario, 'id_usuario', 'No fue posible identificar la cuenta del usuario autenticado.');
+        $id = $this->validarIdentificador($idUsuario, 'id_usuario', 'Seleccione un usuario válido.');
 
         if (!is_string($claveActual) || $claveActual === '') {
             $this->erroresValidacion['clave_actual'] = 'Ingrese la contraseña actual.';

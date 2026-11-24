@@ -86,6 +86,12 @@ const reglasUsuarios = Object.freeze({
     }
 });
 
+/* Reglas para identificar la cuenta que solicita un código de recuperación */
+const reglasSolicitarRecuperacion = Object.freeze({
+    cedula: reglasClientes.cedula,
+    correo: reglasUsuarios.correo
+});
+
 /* Reglas para el catálogo de roles */
 const reglasRoles = Object.freeze({
     nombre_rol: { obligatorio: true, minimo: 1, maximo: 40, etiqueta: "El nombre del rol" },
@@ -162,6 +168,44 @@ const reglasEditarBloqueoHorario = Object.freeze({
     },
     ...reglasBloqueosHorario
 });
+
+/* Prepara las reglas del código y de la nueva contraseña del formulario */
+function crearReglasRecuperacionClave(formulario) {
+    return Object.freeze({
+        codigo_recuperacion: {
+            comprobar: function (valor) {
+                if (typeof valor !== "string") return "Ingrese el código de recuperación de seis dígitos.";
+
+                const codigo = valor.trim();
+
+                return codigo.length === 6 && Regex.codigo_recuperacion.test(codigo)
+                    ? null : "Ingrese el código de recuperación de seis dígitos.";
+            }
+        },
+        nueva_clave: {
+            comprobar: function (valor) {
+                if (validarClave(valor)) return null;
+
+                if (typeof valor === "string" && new TextEncoder().encode(valor).length > 72) {
+                    return "La contraseña es demasiado larga. Utilice una más corta.";
+                }
+
+                return "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo, sin espacios.";
+            }
+        },
+        confirmar_clave: {
+            comprobar: function (valor) {
+                if (typeof valor !== "string" || valor === "") return "Confirme la nueva contraseña.";
+
+                const nuevaClave = obtenerCampo(formulario, "nueva_clave");
+
+                if (!nuevaClave) return "No fue posible comprobar la nueva contraseña.";
+
+                return valor === nuevaClave.value ? null : "Las contraseñas no coinciden.";
+            }
+        }
+    });
+}
 
 /* Comprueba la complejidad y el límite del hash de las contraseñas nuevas */
 function validarClave(clave) {
@@ -443,6 +487,8 @@ export const Validaciones = Object.freeze({
     reglasEstadosAgendamiento: reglasEstadosAgendamiento,
     reglasTiposAgendamiento: reglasTiposAgendamiento,
     reglasUsuarios: reglasUsuarios,
+    reglasSolicitarRecuperacion: reglasSolicitarRecuperacion,
+    crearReglasRecuperacionClave: crearReglasRecuperacionClave,
     reglasRoles: reglasRoles,
     reglasAgendamientos: reglasAgendamientos,
     reglasBloqueosHorario: reglasBloqueosHorario,

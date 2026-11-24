@@ -141,6 +141,22 @@ trait ValidacionTrait
 
 
     /* ================================================= */
+    /* VALIDAR EL FILTRO DE ESTADO */
+    /* ================================================= */
+
+    protected function validarFiltroEstado(mixed $entrada): string
+    {
+        if (!is_string($entrada) || !in_array($entrada, ['ACTIVO', 'INACTIVO', 'TODOS'], true)) {
+            throw new \InvalidArgumentException(
+                'Seleccione Activos, Inactivos o Todos para consultar los registros.'
+            );
+        }
+
+        return $entrada;
+    }
+
+
+    /* ================================================= */
     /* VALIDAR SELECCIÓN DE INSUMOS */
     /* ================================================= */
 

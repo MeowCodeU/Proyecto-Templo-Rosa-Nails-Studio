@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use App\Components\Correo;
 use App\Interfaces\CrudInterface;
 use App\Traits\ValidacionUsuarioTrait;
 use PDO;
@@ -24,6 +25,37 @@ class SeguridadM extends PersonasM implements CrudInterface
     private $nickname;
     private $clave;
     private $estadoUsuario = 'INACTIVO';
+
+    /* Servicio de correo y resultado de la notificación de cuenta creada */
+    private ?Correo $correoElectronico = null;
+    private string $resultadoCorreoBienvenida = 'pendiente';
+
+
+    /* ================================================= */
+    /* CONSTRUCTOR */
+    /* ================================================= */
+
+    public function __construct(?PDO $conexion = null, ?Correo $correoElectronico = null)
+    {
+        if ($conexion === null) {
+            parent::__construct();
+        } else {
+            $this->conexionMD = $conexion;
+        }
+
+        $this->correoElectronico = $correoElectronico;
+    }
+
+
+    /* ================================================= */
+    /* CONSULTAR EL RESULTADO DEL CORREO DE BIENVENIDA */
+    /* ================================================= */
+
+    public function obtenerResultadoCorreoBienvenida(): string
+    {
+        return $this->resultadoCorreoBienvenida;
+    }
+
 
     /* ================================================= */
     /* SETTERS */
@@ -124,6 +156,8 @@ class SeguridadM extends PersonasM implements CrudInterface
 
     public function registrar(mixed $confirmarClave = null): bool
     {
+        $this->resultadoCorreoBienvenida = 'pendiente';
+
         if (!$this->validarDatosUsuario(true, $confirmarClave)) return false;
 
         try {
@@ -179,8 +213,9 @@ class SeguridadM extends PersonasM implements CrudInterface
             $stmtUsuario->bindParam(':clave', $claveCifrada);
             $stmtUsuario->execute();
 
-            $this->conexionMD->commit();
-            return true;
+            if (!$this->conexionMD->commit()) {
+                throw new \RuntimeException('No fue posible confirmar el registro del usuario.');
+            }
 
         } catch (\Throwable $e) {
             if ($this->conexionMD->inTransaction()) {
@@ -188,7 +223,34 @@ class SeguridadM extends PersonasM implements CrudInterface
             }
             throw $e;
         }
+
+        /* Notificar únicamente después de confirmar el registro en la base de datos */
+        $this->notificarCuentaCreada();
+        return true;
     }
+
+    /* ================================================= */
+    /* NOTIFICAR LA CREACIÓN DE LA CUENTA */
+    /* ================================================= */
+
+    private function notificarCuentaCreada(): void
+    {
+        $this->resultadoCorreoBienvenida = 'no_enviado';
+
+        try {
+            $this->correoElectronico ??= new Correo();
+            $nombreCompleto = trim($this->nombre . ' ' . $this->apellido);
+
+            if ($this->correoElectronico->enviarBienvenida($this->correo, $nombreCompleto)) {
+                $this->resultadoCorreoBienvenida = 'enviado';
+            }
+
+        } catch (\Throwable $error) {
+            /* Conservar la cuenta creada aunque falle el servicio de correo */
+            error_log('SeguridadM: la cuenta fue creada, pero no se pudo enviar el correo de bienvenida.');
+        }
+    }
+
 
     /* ================================================= */
     /* MODIFICAR USUARIO */

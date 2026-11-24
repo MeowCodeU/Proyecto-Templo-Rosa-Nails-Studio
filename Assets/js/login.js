@@ -5,6 +5,11 @@
 $(function () {
     "use strict";
 
+    let accesoOcupado = false;
+    let recuperacionOcupada = false;
+    let recuperacionRedirigiendo = false;
+
+
     /* Cargar las reglas compartidas sin cambiar los scripts de las vistas */
     const cargaValidaciones = import("./validaciones/validaciones.js")
         .then(function (modulo) {
@@ -106,6 +111,7 @@ $(function () {
 
                     error.status = solicitud.status;
                     error.respuesta = respuesta;
+                    error.ambiguo = solicitud.status === 0 || estado === "timeout" || estado === "parsererror";
 
                     reject(error);
                 }
@@ -214,9 +220,10 @@ $(function () {
         formulario.on("submit", async function (evento) {
             evento.preventDefault();
 
-            if (enviando || preparandoEnvio || redirigiendo) return;
+            if (enviando || preparandoEnvio || redirigiendo || accesoOcupado || recuperacionOcupada || recuperacionRedirigiendo) return;
 
             preparandoEnvio = true;
+            accesoOcupado = true;
 
             let configuracion = null;
 
@@ -230,6 +237,7 @@ $(function () {
             limpiarMensajes();
 
             if (!configuracion) {
+                accesoOcupado = false;
                 mostrarMensaje("No se cargaron las validaciones. Recargue la página.");
                 return;
             }
@@ -237,6 +245,7 @@ $(function () {
             const errores = validarAcceso(configuracion);
 
             if (Object.keys(errores).length) {
+                accesoOcupado = false;
                 mostrarMensaje(Object.values(errores)[0], errores);
                 return;
             }
@@ -339,6 +348,7 @@ $(function () {
                     formulario.removeAttr("aria-busy");
 
                     enviando = false;
+                    accesoOcupado = false;
 
                     if (avisoPendiente) {
                         mostrarMensaje(
@@ -360,70 +370,455 @@ $(function () {
 
 
     /* ================================================= */
-    /* AYUDA PARA RESTABLECER LA CONTRASEÑA */
+    /* RECUPERACIÓN DE CONTRASEÑA */
     /* ================================================= */
 
     const modalAyudaClave = $("#modalAyudaClave");
     const botonAbrirAyuda = $("#btnAbrirAyudaClave");
     const botonCerrarAyuda = $("#btnCerrarAyudaClave");
-    const botonAceptarAyuda = $("#btnAceptarAyudaClave");
+    const formularioSolicitud = $("#formSolicitarRecuperacion");
+    const formularioRecuperacion = $("#formRecuperarClave");
+    const mensajeRecuperacion = $("#mensajeRecuperacionClave");
+    const botonSolicitarCodigo = $("#btnSolicitarCodigoRecuperacion");
+    const botonReenviarCodigo = $("#btnReenviarCodigoRecuperacion");
+    const botonesClaveRecuperacion = $(".btnAlternarClaveRecuperacion");
 
-    let elementoConFoco = $();
+    let elementoConFoco = botonAbrirAyuda;
+    let validacionesRecuperacion = null;
+    let reglasRecuperacion = null;
+    let limiteReenvio = 0;
+    let relojReenvio = null;
 
-    if (modalAyudaClave.length && botonAbrirAyuda.length) {
+    if (modalAyudaClave.length && formularioSolicitud.length && formularioRecuperacion.length) {
+        formularioSolicitud.add(formularioRecuperacion).prop("noValidate", true);
 
-        /* Abrir el modal y conservar el elemento que tenía el foco */
+
+        /* Reutilizar el mismo ojito del formulario de acceso */
+        botonesClaveRecuperacion.each(function () {
+            const boton = $(this);
+            const iconos = botonMostrarClave.find(".icono-eye").children().clone();
+
+            if (iconos.length) boton.find(".icono-eye").empty().append(iconos);
+
+            boton.data("descripcionClave", (boton.attr("aria-label") || "Mostrar contraseña").slice(8));
+            cambiarVisibilidadRecuperacion(boton, false);
+        });
+
+
+        function cambiarVisibilidadRecuperacion(boton, visible) {
+            const idCampo = boton.attr("data-password-target");
+            const campo = idCampo ? document.getElementById(idCampo) : null;
+
+            if (!campo || !formularioRecuperacion[0].contains(campo)) return;
+
+            const texto = (visible ? "Ocultar " : "Mostrar ") + boton.data("descripcionClave");
+
+            campo.type = visible ? "text" : "password";
+            boton.find(".ojo-cerrado, .bi-eye-slash").toggle(!visible);
+            boton.find(".ojo-abierto").toggle(visible);
+            boton.attr({ "aria-label": texto, title: texto, "aria-pressed": String(visible) });
+        }
+
+
+        botonesClaveRecuperacion.on("click", function () {
+            if (recuperacionOcupada) return;
+
+            const boton = $(this);
+            const campo = document.getElementById(boton.attr("data-password-target"));
+
+            cambiarVisibilidadRecuperacion(boton, campo?.type === "password");
+        });
+
+
+        /* Eliminar los valores secretos cuando se termina o abandona un paso */
+        function limpiarClavesRecuperacion() {
+            formularioRecuperacion.find("[name='codigo_recuperacion'], [name='nueva_clave'], [name='confirmar_clave']").val("");
+
+            botonesClaveRecuperacion.each(function () {
+                cambiarVisibilidadRecuperacion($(this), false);
+            });
+
+            validacionesRecuperacion?.limpiarFormulario(formularioRecuperacion[0]);
+        }
+
+
+        function limpiarMensajeRecuperacion() {
+            mensajeRecuperacion.empty().prop("hidden", true);
+        }
+
+
+        /* Mantener los mensajes dentro del formulario de recuperación */
+        function mostrarMensajeRecuperacion(mensaje, tipo = "error") {
+            const tipoSeguro = ["info", "success", "warning", "error"].includes(tipo) ? tipo : "error";
+
+            mensajeRecuperacion.text(mensaje)
+                .attr({ "data-tipo": tipoSeguro, role: tipoSeguro === "error" ? "alert" : "status" })
+                .prop("hidden", false);
+        }
+
+
+        function formularioDelPaso() {
+            return modalAyudaClave.attr("data-paso-recuperacion") === "restablecer"
+                ? formularioRecuperacion : formularioSolicitud;
+        }
+
+
+        function enfocarPaso() {
+            const campo = formularioDelPaso().find("input:not([type='hidden']):enabled").first();
+
+            if (campo.length) campo.trigger("focus");
+            else botonCerrarAyuda.trigger("focus");
+        }
+
+
+        /* Cambiar de formulario sin abrir una página adicional */
+        function mostrarPasoRecuperacion(paso) {
+            const restablecer = paso === "restablecer";
+            const descripcion = $("#textoAyudaClave");
+
+            modalAyudaClave.attr("data-paso-recuperacion", restablecer ? "restablecer" : "solicitar");
+            formularioSolicitud.prop("hidden", restablecer);
+            formularioRecuperacion.prop("hidden", !restablecer);
+            descripcion.text(descripcion.attr(restablecer ? "data-texto-restablecer" : "data-texto-solicitar"));
+        }
+
+
+        /* Abrir el modal y retirar el acceso del recorrido del teclado */
         function abrirAyuda() {
-            elementoConFoco = $(":focus").first();
+            if (accesoOcupado || recuperacionOcupada || recuperacionRedirigiendo) return;
 
-            if (!elementoConFoco.length) {
-                elementoConFoco = botonAbrirAyuda;
-            }
+            const activo = document.activeElement;
 
-            modalAyudaClave
-                .addClass("is-visible")
-                .attr("aria-hidden", "false");
+            elementoConFoco = activo && !modalAyudaClave[0].contains(activo) ? $(activo) : botonAbrirAyuda;
 
+            modalAyudaClave.addClass("is-visible").attr("aria-hidden", "false");
+            botonAbrirAyuda.attr("aria-expanded", "true");
             $("body").addClass("login-modal-open");
+            $(".login-page").prop("inert", true).attr("inert", "");
 
-            botonCerrarAyuda.trigger("focus");
+            enfocarPaso();
         }
 
 
-        /* Cerrar el modal y devolver el foco al elemento anterior */
+        /* Conservar el paso y la identificación, retirando los valores secretos */
         function cerrarAyuda() {
-            modalAyudaClave
-                .removeClass("is-visible")
-                .attr("aria-hidden", "true");
+            if (recuperacionOcupada || recuperacionRedirigiendo) return;
 
+            modalAyudaClave.removeClass("is-visible").attr("aria-hidden", "true");
+            botonAbrirAyuda.attr("aria-expanded", "false");
             $("body").removeClass("login-modal-open");
+            $(".login-page").prop("inert", false).removeAttr("inert");
+            limpiarClavesRecuperacion();
+            limpiarMensajeRecuperacion();
 
-            if (elementoConFoco.length && elementoConFoco.is(":visible")) {
-                elementoConFoco.trigger("focus");
+            const destino = elementoConFoco[0];
+
+            if (destino?.isConnected && destino !== document.body && !destino.disabled) {
+                destino.focus();
+            } else {
+                botonAbrirAyuda.trigger("focus");
             }
         }
 
 
-        /* Acciones de los botones del modal */
         botonAbrirAyuda.on("click", abrirAyuda);
         botonCerrarAyuda.on("click", cerrarAyuda);
-        botonAceptarAyuda.on("click", cerrarAyuda);
 
+        $("#btnVolverLoginRecuperacion").on("click", function (evento) {
+            evento.preventDefault();
+            cerrarAyuda();
+        });
 
-        /* Cerrar al pulsar el fondo del modal */
         modalAyudaClave.on("click", function (evento) {
-            if ($(evento.target).is("[data-cerrar-ayuda-clave]")) {
-                cerrarAyuda();
-            }
+            if ($(evento.target).is("[data-cerrar-ayuda-clave]")) cerrarAyuda();
         });
 
 
-        /* Cerrar al presionar la tecla Escape */
+        /* Mantener el foco dentro del modal mientras permanezca abierto */
         $(document).on("keydown", function (evento) {
-            if (evento.key === "Escape" && modalAyudaClave.hasClass("is-visible")) {
+            if (!modalAyudaClave.hasClass("is-visible")) return;
+
+            if (evento.key === "Escape") {
+                evento.preventDefault();
                 cerrarAyuda();
+                return;
+            }
+
+            if (evento.key !== "Tab") return;
+
+            const elementos = modalAyudaClave.find("button, a[href], input:not([type='hidden']), [tabindex='0']")
+                .filter(function () {
+                    return !this.disabled && !this.closest("[hidden]") && $(this).is(":visible");
+                }).toArray();
+
+            if (!elementos.length) {
+                evento.preventDefault();
+                return;
+            }
+
+            const indice = elementos.indexOf(document.activeElement);
+
+            if (indice === -1 || (!evento.shiftKey && indice === elementos.length - 1) ||
+                (evento.shiftKey && indice === 0)) {
+                evento.preventDefault();
+                elementos[evento.shiftKey ? elementos.length - 1 : 0].focus();
             }
         });
+
+
+        /* Actualizar la espera visual sin reenviar solicitudes automáticamente */
+        function actualizarEsperaReenvio() {
+            const segundos = Math.max(0, Math.ceil((limiteReenvio - Date.now()) / 1000));
+
+            modalAyudaClave.attr("data-reintentar-en", String(segundos));
+            $("#segundosReenvioRecuperacion").text(segundos);
+            $("#avisoReenvioRecuperacion").prop("hidden", segundos === 0);
+            botonSolicitarCodigo.add(botonReenviarCodigo)
+                .prop("disabled", recuperacionOcupada || recuperacionRedirigiendo || segundos > 0);
+
+            if (segundos === 0 && relojReenvio !== null) {
+                window.clearInterval(relojReenvio);
+                relojReenvio = null;
+            }
+        }
+
+
+        function iniciarEsperaReenvio(segundos) {
+            if (!Number.isSafeInteger(segundos) || segundos < 0) return;
+
+            limiteReenvio = Date.now() + segundos * 1000;
+
+            if (relojReenvio !== null) window.clearInterval(relojReenvio);
+
+            relojReenvio = segundos > 0 ? window.setInterval(actualizarEsperaReenvio, 1000) : null;
+            actualizarEsperaReenvio();
+        }
+
+
+        /* Sincronizar los dos formularios con el token recibido del servidor */
+        function actualizarTokenRecuperacion(respuesta) {
+            if (typeof respuesta?.token_csrf !== "string" || respuesta.token_csrf === "") return;
+
+            formularioSolicitud.add(formularioRecuperacion).find("[name='token_csrf']")
+                .val(respuesta.token_csrf).prop("defaultValue", respuesta.token_csrf);
+        }
+
+
+        /* Preparar una sola vez las reglas compartidas de recuperación */
+        const cargaRecuperacion = cargaValidaciones.then(function (configuracion) {
+            if (!configuracion) return null;
+
+            validacionesRecuperacion = configuracion.validaciones;
+            reglasRecuperacion = validacionesRecuperacion.crearReglasRecuperacionClave(formularioRecuperacion[0]);
+
+            validacionesRecuperacion.activar(formularioSolicitud[0], validacionesRecuperacion.reglasSolicitarRecuperacion);
+            validacionesRecuperacion.activar(formularioRecuperacion[0], reglasRecuperacion);
+
+            return validacionesRecuperacion;
+
+        }).catch(function () {
+            return null;
+        });
+
+
+        /* Comprobar otra vez la confirmación cuando cambia la nueva contraseña */
+        formularioRecuperacion.find("[name='nueva_clave']").on("input", function () {
+            const confirmar = formularioRecuperacion.find("[name='confirmar_clave']");
+
+            if (confirmar.val() !== "") confirmar[0].dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+
+        formularioSolicitud.add(formularioRecuperacion).on("input change", "input:not([type='hidden'])", function () {
+            limpiarMensajeRecuperacion();
+        });
+
+
+        $("#btnVolverSolicitudRecuperacion").on("click", function () {
+            if (recuperacionOcupada || recuperacionRedirigiendo) return;
+
+            limpiarClavesRecuperacion();
+            limpiarMensajeRecuperacion();
+            mostrarPasoRecuperacion("solicitar");
+            enfocarPaso();
+        });
+
+
+        /* Presentar los errores del servidor después de recuperar los controles */
+        function presentarErrorRecuperacion(respuesta, mensaje, ambiguo = false) {
+            if (["solicitar", "restablecer"].includes(respuesta?.paso)) {
+                mostrarPasoRecuperacion(respuesta.paso);
+            }
+
+            const formulario = formularioDelPaso();
+            const errores = $.isPlainObject(respuesta?.errores) ? { ...respuesta.errores } : {};
+
+            if (typeof respuesta?.campo === "string" && !Object.hasOwn(errores, respuesta.campo)) {
+                errores[respuesta.campo] = mensaje;
+            }
+
+            const primerCampo = validacionesRecuperacion?.mostrarErrores(formulario[0], errores);
+
+            mostrarMensajeRecuperacion(mensaje, ambiguo ? "warning" : respuesta?.tipo || "error");
+
+            if (primerCampo && !primerCampo.closest("[hidden]")) primerCampo.focus();
+            else mensajeRecuperacion.trigger("focus");
+        }
+
+
+        /* Solicitar, reenviar o confirmar únicamente por una acción del usuario */
+        async function enviarRecuperacion(esSolicitud) {
+            if (recuperacionOcupada || recuperacionRedirigiendo || accesoOcupado) return;
+
+            if (esSolicitud && limiteReenvio > Date.now()) {
+                actualizarEsperaReenvio();
+                mostrarMensajeRecuperacion("Espere el tiempo indicado antes de solicitar otro código.", "warning");
+                return;
+            }
+
+            recuperacionOcupada = true;
+
+            const formulario = esSolicitud ? formularioSolicitud : formularioRecuperacion;
+            const estadosControles = [];
+            const botonEnvio = esSolicitud ? botonSolicitarCodigo : $("#btnRecuperarClave");
+            const textoBoton = botonEnvio.text();
+
+            let respuesta = null;
+            let fallo = null;
+
+            try {
+                const validaciones = await cargaRecuperacion;
+
+                limpiarMensajeRecuperacion();
+
+                if (!validaciones) {
+                    mostrarMensajeRecuperacion("No se cargaron las validaciones. Recargue la página.");
+                    return;
+                }
+
+                const reglas = esSolicitud ? validaciones.reglasSolicitarRecuperacion : reglasRecuperacion;
+                const resultado = validaciones.validarFormulario(formulario[0], reglas);
+
+                if (!resultado.valido) {
+                    if (esSolicitud) mostrarPasoRecuperacion("solicitar");
+
+                    resultado.primerCampo?.focus();
+                    return;
+                }
+
+                const datos = {};
+
+                formulario.serializeArray().forEach(function (campo) {
+                    datos[campo.name] = campo.value;
+                });
+
+                modalAyudaClave.find(":input").each(function () {
+                    estadosControles.push({ elemento: $(this), deshabilitado: this.disabled });
+                });
+
+                modalAyudaClave.attr("aria-busy", "true").find(":input").prop("disabled", true);
+                botonEnvio.text(esSolicitud ? "Enviando..." : "Guardando...");
+
+                respuesta = await solicitarAcceso(formulario.attr("action"), datos);
+
+            } catch (error) {
+                fallo = error;
+                respuesta = error.respuesta;
+
+            } finally {
+                recuperacionOcupada = false;
+
+                estadosControles.forEach(function (control) {
+                    control.elemento.prop("disabled", control.deshabilitado);
+                });
+
+                modalAyudaClave.removeAttr("aria-busy");
+                botonEnvio.text(textoBoton);
+                actualizarEsperaReenvio();
+            }
+
+            actualizarTokenRecuperacion(respuesta);
+
+            if (Number.isSafeInteger(respuesta?.reintentar_en)) iniciarEsperaReenvio(respuesta.reintentar_en);
+
+
+            /* Respetar la sesión que pudo iniciarse en otra pestaña */
+            if (respuesta?.ok === true && respuesta.redireccion === "Index.php?url=inicio") {
+                recuperacionRedirigiendo = true;
+                modalAyudaClave.find(":input").prop("disabled", true);
+                window.location.assign("Index.php?url=inicio");
+                return;
+            }
+
+
+            if (!fallo && respuesta?.ok === true && esSolicitud && respuesta.paso === "restablecer") {
+                limpiarClavesRecuperacion();
+                mostrarPasoRecuperacion("restablecer");
+                mostrarMensajeRecuperacion(respuesta.mensaje || "Si los datos corresponden a una cuenta activa, recibirá un código.", "info");
+                enfocarPaso();
+                return;
+            }
+
+
+            if (!fallo && respuesta?.ok === true && !esSolicitud && respuesta.paso === "completado") {
+                const cedula = formularioSolicitud.find("[name='cedula']").val();
+                const mensaje = respuesta.mensaje || "La contraseña fue actualizada. Inicie sesión con su nueva contraseña.";
+
+                cerrarAyuda();
+                formularioSolicitud[0].reset();
+                formularioSolicitud.find("[name='cedula'], [name='correo']").val("");
+                validacionesRecuperacion.limpiarFormulario(formularioSolicitud[0]);
+                mostrarPasoRecuperacion("solicitar");
+                campoClave.val("").prop("type", "password");
+                botonMostrarClave.attr({ "aria-label": "Mostrar contraseña", title: "Mostrar contraseña", "aria-pressed": "false" });
+                ojoCerrado.show();
+                ojoAbierto.hide();
+                $("#usuario").val(cedula).trigger("focus");
+                $("#formLogin").closest(".login-content").find(".login-message")
+                    .text(mensaje).attr("data-tipo-aviso", "success").prop("hidden", false);
+                window.Alertas?.notificar(mensaje, "success");
+                return;
+            }
+
+
+            /* Una respuesta perdida no permite saber si la operación terminó */
+            const ambiguo = fallo?.ambiguo === true || (!fallo && respuesta?.ok !== false);
+            const mensaje = ambiguo
+                ? esSolicitud
+                    ? "No se pudo confirmar el envío. Espere un minuto y revise su correo antes de solicitar otro código."
+                    : "No se pudo confirmar el cambio. Intente iniciar sesión con la nueva contraseña antes de repetir la operación."
+                : typeof respuesta?.mensaje === "string"
+                    ? respuesta.mensaje : fallo?.message || "No fue posible completar la operación. Intente nuevamente.";
+
+            if (ambiguo && esSolicitud) iniciarEsperaReenvio(60);
+
+            presentarErrorRecuperacion(respuesta, mensaje, ambiguo);
+        }
+
+
+        formularioSolicitud.on("submit", function (evento) {
+            evento.preventDefault();
+            enviarRecuperacion(true);
+        });
+
+        formularioRecuperacion.on("submit", function (evento) {
+            evento.preventDefault();
+            enviarRecuperacion(false);
+        });
+
+        botonReenviarCodigo.on("click", function () {
+            enviarRecuperacion(true);
+        });
+
+
+        /* Recuperar el paso presentado por PHP después de un envío sin AJAX */
+        mostrarPasoRecuperacion(modalAyudaClave.attr("data-paso-recuperacion"));
+        iniciarEsperaReenvio(Number(modalAyudaClave.attr("data-reintentar-en")) || 0);
+
+        if (modalAyudaClave.attr("data-mostrar-inicial") === "1") {
+            modalAyudaClave.attr("data-mostrar-inicial", "0");
+            abrirAyuda();
+        }
     }
 
 

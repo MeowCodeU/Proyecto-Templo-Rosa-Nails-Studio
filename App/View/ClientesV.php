@@ -19,10 +19,20 @@ require_once __DIR__ . '/Layout/Header.php';
             Gestión de Clientes
         </h2>
 
-        <button type="button" class="btn-templo-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">
-            <i class="bi bi-plus-circle"></i>
-            Nuevo Cliente
-        </button>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <label for="filtroEstadoClientes" class="form-label mb-0">Estado</label>
+
+            <select id="filtroEstadoClientes" class="form-select w-auto">
+                <option value="ACTIVO" selected>Activos</option>
+                <option value="INACTIVO">Inactivos</option>
+                <option value="TODOS">Todos</option>
+            </select>
+
+            <button type="button" class="btn-templo-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">
+                <i class="bi bi-plus-circle"></i>
+                Nuevo Cliente
+            </button>
+        </div>
     </div>
 
     <!-- Listado de clientes y acciones disponibles -->
@@ -1059,7 +1069,7 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="modal-body text-center">
                     <p class="status-question">¿Deseas desactivar este cliente?</p>
                     <p class="status-client-name" id="desactivarNombreCliente"></p>
-                    <p class="status-warning">El cliente no se borrará. Solo dejará de aparecer en la lista principal.</p>
+                    <p class="status-warning">El cliente no se borrará. Podrá consultarlo y reactivarlo desde Inactivos.</p>
                 </div>
 
                 <!-- Botones del formulario -->

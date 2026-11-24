@@ -1,1 +1,4 @@
 vendor/
+
+# Configuración privada del correo electrónico
+App/Config/Correo.php

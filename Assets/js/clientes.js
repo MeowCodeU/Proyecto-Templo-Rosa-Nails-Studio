@@ -11,6 +11,7 @@ $(function () {
     const urlClientes = "Index.php?url=clientes";
     const $tabla = $("#tablaClientes");
     const $modulo = $(".clientes-module");
+    const $filtroEstado = $("#filtroEstadoClientes");
     const $modales = $("#modalNuevoCliente, #modalEditarCliente, #modalDesactivarCliente");
 
     if (!$tabla.length) return;
@@ -18,6 +19,7 @@ $(function () {
     let operacionEnCurso = false;
     let redirigiendo = false;
     let versionLista = 0;
+    let estadoListado = "ACTIVO";
 
     /* Reutilizar los iconos definidos en la vista */
     const $iconoDetalle = $("#modalDetalleClienteLabel svg").first().clone();
@@ -227,6 +229,7 @@ $(function () {
         if (redirigiendo) return false;
 
         const turno = ++versionLista;
+        const estadoSolicitado = $filtroEstado.val() || "ACTIVO";
 
         $tabla.attr("aria-busy", "true");
 
@@ -236,14 +239,19 @@ $(function () {
             if (redirigiendo || turno !== versionLista) return false;
 
             const respuesta = await solicitarClientes({
-                accion: "consultar"
+                accion: "consultar",
+                estado: estadoSolicitado
             });
 
             if (redirigiendo || turno !== versionLista) return false;
 
             if (
                 !Array.isArray(respuesta.clientes) ||
-                !respuesta.clientes.every(cliente => $.isPlainObject(cliente))
+                !respuesta.clientes.every(cliente =>
+                    $.isPlainObject(cliente) &&
+                    ["ACTIVO", "INACTIVO"].includes(cliente.estado) &&
+                    (estadoSolicitado === "TODOS" || cliente.estado === estadoSolicitado)
+                )
             ) {
                 throw new Error("No se pudo cargar la lista.");
             }
@@ -253,6 +261,7 @@ $(function () {
             tablaClientes.clear();
             tablaClientes.rows.add(filas);
             tablaClientes.draw(false);
+            estadoListado = estadoSolicitado;
 
             /* Conservar la página actual */
             const informacion = tablaClientes.page.info();
@@ -269,7 +278,10 @@ $(function () {
             return true;
 
         } catch (error) {
-            if (turno === versionLista) throw error;
+            if (turno === versionLista) {
+                $filtroEstado.val(estadoListado);
+                throw error;
+            }
 
             return false;
 
@@ -279,6 +291,18 @@ $(function () {
             }
         }
     }
+
+
+    /* Consultar el estado elegido sin abrir otra pantalla */
+    $filtroEstado.on("change", function () {
+        if (operacionEnCurso || redirigiendo) return;
+
+        $mensajeGeneral.prop("hidden", true);
+
+        actualizarLista().catch(function (error) {
+            mostrarMensajeGeneral(error.message, true, true);
+        });
+    });
 
 
     /* ================================================= */
@@ -332,9 +356,16 @@ $(function () {
             "visitas",
             "alergias"
         ].forEach(function (campo) {
-            $("<td>")
+            const $celda = $("<td>")
                 .text(cliente[campo] ?? (campo === "visitas" ? 0 : ""))
                 .appendTo($fila);
+
+            if (campo === "nombre" && cliente.estado === "INACTIVO") {
+                $("<span>", {
+                    class: "badge rounded-pill bg-light text-body-secondary ms-2",
+                    text: "Inactivo"
+                }).appendTo($celda);
+            }
         });
 
         const $acciones = $("<div>", {
@@ -366,30 +397,48 @@ $(function () {
                 "#modalHistorialServiciosCliente",
                 "Ver historial de servicios",
                 $historial
-            ),
-
-            crearBotonCliente(
-                cliente,
-                "btn-edit btnEditarCliente",
-                "#modalEditarCliente",
-                "Editar cliente",
-                $("<i>", {
-                    class: "bi bi-pencil-fill",
-                    "aria-hidden": "true"
-                })
-            ),
-
-            crearBotonCliente(
-                cliente,
-                "btn-deactivate btnDesactivarCliente",
-                "#modalDesactivarCliente",
-                "Desactivar cliente",
-                $("<i>", {
-                    class: "bi bi-trash-fill",
-                    "aria-hidden": "true"
-                })
             )
         );
+
+        if (cliente.estado === "ACTIVO") {
+            $acciones.append(
+                crearBotonCliente(
+                    cliente,
+                    "btn-edit btnEditarCliente",
+                    "#modalEditarCliente",
+                    "Editar cliente",
+                    $("<i>", {
+                        class: "bi bi-pencil-fill",
+                        "aria-hidden": "true"
+                    })
+                ),
+
+                crearBotonCliente(
+                    cliente,
+                    "btn-deactivate btnDesactivarCliente",
+                    "#modalDesactivarCliente",
+                    "Desactivar cliente",
+                    $("<i>", {
+                        class: "bi bi-trash-fill",
+                        "aria-hidden": "true"
+                    })
+                )
+            );
+
+        } else {
+            $acciones.append(
+                crearBotonCliente(
+                    cliente,
+                    "btn-detail btnReactivarCliente",
+                    "#modalDesactivarCliente",
+                    "Reactivar cliente",
+                    $("<i>", {
+                        class: "bi bi-arrow-counterclockwise",
+                        "aria-hidden": "true"
+                    })
+                )
+            );
+        }
 
         $("<td>", {
             class: "columna-acciones"
@@ -517,6 +566,7 @@ $(function () {
     let cedulaComprobada = "";
     let cedulaRecuperada = "";
     let personaYaEsCliente = false;
+    let estadoClienteExistente = "";
     let buscandoPersona = false;
 
     /* Muestra los mensajes de búsqueda de personas. */
@@ -538,6 +588,7 @@ $(function () {
         cedulaComprobada = "";
         cedulaRecuperada = "";
         personaYaEsCliente = false;
+        estadoClienteExistente = "";
         buscandoPersona = false;
 
         mostrarMensajePersona("");
@@ -552,6 +603,7 @@ $(function () {
         solicitudPersona = null;
         cedulaComprobada = "";
         personaYaEsCliente = false;
+        estadoClienteExistente = "";
         buscandoPersona = false;
         mostrarMensajePersona("");
 
@@ -628,10 +680,13 @@ $(function () {
 
             cedulaComprobada = cedula;
             personaYaEsCliente = respuesta.ya_es_cliente;
+            estadoClienteExistente = respuesta.estado_cliente || "";
 
             if (personaYaEsCliente) {
                 mostrarMensajePersona(
-                    "Cliente ya registrado.",
+                    estadoClienteExistente === "INACTIVO"
+                        ? "Este cliente está inactivo. Cierre el formulario, seleccione Inactivos y utilice Reactivar."
+                        : "Cliente ya registrado.",
                     "error"
                 );
 
@@ -737,6 +792,34 @@ $(function () {
         }
 
         if ($modal.attr("id") === "modalDesactivarCliente") {
+            const reactivar = $boton.hasClass("btnReactivarCliente");
+            const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-person-dash";
+
+            $formulario.find('[name="accion"]').val(reactivar ? "reactivar" : "desactivar");
+
+            $("#modalDesactivarClienteLabel").empty().append(
+                $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                document.createTextNode(reactivar ? " Confirmar reactivación" : " Confirmar desactivación")
+            );
+
+            $modal.find(".status-question").text(
+                reactivar ? "¿Deseas reactivar este cliente?" : "¿Deseas desactivar este cliente?"
+            );
+
+            $modal.find(".status-warning").text(
+                reactivar
+                    ? "El cliente volverá a estar disponible conservando sus datos y su historial."
+                    : "El cliente no se borrará. Podrá consultarlo y reactivarlo desde Inactivos."
+            );
+
+            $formulario.find('[type="submit"]')
+                .toggleClass("btn-templo-primary", reactivar)
+                .toggleClass("btn-templo-danger", !reactivar)
+                .empty().append(
+                    $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                    document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+                );
+
             $("#desactivarCedula").val(
                 datoBoton($boton, "cedula")
             );
@@ -1080,7 +1163,7 @@ $(function () {
 
 
     /* ================================================= */
-    /* REGISTRAR, MODIFICAR Y DESACTIVAR */
+    /* REGISTRAR, MODIFICAR Y CAMBIAR EL ESTADO */
     /* ================================================= */
 
     $modales.find("form").on("submit", async function (evento) {
@@ -1133,7 +1216,11 @@ $(function () {
             ) {
                 mostrarErrores(
                     $formulario,
-                    new Error("Cliente ya registrado.")
+                    new Error(
+                        estadoClienteExistente === "INACTIVO"
+                            ? "Este cliente está inactivo. Seleccione Inactivos en el listado y utilice Reactivar."
+                            : "Cliente ya registrado."
+                    )
                 );
 
                 return;
@@ -1180,6 +1267,8 @@ $(function () {
             .attr("aria-busy", "true");
 
         operacionEnCurso = true;
+        const filtroDeshabilitado = $filtroEstado.prop("disabled");
+        $filtroEstado.prop("disabled", true);
         ++versionLista;
 
         $tabla.attr("aria-busy", "false");
@@ -1259,6 +1348,7 @@ $(function () {
                 .attr("aria-busy", "false");
 
             operacionEnCurso = false;
+            $filtroEstado.prop("disabled", filtroDeshabilitado);
 
             if (primerCampo && !redirigiendo) {
                 primerCampo.trigger("focus");

@@ -8,6 +8,24 @@ $escaparLogin = static function ($valor): string {
     return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
 };
 
+/* Preparar los datos que presenta el modal de recuperación */
+$mensajeRecuperacion = is_string($mensajeRecuperacion ?? null) ? $mensajeRecuperacion : '';
+$tipoMensajeRecuperacion = in_array($tipoMensajeRecuperacion ?? '', ['info', 'success', 'warning', 'error'], true)
+    ? $tipoMensajeRecuperacion : 'info';
+$erroresRecuperacion = is_array($erroresRecuperacion ?? null)
+    ? array_filter($erroresRecuperacion, 'is_string') : [];
+$mostrarRecuperacion = ($mostrarRecuperacion ?? false) === true;
+$pasoRecuperacion = ($pasoRecuperacion ?? '') === 'restablecer' ? 'restablecer' : 'solicitar';
+$tokenRecuperacionClave = is_string($tokenRecuperacionClave ?? null) ? $tokenRecuperacionClave : '';
+
+$cedulaRecuperacion = is_string($datosRecuperacion['cedula'] ?? null) ? $datosRecuperacion['cedula'] : '';
+$correoRecuperacion = is_string($datosRecuperacion['correo'] ?? null) ? $datosRecuperacion['correo'] : '';
+
+/* Presentar la espera restante sin decidir la autorización del reenvío */
+$ultimoEnvioRecuperacion = $_SESSION['recuperacion_ultimo_envio'] ?? 0;
+$reintentarRecuperacion = is_int($ultimoEnvioRecuperacion)
+    ? max(0, $ultimoEnvioRecuperacion + 60 - time()) : 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -61,9 +79,9 @@ $escaparLogin = static function ($valor): string {
 
 </head>
 
-<body>
+<body<?= $mostrarRecuperacion ? ' class="login-modal-open"' : ''; ?>>
 
-    <main class="login-page">
+    <main class="login-page"<?= $mostrarRecuperacion ? ' inert' : ''; ?>>
 
         <section class="login-scene">
 
@@ -464,6 +482,9 @@ $escaparLogin = static function ($valor): string {
                                     type="button"
                                     class="login-link-button"
                                     id="btnAbrirAyudaClave"
+                                    aria-controls="modalAyudaClave"
+                                    aria-haspopup="dialog"
+                                    aria-expanded="<?= $mostrarRecuperacion ? 'true' : 'false'; ?>"
                                 >
                                     ¿Olvidaste tu contraseña?
                                 </button>
@@ -484,17 +505,20 @@ $escaparLogin = static function ($valor): string {
 
 
     <!-- ===================================================== -->
-    <!-- AYUDA PARA RESTABLECER LA CONTRASEÑA -->
+    <!-- RECUPERACIÓN DE CONTRASEÑA -->
     <!-- ===================================================== -->
 
     <div
-        class="login-help-modal"
+        class="login-help-modal<?= $mostrarRecuperacion ? ' is-visible' : ''; ?>"
         id="modalAyudaClave"
         role="dialog"
         aria-modal="true"
         aria-labelledby="tituloAyudaClave"
         aria-describedby="textoAyudaClave"
-        aria-hidden="true"
+        aria-hidden="<?= $mostrarRecuperacion ? 'false' : 'true'; ?>"
+        data-mostrar-inicial="<?= $mostrarRecuperacion ? '1' : '0'; ?>"
+        data-paso-recuperacion="<?= $escaparLogin($pasoRecuperacion); ?>"
+        data-reintentar-en="<?= $reintentarRecuperacion; ?>"
     >
 
         <!-- Fondo del modal -->
@@ -506,63 +530,326 @@ $escaparLogin = static function ($valor): string {
 
         <!-- Contenido del modal -->
         <section
-            class="login-help-card"
+            class="login-help-card login-recovery-card"
             role="document"
         >
 
-            <!-- Cerrar la ayuda -->
+            <!-- Cerrar la recuperación -->
             <button
                 type="button"
                 class="login-help-close"
                 id="btnCerrarAyudaClave"
-                aria-label="Cerrar"
+                aria-label="Cerrar recuperación de contraseña"
                 title="Cerrar"
             >
-                <i
-                    class="bi bi-x-lg"
-                    aria-hidden="true"
-                ></i>
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
 
 
-            <!-- Ícono informativo -->
-            <div
-                class="login-help-icon"
-                aria-hidden="true"
-            >
-                <i class="bi bi-person-heart"></i>
+            <!-- Identificación del formulario -->
+            <div class="login-help-icon" aria-hidden="true">
+                <i class="bi bi-envelope-heart"></i>
             </div>
 
-
-            <!-- Título -->
-            <h2
-                class="login-help-title"
-                id="tituloAyudaClave"
-            >
-                Restablecer Contraseña
+            <h2 class="login-help-title" id="tituloAyudaClave">
+                Recuperar Contraseña
             </h2>
 
-
-            <!-- Instrucciones para solicitar el restablecimiento -->
             <p
                 class="login-help-text"
                 id="textoAyudaClave"
+                data-texto-solicitar="Indique su cédula y el correo registrado para solicitar un código de recuperación."
+                data-texto-restablecer="Escriba el código recibido por correo y establezca su nueva contraseña."
             >
-                Para restablecer su contraseña, comuníquese con el
-                Administrador del Sistema, quien le asignará una
-                contraseña temporal. Posteriormente podrá cambiarla
-                desde las opciones de su perfil.
+                <?= $pasoRecuperacion === 'restablecer'
+                    ? 'Escriba el código recibido por correo y establezca su nueva contraseña.'
+                    : 'Indique su cédula y el correo registrado para solicitar un código de recuperación.'; ?>
             </p>
 
 
-            <!-- Confirmar la lectura -->
-            <button
-                type="button"
-                class="login-help-accept"
-                id="btnAceptarAyudaClave"
+            <!-- Resultado o error de la recuperación -->
+            <p
+                class="login-recovery-message"
+                id="mensajeRecuperacionClave"
+                data-tipo="<?= $escaparLogin($tipoMensajeRecuperacion); ?>"
+                role="<?= $tipoMensajeRecuperacion === 'error' ? 'alert' : 'status'; ?>"
+                tabindex="-1"
+                <?= $mensajeRecuperacion === '' ? 'hidden' : ''; ?>
             >
-                Entendido
-            </button>
+                <?= $escaparLogin($mensajeRecuperacion); ?>
+            </p>
+
+
+            <!-- ================================================= -->
+            <!-- SOLICITAR EL CÓDIGO -->
+            <!-- ================================================= -->
+
+            <form
+                class="login-recovery-form"
+                id="formSolicitarRecuperacion"
+                action="Index.php?url=login"
+                method="POST"
+                <?= $pasoRecuperacion !== 'solicitar' ? 'hidden' : ''; ?>
+            >
+                <input type="hidden" name="accion" value="solicitar_recuperacion">
+                <input type="hidden" name="token_csrf" value="<?= $escaparLogin($tokenRecuperacionClave); ?>">
+
+                <!-- Identificación de la cuenta -->
+                <div class="login-recovery-field">
+                    <label for="recuperacionCedula">
+                        Cédula
+                        <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        class="login-recovery-input"
+                        id="recuperacionCedula"
+                        name="cedula"
+                        value="<?= $escaparLogin($cedulaRecuperacion); ?>"
+                        placeholder="Ingrese su cédula"
+                        inputmode="numeric"
+                        pattern="[0-9]{6,20}"
+                        minlength="6"
+                        maxlength="20"
+                        autocomplete="username"
+                        <?= isset($erroresRecuperacion['cedula']) ? 'aria-invalid="true"' : ''; ?>
+                        required
+                    >
+
+                    <?php if (isset($erroresRecuperacion['cedula'])): ?>
+                        <div class="templo-validacion-feedback is-invalid">
+                            <?= $escaparLogin($erroresRecuperacion['cedula']); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="login-recovery-field">
+                    <label for="recuperacionCorreo">
+                        Correo electrónico
+                        <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+
+                    <input
+                        type="email"
+                        class="login-recovery-input"
+                        id="recuperacionCorreo"
+                        name="correo"
+                        value="<?= $escaparLogin($correoRecuperacion); ?>"
+                        placeholder="Ingrese el correo de su cuenta"
+                        maxlength="100"
+                        autocomplete="email"
+                        <?= isset($erroresRecuperacion['correo']) ? 'aria-invalid="true"' : ''; ?>
+                        required
+                    >
+
+                    <?php if (isset($erroresRecuperacion['correo'])): ?>
+                        <div class="templo-validacion-feedback is-invalid">
+                            <?= $escaparLogin($erroresRecuperacion['correo']); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Enviar el código al correo registrado -->
+                <button
+                    type="submit"
+                    class="login-help-accept login-recovery-submit"
+                    id="btnSolicitarCodigoRecuperacion"
+                    <?= $reintentarRecuperacion > 0 ? 'disabled' : ''; ?>
+                >
+                    Enviar código
+                </button>
+            </form>
+
+
+            <!-- ================================================= -->
+            <!-- VALIDAR EL CÓDIGO Y CAMBIAR LA CONTRASEÑA -->
+            <!-- ================================================= -->
+
+            <form
+                class="login-recovery-form"
+                id="formRecuperarClave"
+                action="Index.php?url=login"
+                method="POST"
+                <?= $pasoRecuperacion !== 'restablecer' ? 'hidden' : ''; ?>
+            >
+                <input type="hidden" name="accion" value="recuperar_clave">
+                <input type="hidden" name="token_csrf" value="<?= $escaparLogin($tokenRecuperacionClave); ?>">
+
+                <!-- Código recibido por correo -->
+                <div class="login-recovery-field">
+                    <label for="recuperacionCodigo">
+                        Código de recuperación
+                        <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        class="login-recovery-input login-recovery-code"
+                        id="recuperacionCodigo"
+                        name="codigo_recuperacion"
+                        placeholder="000000"
+                        inputmode="numeric"
+                        pattern="[0-9]{6}"
+                        minlength="6"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        aria-describedby="ayudaCodigoRecuperacion"
+                        <?= isset($erroresRecuperacion['codigo_recuperacion']) ? 'aria-invalid="true"' : ''; ?>
+                        required
+                    >
+
+                    <?php if (isset($erroresRecuperacion['codigo_recuperacion'])): ?>
+                        <div class="templo-validacion-feedback is-invalid">
+                            <?= $escaparLogin($erroresRecuperacion['codigo_recuperacion']); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <small class="login-recovery-note" id="ayudaCodigoRecuperacion">
+                        Ingrese los seis dígitos. El código vence en diez minutos.
+                    </small>
+                </div>
+
+                <!-- Nueva contraseña -->
+                <div class="login-recovery-field">
+                    <label for="recuperacionNuevaClave">
+                        Nueva contraseña
+                        <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+
+                    <div class="login-recovery-password templo-password-field">
+                        <input
+                            type="password"
+                            class="login-recovery-input"
+                            id="recuperacionNuevaClave"
+                            name="nueva_clave"
+                            placeholder="Ingrese su nueva contraseña"
+                            minlength="8"
+                            maxlength="72"
+                            autocomplete="new-password"
+                            aria-describedby="ayudaNuevaClaveRecuperacion"
+                            <?= isset($erroresRecuperacion['nueva_clave']) ? 'aria-invalid="true"' : ''; ?>
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="input-eye btnAlternarClaveRecuperacion"
+                            data-password-target="recuperacionNuevaClave"
+                            aria-label="Mostrar nueva contraseña"
+                            title="Mostrar nueva contraseña"
+                            aria-pressed="false"
+                        >
+                            <span class="icono-eye" aria-hidden="true">
+                                <i class="bi bi-eye-slash"></i>
+                            </span>
+                        </button>
+                    </div>
+
+                    <?php if (isset($erroresRecuperacion['nueva_clave'])): ?>
+                        <div class="templo-validacion-feedback is-invalid">
+                            <?= $escaparLogin($erroresRecuperacion['nueva_clave']); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <small class="login-recovery-note" id="ayudaNuevaClaveRecuperacion">
+                        Mínimo ocho caracteres: mayúscula, minúscula, número y símbolo, sin espacios.
+                    </small>
+                </div>
+
+                <!-- Confirmación de la nueva contraseña -->
+                <div class="login-recovery-field">
+                    <label for="recuperacionConfirmarClave">
+                        Confirmar contraseña
+                        <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+
+                    <div class="login-recovery-password templo-password-field">
+                        <input
+                            type="password"
+                            class="login-recovery-input"
+                            id="recuperacionConfirmarClave"
+                            name="confirmar_clave"
+                            placeholder="Repita la nueva contraseña"
+                            minlength="8"
+                            maxlength="72"
+                            autocomplete="new-password"
+                            <?= isset($erroresRecuperacion['confirmar_clave']) ? 'aria-invalid="true"' : ''; ?>
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="input-eye btnAlternarClaveRecuperacion"
+                            data-password-target="recuperacionConfirmarClave"
+                            aria-label="Mostrar confirmación de contraseña"
+                            title="Mostrar confirmación de contraseña"
+                            aria-pressed="false"
+                        >
+                            <span class="icono-eye" aria-hidden="true">
+                                <i class="bi bi-eye-slash"></i>
+                            </span>
+                        </button>
+                    </div>
+
+                    <?php if (isset($erroresRecuperacion['confirmar_clave'])): ?>
+                        <div class="templo-validacion-feedback is-invalid">
+                            <?= $escaparLogin($erroresRecuperacion['confirmar_clave']); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Confirmar la nueva contraseña -->
+                <button
+                    type="submit"
+                    class="login-help-accept login-recovery-submit"
+                    id="btnRecuperarClave"
+                >
+                    Guardar contraseña
+                </button>
+
+                <!-- Acciones disponibles si necesita otro código -->
+                <div class="login-recovery-actions">
+                    <button
+                        type="button"
+                        class="login-link-button"
+                        id="btnReenviarCodigoRecuperacion"
+                        <?= $reintentarRecuperacion > 0 ? 'disabled' : ''; ?>
+                    >
+                        Reenviar código
+                    </button>
+
+                    <button
+                        type="button"
+                        class="login-link-button"
+                        id="btnVolverSolicitudRecuperacion"
+                    >
+                        Cambiar datos
+                    </button>
+                </div>
+            </form>
+
+
+            <!-- Tiempo de espera para solicitar otro código -->
+            <p
+                class="login-recovery-note login-recovery-wait"
+                id="avisoReenvioRecuperacion"
+                role="status"
+                <?= $reintentarRecuperacion === 0 ? 'hidden' : ''; ?>
+            >
+                Podrá solicitar otro código en
+                <span id="segundosReenvioRecuperacion"><?= $reintentarRecuperacion; ?></span>
+                segundos.
+            </p>
+
+            <!-- Volver al formulario de acceso -->
+            <a
+                href="Index.php?url=login"
+                class="login-recovery-back"
+                id="btnVolverLoginRecuperacion"
+            >
+                Volver al inicio de sesión
+            </a>
 
         </section>
 
@@ -586,4 +873,3 @@ $escaparLogin = static function ($valor): string {
     <script src="Assets/js/login.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/login.js'); ?>"></script>
 
 </body>
-</html>

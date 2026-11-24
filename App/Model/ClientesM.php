@@ -75,9 +75,11 @@ class ClientesM extends PersonasM implements CrudInterface
     /* CONSULTAR CLIENTES */
     /* ================================================= */
 
-    public function consultar(): array
+    public function consultar(mixed $estado = 'ACTIVO'): array
     {
-        /* Obtener los clientes activos y contar sus citas realizadas */
+        $estado = $this->validarFiltroEstado($estado);
+
+        /* Filtrar los clientes sin alterar sus datos ni su historial */
         $sql = "SELECT
                     c.id_cliente,
                     p.id_persona,
@@ -108,11 +110,14 @@ class ClientesM extends PersonasM implements CrudInterface
                 INNER JOIN personas p
                     ON p.id_persona = c.id_persona
 
-                WHERE c.estado_cliente = 'ACTIVO'
+                WHERE (:todos = 1 OR c.estado_cliente = :estado)
 
                 ORDER BY p.nombre, p.apellido";
 
         $stmt = $this->conexionMD->prepare($sql);
+
+        $stmt->bindValue(':todos', $estado === 'TODOS' ? 1 : 0, PDO::PARAM_INT);
+        $stmt->bindValue(':estado', $estado, PDO::PARAM_STR);
 
         $stmt->execute();
 
@@ -130,6 +135,18 @@ class ClientesM extends PersonasM implements CrudInterface
 
         try {
             $this->conexionMD->beginTransaction();
+
+            /* Reconocer también los clientes inactivos antes de reutilizar sus datos */
+            $clienteExistente = $this->buscar(true);
+
+            if ($clienteExistente) {
+                $this->erroresValidacion['cedula'] = $clienteExistente['estado'] === 'INACTIVO'
+                    ? 'Este cliente está inactivo. Seleccione Inactivos en el listado y utilice Reactivar.'
+                    : 'Esta cédula ya está registrada como cliente.';
+
+                $this->conexionMD->rollBack();
+                return false;
+            }
 
             /* Reutilizar los datos personales existentes o registrar una nueva persona */
             $idPersona = $this->obtenerORegistrarPersona();
@@ -170,11 +187,11 @@ class ClientesM extends PersonasM implements CrudInterface
     /* BUSCAR CLIENTE */
     /* ================================================= */
 
-    public function buscar()
+    public function buscar(bool $incluirInactivos = false)
     {
         if (!$this->validarIdentificacion()) return false;
 
-        /* Obtener un cliente activo por su cédula y calcular sus visitas */
+        /* Incluir inactivos únicamente cuando la operación lo solicita */
         $sql = "SELECT
                     c.id_cliente,
                     p.id_persona,
@@ -206,13 +223,14 @@ class ClientesM extends PersonasM implements CrudInterface
                     ON p.id_persona = c.id_persona
 
                 WHERE p.cedula = :cedula
-                    AND c.estado_cliente = 'ACTIVO'
+                    AND (:incluir_inactivos = 1 OR c.estado_cliente = 'ACTIVO')
 
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
 
         $stmt->bindParam(':cedula', $this->cedula);
+        $stmt->bindValue(':incluir_inactivos', $incluirInactivos ? 1 : 0, PDO::PARAM_INT);
 
         $stmt->execute();
 
@@ -361,22 +379,54 @@ class ClientesM extends PersonasM implements CrudInterface
 
     public function eliminar(): bool
     {
+        return $this->cambiarEstadoCliente('ACTIVO', 'INACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* REACTIVAR CLIENTE */
+    /* ================================================= */
+
+    public function reactivar(): bool
+    {
+        return $this->cambiarEstadoCliente('INACTIVO', 'ACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* ACTUALIZAR EL ESTADO DEL CLIENTE */
+    /* ================================================= */
+
+    private function cambiarEstadoCliente(string $estadoActual, string $estadoNuevo): bool
+    {
         if (!$this->validarIdentificacion()) return false;
 
-        /* Cambiar el estado del cliente para conservar su registro */
-        $sql = "UPDATE clientes c
+        /* Cambiar únicamente el estado y conservar la identidad y las relaciones */
+        $sql = "UPDATE clientes
 
-                INNER JOIN personas p
-                    ON p.id_persona = c.id_persona
+                SET estado_cliente = :estado_nuevo
 
-                SET c.estado_cliente = 'INACTIVO'
-
-                WHERE p.cedula = :cedula";
+                WHERE id_persona = (
+                    SELECT id_persona
+                    FROM personas
+                    WHERE cedula = :cedula
+                )
+                    AND estado_cliente = :estado_actual";
 
         $stmt = $this->conexionMD->prepare($sql);
 
-        $stmt->bindParam(':cedula', $this->cedula);
+        $stmt->bindValue(':cedula', $this->cedula, PDO::PARAM_STR);
+        $stmt->bindValue(':estado_actual', $estadoActual, PDO::PARAM_STR);
+        $stmt->bindValue(':estado_nuevo', $estadoNuevo, PDO::PARAM_STR);
 
-        return $stmt->execute();
+        $stmt->execute();
+
+        if ($stmt->rowCount() !== 1) {
+            throw new \DomainException(
+                'El cliente ya no se encuentra en el estado esperado. Actualice la lista.'
+            );
+        }
+
+        return true;
     }
 }

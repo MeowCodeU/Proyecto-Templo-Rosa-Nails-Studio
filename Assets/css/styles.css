@@ -5089,6 +5089,51 @@ body{
 /* MÓDULO CLIENTES */
 /* ===================================================== */
 
+
+/* Selector del estado de los clientes */
+.clientes-module #filtroEstadoClientes{
+  appearance: none;
+  min-width: 116px;
+  height: 40px;
+  padding: 7px 34px 7px 12px;
+  border: 1.5px solid rgba(216,167,177,0.55);
+  border-radius: 12px;
+  background-color: rgba(255,255,255,0.88);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6 L8 10 L12 6' fill='none' stroke='%23D8A7B1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px 14px;
+  color: var(--brown-main);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clientes-module #filtroEstadoClientes:focus{
+  border-color: var(--rose-hover);
+  box-shadow: 0 0 0 4px rgba(238,187,187,0.22);
+}
+
+.clientes-module #filtroEstadoClientes:disabled{
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Conservar la flecha rosada en los menús personalizables */
+@supports (appearance: base-select) and selector(select::picker(select)){
+  .clientes-module #filtroEstadoClientes{
+    appearance: base-select;
+    padding-inline-end: 12px;
+    background-image: none;
+  }
+
+  .clientes-module #filtroEstadoClientes::picker-icon{
+    color: var(--rose-pagination);
+  }
+}
+
+
 /* ===================================================== */
 /* FONDO DOODLE - CARD INTERNA CLIENTES */
 /* ===================================================== */

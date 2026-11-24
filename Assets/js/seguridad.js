@@ -824,6 +824,14 @@ $(function () {
             reemplazarFilas(tablaRoles.instancia, filasRoles);
             actualizarSelectoresRoles(respuesta.roles);
 
+            /* Mostrar una sola vez el resultado de un registro enviado sin AJAX */
+            const avisoRegistro = respuesta.aviso_registro_usuario;
+
+            if ($.isPlainObject(avisoRegistro) && typeof avisoRegistro.mensaje === "string" &&
+                ["success", "warning"].includes(avisoRegistro.tipo)) {
+                mostrarMensaje(avisoRegistro.mensaje, false, false, avisoRegistro.tipo);
+            }
+
             return true;
 
         } catch (error) {
@@ -893,6 +901,7 @@ $(function () {
 
         if (idModal === "modalEstadoUsuario") {
             $("#estadoUsuarioId").val(boton.attr("data-id-usuario") || "");
+
             $("#nuevoEstadoUsuario").val("INACTIVO");
             $("#nombreEstadoUsuario").text(boton.attr("data-nombre") || "");
             $("#tituloEstadoUsuario").text("Desactivar Usuario");
@@ -998,6 +1007,7 @@ $(function () {
         let primerCampo = null;
         let respuestaConfirmada = null;
         let mensajeExito = "Operación completada.";
+        let tipoExito = "success";
 
         try {
             if (formulario.attr("id") === "formNuevoUsuario") {
@@ -1030,6 +1040,7 @@ $(function () {
 
             respuestaConfirmada = respuesta;
             mensajeExito = typeof respuesta.mensaje === "string" ? respuesta.mensaje : mensajeExito;
+            tipoExito = respuesta.tipo === "warning" ? "warning" : "success";
 
             formulario.data("enviando", false);
 
@@ -1048,14 +1059,14 @@ $(function () {
             cerrarModal();
 
             if (datos.accion === "restablecer_clave") {
-                mostrarMensaje(mensajeExito);
+                mostrarMensaje(mensajeExito, false, false, tipoExito);
             }
 
             if (datos.accion !== "restablecer_clave") {
                 try {
                     await actualizarListas();
 
-                    mostrarMensaje(mensajeExito);
+                    mostrarMensaje(mensajeExito, false, false, tipoExito);
 
                 } catch (error) {
                     mostrarMensaje(

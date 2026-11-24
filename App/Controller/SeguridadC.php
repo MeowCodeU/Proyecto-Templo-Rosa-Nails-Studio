@@ -12,6 +12,8 @@ $accion = '';
 $resultadoRestablecimiento = 'error';
 $erroresValidacion = [];
 $modeloOperacion = null;
+$tipoResultado = 'success';
+$correoEnviado = null;
 
 $responderJson = static function (array $datos, int $estado = 200) use (&$accion): void {
 
@@ -125,7 +127,23 @@ try {
                     array_values($listaRoles)
                 );
 
-                $responderJson(['ok' => true, 'usuarios' => $usuariosPublicos, 'roles' => $rolesPublicos]);
+                $respuestaConsulta = ['ok' => true, 'usuarios' => $usuariosPublicos, 'roles' => $rolesPublicos];
+
+                /* Recuperar el aviso de un registro enviado sin AJAX */
+                $avisoRegistro = $_SESSION['aviso_registro_usuario'] ?? null;
+
+                if (is_array($avisoRegistro) && is_string($avisoRegistro['mensaje'] ?? null) &&
+                    in_array($avisoRegistro['tipo'] ?? '', ['success', 'warning'], true)) {
+                    $respuestaConsulta['aviso_registro_usuario'] = [
+                        'mensaje' => $avisoRegistro['mensaje'],
+                        'tipo' => $avisoRegistro['tipo'],
+                        'correo_enviado' => ($avisoRegistro['correo_enviado'] ?? false) === true
+                    ];
+                }
+
+                unset($_SESSION['aviso_registro_usuario']);
+
+                $responderJson($respuestaConsulta);
                 break;
 
             /* ================================================= */
@@ -188,6 +206,16 @@ try {
 
                 $resultado = $modeloSeguridad->registrar($datosFormulario['confirmar_clave'] ?? '');
                 $mensaje = 'Usuario registrado correctamente.';
+
+                /* Distinguir la cuenta creada del resultado de su notificación */
+                if ($resultado) {
+                    $correoEnviado = $modeloSeguridad->obtenerResultadoCorreoBienvenida() === 'enviado';
+                    $tipoResultado = $correoEnviado ? 'success' : 'warning';
+
+                    $mensaje = $correoEnviado
+                        ? 'Usuario registrado correctamente. Se envió el correo de bienvenida.'
+                        : 'Usuario registrado correctamente. No se pudo enviar el correo de bienvenida. La cuenta ya puede utilizarse.';
+                }
 
                 break;
 
@@ -318,7 +346,22 @@ try {
         }
 
         if ($esPeticionAjax) {
-            $responderJson(['ok' => true, 'mensaje' => $mensaje]);
+            $respuestaOperacion = ['ok' => true, 'mensaje' => $mensaje, 'tipo' => $tipoResultado];
+
+            if ($accion === 'registrar_usuario') {
+                $respuestaOperacion['correo_enviado'] = $correoEnviado;
+            }
+
+            $responderJson($respuestaOperacion);
+        }
+
+        /* Conservar el aviso del registro hasta que se actualice la lista */
+        if ($accion === 'registrar_usuario') {
+            $_SESSION['aviso_registro_usuario'] = [
+                'mensaje' => $mensaje,
+                'tipo' => $tipoResultado,
+                'correo_enviado' => $correoEnviado
+            ];
         }
 
         /* Conservar la respuesta de los formularios tradicionales */

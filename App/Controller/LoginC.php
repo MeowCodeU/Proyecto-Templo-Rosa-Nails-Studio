@@ -5,7 +5,7 @@ use App\Model\LoginM;
 
 
 /* ===================================================== */
-/* INICIO DE SESIÓN */
+/* INICIO DE SESIÓN Y RECUPERACIÓN DE CONTRASEÑA */
 /* ===================================================== */
 
 /* Variables utilizadas en la vista */
@@ -14,14 +14,36 @@ $tipoMensajeLogin = 'error';
 $cedulaLogin = '';
 $erroresLogin = [];
 $modeloLogin = null;
+$accionLogin = '';
+$esRecuperacion = false;
+
+/* Datos utilizados por el modal de recuperación */
+$mensajeRecuperacion = '';
+$tipoMensajeRecuperacion = 'info';
+$erroresRecuperacion = [];
+$mostrarRecuperacion = false;
+$pasoRecuperacion = 'solicitar';
+$tokenRecuperacionClave = '';
+$datosRecuperacion = ['cedula' => '', 'correo' => ''];
 
 
 /* Identificar las solicitudes asíncronas */
-$esPeticionAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+$contenidoJsonLogin = stripos((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json') === 0;
+
+$esPeticionAjax = $contenidoJsonLogin || strtolower(
+    (string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')
+) === 'xmlhttprequest';
 
 
 /* Enviar la respuesta y finalizar la solicitud */
-$responderJson = static function (array $datos, int $estado = 200): void {
+$responderJson = static function (array $datos, int $estado = 200) use (
+    &$esRecuperacion,
+    &$tokenRecuperacionClave
+): void {
+    if ($esRecuperacion) {
+        $datos['token_csrf'] = $tokenRecuperacionClave;
+    }
+
     http_response_code($estado);
 
     header('Content-Type: application/json; charset=utf-8');
@@ -56,6 +78,31 @@ if (Session\estaAutenticada()) {
 }
 
 
+/* Preparar el token de los formularios públicos de recuperación */
+if (!isset($_SESSION['token_recuperacion_clave']) ||
+    !is_string($_SESSION['token_recuperacion_clave']) ||
+    strlen($_SESSION['token_recuperacion_clave']) !== 64) {
+    $_SESSION['token_recuperacion_clave'] = bin2hex(random_bytes(32));
+}
+
+$tokenRecuperacionClave = $_SESSION['token_recuperacion_clave'];
+
+
+/* Recuperar únicamente los datos de identificación, nunca las contraseñas */
+$datosAnterioresRecuperacion = $_SESSION['datos_recuperacion'] ?? [];
+
+if (is_array($datosAnterioresRecuperacion)) {
+    foreach (array_keys($datosRecuperacion) as $campo) {
+        $valor = $datosAnterioresRecuperacion[$campo] ?? '';
+        $datosRecuperacion[$campo] = is_string($valor) ? $valor : '';
+    }
+}
+
+if (isset($_SESSION['solicitud_recuperacion']) && is_string($_SESSION['solicitud_recuperacion'])) {
+    $pasoRecuperacion = 'restablecer';
+}
+
+
 /* Conservar el motivo específico del cierre de sesión */
 if ($mensajeLogin === '' && ($_GET['sesion'] ?? '') === 'expirada') {
     $mensajeLogin = 'La sesión expiró por inactividad. Inicie sesión nuevamente.';
@@ -64,71 +111,218 @@ if ($mensajeLogin === '' && ($_GET['sesion'] ?? '') === 'expirada') {
 
 
 /* ===================================================== */
-/* PROCESAR EL FORMULARIO DE ACCESO */
+/* PROCESAR LOS FORMULARIOS DE ACCESO */
 /* ===================================================== */
 
 try {
     $datosFormulario = $_POST;
     $metodoSolicitud = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $tipoContenido = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
 
-
-    /* Leer los datos enviados en el cuerpo de la solicitud */
-    if ($metodoSolicitud === 'POST' && $tipoContenido === 'application/json') {
-        $datosFormulario = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
-
-        if (!is_array($datosFormulario)) {
-            throw new \InvalidArgumentException('Los datos enviados no tienen un formato válido.');
-        }
+    if (!in_array($metodoSolicitud, ['GET', 'POST'], true)) {
+        header('Allow: GET, POST');
+        $responderJson(['ok' => false, 'mensaje' => 'El método solicitado no está permitido.'], 405);
     }
 
 
-    /* Comprobar la acción solicitada */
-    if ($metodoSolicitud === 'POST') {
-        if (($datosFormulario['accion'] ?? '') !== 'iniciar_sesion') {
-            throw new \InvalidArgumentException('La solicitud enviada no es válida.');
+    /* Leer los datos enviados en el cuerpo de la solicitud */
+    if ($metodoSolicitud === 'POST' && $contenidoJsonLogin) {
+        $entradaLogin = json_decode(file_get_contents('php://input'), false, 32, JSON_THROW_ON_ERROR);
+
+        if (!$entradaLogin instanceof stdClass) {
+            throw new InvalidArgumentException('Los datos enviados no tienen un formato válido.');
         }
 
-        $cedula = $datosFormulario['cedula'] ?? '';
-        $clave = $datosFormulario['clave'] ?? '';
+        $datosFormulario = get_object_vars($entradaLogin);
+    }
 
 
-        /* Conservar la cédula como texto para volver a mostrar el formulario */
-        $cedulaLogin = is_string($cedula) ? trim($cedula) : '';
+    if ($metodoSolicitud === 'POST') {
+        $accionLogin = $datosFormulario['accion'] ?? '';
+
+        if (!is_string($accionLogin) || !in_array(
+            $accionLogin,
+            ['iniciar_sesion', 'solicitar_recuperacion', 'recuperar_clave'],
+            true
+        )) {
+            throw new InvalidArgumentException('La solicitud enviada no es válida.');
+        }
+
+        $esRecuperacion = $accionLogin !== 'iniciar_sesion';
 
 
-        /* Delegar la validación y la autenticación al modelo */
-        $modeloLogin = new LoginM();
-        $usuario = $modeloLogin->autenticar($cedula, $clave);
+        /* ================================================= */
+        /* RECUPERACIÓN DE CONTRASEÑA */
+        /* ================================================= */
 
+        if ($esRecuperacion) {
+            $mostrarRecuperacion = true;
+            $estadoRecuperacion = 422;
+            $tokenFormulario = $datosFormulario['token_csrf'] ?? '';
 
-        /* Registrar la sesión únicamente después de confirmar el acceso */
-        if ($usuario !== null) {
-            Session\registrarUsuario($usuario);
+            /* Comprobar que el formulario corresponda a la sesión actual */
+            if (!is_string($tokenFormulario) || $tokenFormulario === '' ||
+                !hash_equals($tokenRecuperacionClave, $tokenFormulario)) {
+                $estadoRecuperacion = 403;
+
+                $respuestaRecuperacion = [
+                    'ok' => false,
+                    'codigo' => 'solicitud_invalida',
+                    'mensaje' => 'La solicitud no es válida. Actualice la página e intente nuevamente.',
+                    'errores' => [],
+                    'paso' => $pasoRecuperacion,
+                    'tipo' => 'error'
+                ];
+
+            } else {
+                $ultimoEnvio = $_SESSION['recuperacion_ultimo_envio'] ?? 0;
+                $ultimoEnvio = is_int($ultimoEnvio) ? $ultimoEnvio : 0;
+                $esperaReenvio = max(0, $ultimoEnvio + 60 - time());
+
+                /* Limitar también las solicitudes consecutivas de esta sesión */
+                if ($accionLogin === 'solicitar_recuperacion' && $esperaReenvio > 0) {
+                    $estadoRecuperacion = 429;
+
+                    $respuestaRecuperacion = [
+                        'ok' => false,
+                        'codigo' => 'esperar_reenvio',
+                        'mensaje' => 'Espere antes de solicitar otro código de recuperación.',
+                        'errores' => [],
+                        'paso' => $pasoRecuperacion,
+                        'tipo' => 'warning',
+                        'reintentar_en' => $esperaReenvio
+                    ];
+
+                } else {
+                    $modeloLogin = new LoginM();
+
+                    if ($accionLogin === 'solicitar_recuperacion') {
+                        foreach (array_keys($datosRecuperacion) as $campo) {
+                            $valor = $datosFormulario[$campo] ?? '';
+                            $datosRecuperacion[$campo] = is_string($valor) ? trim($valor) : '';
+                        }
+
+                        /* El modelo valida la identificación y gestiona el envío */
+                        $solicitud = $modeloLogin->solicitarRecuperacion(
+                            $datosFormulario['cedula'] ?? '',
+                            $datosFormulario['correo'] ?? '',
+                            $_SESSION['solicitud_recuperacion'] ?? null
+                        );
+
+                        $correcto = $solicitud !== null;
+
+                        if ($correcto) {
+                            /* Mantener el identificador privado fuera de las respuestas JSON */
+                            $_SESSION['solicitud_recuperacion'] = $solicitud;
+                            $_SESSION['datos_recuperacion'] = $datosRecuperacion;
+                            $_SESSION['recuperacion_ultimo_envio'] = time();
+                            $pasoRecuperacion = 'restablecer';
+                        }
+
+                    } else {
+                        /* Preparar la renovación antes de que se confirme el cambio */
+                        $nuevoTokenRecuperacion = bin2hex(random_bytes(32));
+
+                        $correcto = $modeloLogin->recuperarClave(
+                            $_SESSION['solicitud_recuperacion'] ?? null,
+                            $datosFormulario['codigo_recuperacion'] ?? '',
+                            $datosFormulario['nueva_clave'] ?? '',
+                            $datosFormulario['confirmar_clave'] ?? ''
+                        );
+
+                        if ($correcto) {
+                            unset($_SESSION['solicitud_recuperacion'], $_SESSION['datos_recuperacion']);
+
+                            $_SESSION['token_recuperacion_clave'] = $nuevoTokenRecuperacion;
+                            $tokenRecuperacionClave = $nuevoTokenRecuperacion;
+                            $datosRecuperacion = ['cedula' => '', 'correo' => ''];
+                            $pasoRecuperacion = 'completado';
+
+                            /* Conservar el resultado confirmado aunque falle la renovación de sesión */
+                            if (!@session_regenerate_id(true)) {
+                                error_log('Login: no fue posible renovar la sesión después de recuperar la contraseña.');
+                            }
+                        }
+                    }
+
+                    $estadoRecuperacion = $modeloLogin->obtenerEstadoRespuesta();
+                    $erroresRecuperacion = $modeloLogin->obtenerErroresValidacion();
+
+                    $respuestaRecuperacion = [
+                        'ok' => $correcto,
+                        'codigo' => $modeloLogin->obtenerCodigoResultado(),
+                        'mensaje' => $modeloLogin->obtenerMensajeAcceso(),
+                        'campo' => array_key_first($erroresRecuperacion),
+                        'errores' => $erroresRecuperacion,
+                        'paso' => $pasoRecuperacion,
+                        'tipo' => $correcto ? ($accionLogin === 'solicitar_recuperacion' ? 'info' : 'success') : 'error'
+                    ];
+
+                    if ($correcto && $accionLogin === 'solicitar_recuperacion') {
+                        $respuestaRecuperacion['reintentar_en'] = 60;
+                    }
+                }
+            }
+
+            if ($esPeticionAjax) {
+                $responderJson($respuestaRecuperacion, $estadoRecuperacion);
+            }
+
+            /* Conservar el envío tradicional de los formularios */
+            if ($respuestaRecuperacion['ok'] && $accionLogin === 'recuperar_clave') {
+                $_SESSION['mensaje_login'] = $respuestaRecuperacion['mensaje'];
+                $_SESSION['tipo_mensaje_login'] = 'success';
+
+                header('Location: Index.php?url=login');
+                exit;
+            }
+
+            $mensajeRecuperacion = $respuestaRecuperacion['mensaje'];
+            $tipoMensajeRecuperacion = $respuestaRecuperacion['tipo'];
+            $erroresRecuperacion = $respuestaRecuperacion['errores'];
+            http_response_code($estadoRecuperacion);
+
+        } else {
+
+            /* ================================================= */
+            /* INICIAR LA SESIÓN */
+            /* ================================================= */
+
+            $cedula = $datosFormulario['cedula'] ?? '';
+            $clave = $datosFormulario['clave'] ?? '';
+
+            /* Conservar la cédula como texto para volver a mostrar el formulario */
+            $cedulaLogin = is_string($cedula) ? trim($cedula) : '';
+
+            /* Delegar la validación y la autenticación al modelo */
+            $modeloLogin = new LoginM();
+            $usuario = $modeloLogin->autenticar($cedula, $clave);
+
+            if ($usuario !== null) {
+                Session\registrarUsuario($usuario);
+                unset($_SESSION['solicitud_recuperacion'], $_SESSION['datos_recuperacion']);
+
+                if ($esPeticionAjax) {
+                    $responderJson([
+                        'ok' => true,
+                        'redireccion' => 'Index.php?url=inicio'
+                    ]);
+                }
+
+                header('Location: Index.php?url=inicio');
+                exit;
+            }
+
+            $mensajeLogin = $modeloLogin->obtenerMensajeAcceso();
+            $erroresLogin = $modeloLogin->obtenerErroresValidacion();
 
             if ($esPeticionAjax) {
                 $responderJson([
-                    'ok' => true,
-                    'redireccion' => 'Index.php?url=inicio'
-                ]);
+                    'ok' => false,
+                    'mensaje' => $mensajeLogin,
+                    'campo' => array_key_first($erroresLogin),
+                    'errores' => $erroresLogin
+                ], $modeloLogin->obtenerEstadoRespuesta());
             }
-
-            header('Location: Index.php?url=inicio');
-            exit;
-        }
-
-        $mensajeLogin = $modeloLogin->obtenerMensajeAcceso();
-        $erroresLogin = $modeloLogin->obtenerErroresValidacion();
-
-
-        /* Informar los errores de acceso sin cargar la vista */
-        if ($esPeticionAjax) {
-            $responderJson([
-                'ok' => false,
-                'mensaje' => $mensajeLogin,
-                'campo' => array_key_first($erroresLogin),
-                'errores' => $erroresLogin
-            ], $modeloLogin->obtenerEstadoRespuesta());
         }
 
     } elseif ($esPeticionAjax) {
@@ -138,37 +332,56 @@ try {
         ], 400);
     }
 
-} catch (\Throwable $error) {
+} catch (Throwable $error) {
     $estadoRespuesta = 500;
-    $mensajeLogin = 'No fue posible validar el acceso. Intente nuevamente.';
+    $mensajeError = $esRecuperacion
+        ? 'No fue posible completar la recuperación de contraseña. Intente nuevamente.'
+        : 'No fue posible validar el acceso. Intente nuevamente.';
+    $erroresRespuesta = [];
 
-
-    /* Identificar los errores del formato o de los datos enviados */
-    if ($error instanceof \JsonException) {
+    if ($error instanceof JsonException) {
         $estadoRespuesta = 422;
-        $mensajeLogin = 'Los datos enviados no tienen un formato válido.';
+        $mensajeError = 'Los datos enviados no tienen un formato válido.';
 
-    } elseif ($error instanceof \InvalidArgumentException) {
+    } elseif ($error instanceof InvalidArgumentException) {
         $estadoRespuesta = 422;
-        $mensajeLogin = $error->getMessage();
+        $mensajeError = $error->getMessage();
 
         if ($modeloLogin instanceof LoginM) {
-            $erroresLogin = $modeloLogin->obtenerErroresValidacion();
+            $erroresRespuesta = $modeloLogin->obtenerErroresValidacion();
         }
 
     } else {
-        error_log($error->getMessage());
+        error_log('Login: ' . $error->getMessage());
     }
 
-
-    /* Devolver el mensaje correspondiente a la solicitud */
     if ($esPeticionAjax) {
-        $responderJson([
+        $respuestaError = [
             'ok' => false,
-            'mensaje' => $mensajeLogin,
-            'campo' => array_key_first($erroresLogin),
-            'errores' => $erroresLogin
-        ], $estadoRespuesta);
+            'mensaje' => $mensajeError,
+            'campo' => array_key_first($erroresRespuesta),
+            'errores' => $erroresRespuesta
+        ];
+
+        if ($esRecuperacion) {
+            $respuestaError['codigo'] = 'operacion_no_confirmada';
+            $respuestaError['paso'] = $pasoRecuperacion;
+            $respuestaError['tipo'] = 'error';
+        }
+
+        $responderJson($respuestaError, $estadoRespuesta);
+    }
+
+    if ($esRecuperacion) {
+        $mostrarRecuperacion = true;
+        $mensajeRecuperacion = $mensajeError;
+        $tipoMensajeRecuperacion = 'error';
+        $erroresRecuperacion = $erroresRespuesta;
+        http_response_code($estadoRespuesta);
+
+    } else {
+        $mensajeLogin = $mensajeError;
+        $erroresLogin = $erroresRespuesta;
     }
 }
 

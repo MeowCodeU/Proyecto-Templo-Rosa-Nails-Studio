@@ -133,13 +133,21 @@ try {
             /* Utilizar la autorización para registrar una sola cuenta */
             unset($_SESSION['registro_usuario_autorizado_hasta']);
 
-            $_SESSION['mensaje_login'] = 'El usuario fue registrado exitosamente. Ya puede iniciar sesión.';
-            $_SESSION['tipo_mensaje_login'] = 'success';
+            /* Informar por separado el registro y el envío de la bienvenida */
+            $correoEnviado = $modeloSeguridad->obtenerResultadoCorreoBienvenida() === 'enviado';
+
+            $_SESSION['mensaje_login'] = $correoEnviado
+                ? 'El usuario fue registrado exitosamente. Se envió el correo de bienvenida. Ya puede iniciar sesión.'
+                : 'El usuario fue registrado exitosamente. No se pudo enviar el correo de bienvenida. Ya puede iniciar sesión.';
+
+            $_SESSION['tipo_mensaje_login'] = $correoEnviado ? 'success' : 'warning';
 
             if ($esPeticionAjax) {
                 $responderJson([
                     'ok' => true,
                     'mensaje' => $_SESSION['mensaje_login'],
+                    'tipo' => $_SESSION['tipo_mensaje_login'],
+                    'correo_enviado' => $correoEnviado,
                     'redireccion' => 'Index.php?url=login'
                 ]);
             }
