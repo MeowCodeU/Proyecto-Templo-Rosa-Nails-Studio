@@ -10,6 +10,7 @@ $(function () {
     const urlInsumos = "Index.php?url=insumos";
     const $tabla = $("#tablaInsumos");
     const $modulo = $(".insumos-module");
+    const $filtroEstado = $("#filtroEstadoInsumos");
     const $modales = $("#modalNuevoInsumo, #modalEditarInsumo, #modalGestionarExistencias, #modalDesactivarInsumo");
 
     if (!$tabla.length) return;
@@ -17,6 +18,7 @@ $(function () {
     let operacionEnCurso = false;
     let redirigiendo = false;
     let versionLista = 0;
+    let estadoListado = "ACTIVO";
 
     /* Reutiliza los iconos originales, incluso si no hay insumos */
     const $iconoDetalle = $("#modalDetalleInsumoLabel svg").first().clone();
@@ -397,6 +399,7 @@ $(function () {
         if (redirigiendo) return false;
 
         const turno = ++versionLista;
+        const estadoSolicitado = String($filtroEstado.val() || "ACTIVO");
 
         $tabla.attr("aria-busy", "true");
 
@@ -405,13 +408,20 @@ $(function () {
 
             if (turno !== versionLista) return false;
 
-            const respuesta = await solicitarInsumos({ accion: "consultar" });
+            const respuesta = await solicitarInsumos({
+                accion: "consultar",
+                estado: estadoSolicitado
+            });
 
             if (turno !== versionLista) return false;
 
             if (
                 !Array.isArray(respuesta.insumos) ||
-                !respuesta.insumos.every(insumo => $.isPlainObject(insumo))
+                !respuesta.insumos.every(insumo =>
+                    $.isPlainObject(insumo) &&
+                    ["ACTIVO", "INACTIVO"].includes(insumo.estado_insumo) &&
+                    (estadoSolicitado === "TODOS" || insumo.estado_insumo === estadoSolicitado)
+                )
             ) {
                 throw new Error("La lista recibida no tiene un formato válido.");
             }
@@ -421,6 +431,7 @@ $(function () {
             tablaInsumos.clear();
             tablaInsumos.rows.add(filas);
             tablaInsumos.draw(false);
+            estadoListado = estadoSolicitado;
 
             /* Conserva búsqueda, orden y página; corrige una última página vacía */
             const informacion = tablaInsumos.page.info();
@@ -432,7 +443,10 @@ $(function () {
             return true;
 
         } catch (error) {
-            if (turno === versionLista) throw error;
+            if (turno === versionLista) {
+                $filtroEstado.val(estadoListado);
+                throw error;
+            }
 
             return false;
 
@@ -440,6 +454,21 @@ $(function () {
             if (turno === versionLista) $tabla.attr("aria-busy", "false");
         }
     }
+
+
+    /* Actualizar el estado elegido sin modificar los filtros del historial */
+    $filtroEstado.on("change", function () {
+        if (operacionEnCurso || redirigiendo) {
+            $filtroEstado.val(estadoListado);
+            return;
+        }
+
+        $mensajeGeneral.prop("hidden", true);
+
+        actualizarLista().catch(function (error) {
+            mostrarMensajeGeneral(error.message, true, true);
+        });
+    });
 
 
     /* ===================================================== */
@@ -609,41 +638,59 @@ $(function () {
                 "#modalDetalleInsumo",
                 "Ver detalles del insumo",
                 $detalle
-            ),
-
-            crearBotonInsumo(
-                insumo,
-                "btn-edit btnEditarInsumo",
-                "#modalEditarInsumo",
-                "Editar insumo",
-                $("<i>", {
-                    class: "bi bi-pencil-fill",
-                    "aria-hidden": "true"
-                })
-            ),
-
-            crearBotonInsumo(
-                insumo,
-                "btn-reponer btnGestionarExistencias",
-                "#modalGestionarExistencias",
-                "Gestionar existencias",
-                $("<i>", {
-                    class: "bi bi-box-seam",
-                    "aria-hidden": "true"
-                })
-            ),
-
-            crearBotonInsumo(
-                insumo,
-                "btn-delete btnDesactivarInsumo",
-                "#modalDesactivarInsumo",
-                "Desactivar insumo",
-                $("<i>", {
-                    class: "bi bi-trash-fill",
-                    "aria-hidden": "true"
-                })
             )
         );
+
+        if (estado === "ACTIVO") {
+            $acciones.append(
+                crearBotonInsumo(
+                    insumo,
+                    "btn-edit btnEditarInsumo",
+                    "#modalEditarInsumo",
+                    "Editar insumo",
+                    $("<i>", {
+                        class: "bi bi-pencil-fill",
+                        "aria-hidden": "true"
+                    })
+                ),
+
+                crearBotonInsumo(
+                    insumo,
+                    "btn-reponer btnGestionarExistencias",
+                    "#modalGestionarExistencias",
+                    "Gestionar existencias",
+                    $("<i>", {
+                        class: "bi bi-box-seam",
+                        "aria-hidden": "true"
+                    })
+                ),
+
+                crearBotonInsumo(
+                    insumo,
+                    "btn-deactivate btnDesactivarInsumo",
+                    "#modalDesactivarInsumo",
+                    "Desactivar insumo",
+                    $("<i>", {
+                        class: "bi bi-trash-fill",
+                        "aria-hidden": "true"
+                    })
+                )
+            );
+
+        } else {
+            $acciones.append(
+                crearBotonInsumo(
+                    insumo,
+                    "btn-reactivate btnReactivarInsumo",
+                    "#modalDesactivarInsumo",
+                    "Reactivar insumo",
+                    $("<i>", {
+                        class: "bi bi-arrow-counterclockwise",
+                        "aria-hidden": "true"
+                    })
+                )
+            );
+        }
 
         $("<td>").append($acciones).appendTo($fila);
 
@@ -1131,8 +1178,36 @@ $(function () {
         }
 
         if ($modal.is("#modalDesactivarInsumo")) {
+            const reactivar = $boton.hasClass("btnReactivarInsumo");
+            const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-person-dash";
+
+            $formulario.find('[name="accion"]').val(reactivar ? "reactivar" : "desactivar");
+
             $("#desactivarIdInsumo").val(datoBoton($boton, "id-insumo"));
             $("#desactivarNombreInsumo").text(datoBoton($boton, "nombre-insumo"));
+
+            $("#modalDesactivarInsumoLabel").empty().append(
+                $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                document.createTextNode(reactivar ? " Confirmar reactivación" : " Confirmar desactivación")
+            );
+
+            $modal.find(".status-question").text(
+                reactivar ? "¿Deseas reactivar este insumo?" : "¿Deseas desactivar este insumo?"
+            );
+
+            $modal.find(".status-warning").text(
+                reactivar
+                    ? "El insumo volverá a estar disponible conservando sus existencias, lotes, movimientos y reservas."
+                    : "El insumo no se borrará. Podrá consultarlo y reactivarlo desde Inactivos."
+            );
+
+            $formulario.find('[type="submit"]')
+                .toggleClass("btn-templo-primary", reactivar)
+                .toggleClass("btn-templo-danger", !reactivar)
+                .empty().append(
+                    $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                    document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+                );
         }
     });
 
@@ -1409,7 +1484,7 @@ $(function () {
 
 
     /* ===================================================== */
-    /* REGISTRAR, MODIFICAR, GESTIONAR EXISTENCIAS Y DESACTIVAR */
+    /* REGISTRAR, MODIFICAR, GESTIONAR EXISTENCIAS Y CAMBIAR ESTADO */
     /* ===================================================== */
 
     $modales.find("form").on("submit", async function (evento) {
@@ -1534,6 +1609,8 @@ $(function () {
         $formulario.data("enviando", true).attr("aria-busy", "true");
 
         operacionEnCurso = true;
+        const filtroDeshabilitado = $filtroEstado.prop("disabled");
+        $filtroEstado.prop("disabled", true);
         ++versionLista;
 
         $tabla.attr("aria-busy", "false");
@@ -1606,6 +1683,7 @@ $(function () {
             $formulario.data("enviando", false).attr("aria-busy", "false");
 
             operacionEnCurso = false;
+            $filtroEstado.prop("disabled", filtroDeshabilitado);
 
             if (primerCampo && !redirigiendo) primerCampo.trigger("focus");
         }
@@ -1628,6 +1706,7 @@ $(function () {
 
         preparandoPDFInsumos = true;
 
+        const estadoPDF = String($filtroEstado.val() || "ACTIVO");
         const $boton = $(this);
         const contenidoOriginal = $boton.html();
 
@@ -1638,7 +1717,7 @@ $(function () {
         $mensajeGeneral.prop("hidden", true);
 
         try {
-            /* Utilizar la consulta oficial de Reportes y solo los insumos activos */
+            /* Utilizar la consulta oficial de Reportes con el estado seleccionado */
             const respuesta = await new Promise(function (resolve, reject) {
                 $.ajax({
                     url: "Index.php?url=reportes",
@@ -1653,7 +1732,7 @@ $(function () {
                         accion: "consultar",
                         filtros: {
                             reporte: "existencias",
-                            estado_registro: "ACTIVO"
+                            estado_registro: estadoPDF === "TODOS" ? "" : estadoPDF
                         }
                     }),
 
@@ -1681,7 +1760,7 @@ $(function () {
 
             /* El controlador no emite un token cuando el resultado está vacío */
             if (respuesta.reporte.total === 0) {
-                mostrarMensajeGeneral("Todavía no hay insumos activos para incluir en el PDF.");
+                mostrarMensajeGeneral("No hay insumos para incluir en el PDF con el estado seleccionado.");
                 return;
             }
 
@@ -1700,7 +1779,7 @@ $(function () {
             $enlace.get(0).click();
             $enlace.remove();
 
-            mostrarMensajeGeneral("Se solicitó la descarga del reporte de insumos activos.");
+            mostrarMensajeGeneral("Se solicitó la descarga del reporte de insumos con el estado seleccionado.");
 
         } catch (error) {
             if (error.estado === 401) {

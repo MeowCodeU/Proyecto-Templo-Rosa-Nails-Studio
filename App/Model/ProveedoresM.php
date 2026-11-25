@@ -126,9 +126,12 @@ class ProveedoresM extends PersonasM implements CrudInterface
     /* CONSULTAR PROVEEDORES */
     /* ================================================= */
 
-    public function consultar(): array
+    public function consultar(mixed $estado = 'ACTIVO'): array
     {
-        /* Obtener los proveedores activos y los datos de sus contactos */
+        $estado = $this->validarFiltroEstado($estado);
+        $condicionEstado = $estado === 'TODOS' ? '' : 'WHERE pr.estado_proveedor = :estado';
+
+        /* Obtener los proveedores del estado elegido y los datos de sus contactos */
         $sql = "SELECT
                     pr.id_proveedor,
                     pr.id_persona_contacto,
@@ -149,7 +152,7 @@ class ProveedoresM extends PersonasM implements CrudInterface
                 INNER JOIN personas p
                     ON p.id_persona = pr.id_persona_contacto
 
-                WHERE pr.estado_proveedor = 'ACTIVO'
+                $condicionEstado
 
                 ORDER BY
                     pr.nombre_empresa,
@@ -157,6 +160,11 @@ class ProveedoresM extends PersonasM implements CrudInterface
                     p.apellido";
 
         $stmt = $this->conexionMD->prepare($sql);
+
+        if ($estado !== 'TODOS') {
+            $stmt->bindValue(':estado', $estado, PDO::PARAM_STR);
+        }
+
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -176,6 +184,28 @@ class ProveedoresM extends PersonasM implements CrudInterface
 
         try {
             $this->conexionMD->beginTransaction();
+
+            /* Reconocer el RIF antes de modificar los datos de la persona de contacto */
+            $sqlExistente = "SELECT estado_proveedor
+                             FROM proveedores
+                             WHERE rif = :rif
+                             LIMIT 1
+                             FOR UPDATE";
+
+            $stmtExistente = $this->conexionMD->prepare($sqlExistente);
+            $stmtExistente->bindValue(':rif', $this->rif, PDO::PARAM_STR);
+            $stmtExistente->execute();
+
+            $estadoExistente = $stmtExistente->fetchColumn();
+
+            if ($estadoExistente !== false) {
+                $this->erroresValidacion['rif'] = $estadoExistente === 'INACTIVO'
+                    ? 'Este proveedor está inactivo. Seleccione Inactivos en el listado y utilice Reactivar.'
+                    : 'Este RIF ya está registrado como proveedor.';
+
+                $this->conexionMD->rollBack();
+                return false;
+            }
 
             /* Reutilizar o registrar a la persona de contacto */
             $idPersonaContacto = $this->obtenerORegistrarPersona();
@@ -390,7 +420,7 @@ class ProveedoresM extends PersonasM implements CrudInterface
     /* CONSULTAR INSUMOS DEL PROVEEDOR */
     /* ================================================= */
 
-    public function consultarInsumosProveedor(mixed $idProveedor): array
+    public function consultarInsumosProveedor(mixed $idProveedor, bool $incluirInactivos = false): array
     {
         $this->erroresValidacion = [];
         $idProveedor = $this->validarIdentificador($idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
@@ -399,11 +429,13 @@ class ProveedoresM extends PersonasM implements CrudInterface
             throw new \InvalidArgumentException('Seleccione un proveedor válido.');
         }
 
-        /* Comprobar que el proveedor se encuentra activo */
+        $condicionEstado = $incluirInactivos ? '' : "AND estado_proveedor = 'ACTIVO'";
+
+        /* Permitir consultar las asociaciones de un inactivo únicamente desde Detalles */
         $sql = "SELECT id_proveedor
                 FROM proveedores
                 WHERE id_proveedor = :id_proveedor
-                    AND estado_proveedor = 'ACTIVO'
+                    $condicionEstado
                 LIMIT 1";
 
         $stmt = $this->conexionMD->prepare($sql);
@@ -411,7 +443,7 @@ class ProveedoresM extends PersonasM implements CrudInterface
         $stmt->execute();
 
         if ($stmt->fetchColumn() === false) {
-            throw new \InvalidArgumentException('El proveedor no se encuentra activo.');
+            throw new \InvalidArgumentException('El proveedor no está disponible para esta consulta. Actualice el listado.');
         }
 
         /* Consultar el catálogo e identificar los insumos asociados */
@@ -577,19 +609,49 @@ class ProveedoresM extends PersonasM implements CrudInterface
 
     public function eliminar(): bool
     {
+        return $this->cambiarEstadoProveedor('ACTIVO', 'INACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* REACTIVAR PROVEEDOR */
+    /* ================================================= */
+
+    public function reactivar(): bool
+    {
+        return $this->cambiarEstadoProveedor('INACTIVO', 'ACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* ACTUALIZAR EL ESTADO DEL PROVEEDOR */
+    /* ================================================= */
+
+    private function cambiarEstadoProveedor(string $estadoActual, string $estadoNuevo): bool
+    {
         $this->erroresValidacion = [];
         $this->idProveedor = $this->validarIdentificador($this->idProveedor, 'id_proveedor', 'Seleccione un proveedor válido.');
 
         if ($this->idProveedor === null) return false;
 
-        /* Cambiar el estado del proveedor para conservar su registro */
+        /* Conservar la empresa, su contacto, sus insumos y sus relaciones históricas */
         $sql = "UPDATE proveedores
-                SET estado_proveedor = 'INACTIVO'
-                WHERE id_proveedor = :id_proveedor";
+                SET estado_proveedor = :estado_nuevo
+                WHERE id_proveedor = :id_proveedor
+                    AND estado_proveedor = :estado_actual";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindParam(':id_proveedor', $this->idProveedor);
+        $stmt->bindValue(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+        $stmt->bindValue(':estado_actual', $estadoActual, PDO::PARAM_STR);
+        $stmt->bindValue(':estado_nuevo', $estadoNuevo, PDO::PARAM_STR);
+        $stmt->execute();
 
-        return $stmt->execute();
+        if ($stmt->rowCount() !== 1) {
+            throw new \DomainException(
+                'El proveedor ya no se encuentra en el estado esperado. Actualice el listado.'
+            );
+        }
+
+        return true;
     }
 }

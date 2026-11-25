@@ -9,6 +9,9 @@ $(function () {
 
     const modulo = $(".seguridad-module");
     const urlSeguridad = "Index.php?url=seguridad";
+    const filtroUsuarios = $("#filtroEstadoUsuarios");
+    const filtroRoles = $("#filtroEstadoRoles");
+    const filtrosEstado = filtroUsuarios.add(filtroRoles);
 
     if (!modulo.length) return;
 
@@ -20,6 +23,8 @@ $(function () {
     let operacionEnCurso = false;
     let redirigiendo = false;
     let versionLista = 0;
+    let estadoListadoUsuarios = "ACTIVO";
+    let estadoListadoRoles = "ACTIVO";
     let versionPersona = 0;
     let datosAutocompletados = false;
     let usuariosPorId = new Map();
@@ -283,7 +288,11 @@ $(function () {
                     }
                 };
 
+            case "reactivar_usuario":
+                return { id_usuario: reglaIdentificador };
+
             case "cambiar_estado_rol":
+            case "reactivar_rol":
                 return { id_rol: reglaIdentificador };
 
             default:
@@ -526,7 +535,7 @@ $(function () {
         });
 
         $("<td>").append($("<span>", {
-            class: "badge estado-realizada",
+            class: "badge " + (estado === "ACTIVO" ? "estado-registro-activo" : "estado-registro-inactivo"),
             text: estado
         })).appendTo(fila);
 
@@ -559,33 +568,46 @@ $(function () {
             }).append(iconoDetalleUsuario.clone()));
         }
 
-        acciones.append(
-            detalle,
+        acciones.append(detalle);
 
-            crearBoton(
-                "btn-edit btnEditarUsuario",
-                "#modalEditarUsuario",
-                "Editar usuario",
-                datos,
-                "bi-pencil-square"
-            ),
+        if (estado === "ACTIVO") {
+            acciones.append(
+                crearBoton(
+                    "btn-edit btnEditarUsuario",
+                    "#modalEditarUsuario",
+                    "Editar usuario",
+                    datos,
+                    "bi-pencil-square"
+                ),
 
-            crearBoton(
-                "btn-reset-password btnRestablecerClave",
-                "#modalRestablecerClave",
-                "Restablecer contraseña",
-                referencia,
-                "bi-bag-heart"
-            ),
+                crearBoton(
+                    "btn-reset-password btnRestablecerClave",
+                    "#modalRestablecerClave",
+                    "Restablecer contraseña",
+                    referencia,
+                    "bi-bag-heart"
+                ),
 
-            crearBoton(
-                "btn-deactivate btnCambiarEstadoUsuario",
-                "#modalEstadoUsuario",
-                "Desactivar usuario",
-                referencia,
-                "bi-trash-fill"
-            )
-        );
+                crearBoton(
+                    "btn-deactivate btnCambiarEstadoUsuario",
+                    "#modalEstadoUsuario",
+                    "Desactivar usuario",
+                    referencia,
+                    "bi-trash-fill"
+                )
+            );
+
+        } else {
+            acciones.append(
+                crearBoton(
+                    "btn-reactivate btnReactivarUsuario",
+                    "#modalEstadoUsuario",
+                    "Reactivar usuario",
+                    referencia,
+                    "bi-arrow-counterclockwise"
+                )
+            );
+        }
 
         $("<td>", { class: "columna-acciones" }).append(acciones).appendTo(fila);
 
@@ -616,23 +638,38 @@ $(function () {
             text: estado
         })).appendTo(fila);
 
-        const acciones = $("<div>", { class: "btn-group-actions" }).append(
-            crearBoton(
-                "btn-edit btnEditarRol",
-                "#modalEditarRol",
-                "Editar rol",
-                datos,
-                "bi-pencil-fill"
-            ),
+        const acciones = $("<div>", { class: "btn-group-actions" });
 
-            crearBoton(
-                "btn-deactivate btnDesactivarRol",
-                "#modalEstadoRol",
-                "Desactivar rol",
-                datos,
-                "bi-trash-fill"
-            )
-        );
+        if (estado === "ACTIVO") {
+            acciones.append(
+                crearBoton(
+                    "btn-edit btnEditarRol",
+                    "#modalEditarRol",
+                    "Editar rol",
+                    datos,
+                    "bi-pencil-fill"
+                ),
+
+                crearBoton(
+                    "btn-deactivate btnDesactivarRol",
+                    "#modalEstadoRol",
+                    "Desactivar rol",
+                    datos,
+                    "bi-trash-fill"
+                )
+            );
+
+        } else {
+            acciones.append(
+                crearBoton(
+                    "btn-reactivate btnReactivarRol",
+                    "#modalEstadoRol",
+                    "Reactivar rol",
+                    datos,
+                    "bi-arrow-counterclockwise"
+                )
+            );
+        }
 
         $("<td>", { class: "columna-acciones" }).append(acciones).appendTo(fila);
 
@@ -735,8 +772,13 @@ $(function () {
             const campo = camposDetalle[etiqueta]?.[0];
             const valor = campo === "clave_oculta" ? "********" : usuario[campo];
 
-            tarjeta.find(".detalle-ficha-value, .detalle-ficha-status")
+            const contenido = tarjeta.find(".detalle-ficha-value, .detalle-ficha-status")
                 .text(valor || "No registrado");
+
+            if (campo === "estado_usuario") {
+                contenido.removeClass("estado-realizada estado-registro-activo estado-registro-inactivo")
+                    .addClass(usuario.estado_usuario === "INACTIVO" ? "estado-registro-inactivo" : "estado-registro-activo");
+            }
         });
     });
 
@@ -788,6 +830,10 @@ $(function () {
         if (redirigiendo) return false;
 
         const turno = ++versionLista;
+        const estadoUsuarios = String(filtroUsuarios.val() || "ACTIVO");
+        const estadoRoles = String(filtroRoles.val() || "ACTIVO");
+
+        $("#tablaUsuarios, #tablaRoles").attr("aria-busy", "true");
 
         try {
             await Promise.all([
@@ -797,15 +843,29 @@ $(function () {
 
             if (turno !== versionLista) return false;
 
-            const respuesta = await solicitarSeguridad({ accion: "consultar" });
+            const respuesta = await solicitarSeguridad({
+                accion: "consultar",
+                estado_usuarios: estadoUsuarios,
+                estado_roles: estadoRoles
+            });
 
             if (turno !== versionLista) return false;
 
             if (
                 !Array.isArray(respuesta.usuarios) ||
                 !Array.isArray(respuesta.roles) ||
-                !respuesta.usuarios.every(usuario => $.isPlainObject(usuario)) ||
-                !respuesta.roles.every(rol => $.isPlainObject(rol))
+                !Array.isArray(respuesta.roles_activos) ||
+                !respuesta.usuarios.every(usuario =>
+                    $.isPlainObject(usuario) &&
+                    ["ACTIVO", "INACTIVO"].includes(usuario.estado_usuario) &&
+                    (estadoUsuarios === "TODOS" || usuario.estado_usuario === estadoUsuarios)
+                ) ||
+                !respuesta.roles.every(rol =>
+                    $.isPlainObject(rol) &&
+                    ["ACTIVO", "INACTIVO"].includes(rol.estado_rol) &&
+                    (estadoRoles === "TODOS" || rol.estado_rol === estadoRoles)
+                ) ||
+                !respuesta.roles_activos.every(rol => $.isPlainObject(rol) && rol.estado_rol === "ACTIVO")
             ) {
                 throw new Error("Las listas recibidas no tienen un formato válido.");
             }
@@ -822,7 +882,9 @@ $(function () {
 
             reemplazarFilas(tablaUsuarios.instancia, filasUsuarios);
             reemplazarFilas(tablaRoles.instancia, filasRoles);
-            actualizarSelectoresRoles(respuesta.roles);
+            actualizarSelectoresRoles(respuesta.roles_activos);
+            estadoListadoUsuarios = estadoUsuarios;
+            estadoListadoRoles = estadoRoles;
 
             /* Mostrar una sola vez el resultado de un registro enviado sin AJAX */
             const avisoRegistro = respuesta.aviso_registro_usuario;
@@ -835,11 +897,36 @@ $(function () {
             return true;
 
         } catch (error) {
-            if (turno === versionLista) throw error;
+            if (turno === versionLista) {
+                filtroUsuarios.val(estadoListadoUsuarios);
+                filtroRoles.val(estadoListadoRoles);
+                throw error;
+            }
 
             return false;
+
+        } finally {
+            if (turno === versionLista) {
+                $("#tablaUsuarios, #tablaRoles").attr("aria-busy", "false");
+            }
         }
     }
+
+
+    /* Conservar la selección independiente de cada listado */
+    filtrosEstado.on("change", function () {
+        if (operacionEnCurso || redirigiendo) {
+            filtroUsuarios.val(estadoListadoUsuarios);
+            filtroRoles.val(estadoListadoRoles);
+            return;
+        }
+
+        mensajeGeneral.prop("hidden", true);
+
+        actualizarListas().catch(function (error) {
+            mostrarMensaje(error.message, true, true);
+        });
+    });
 
 
     /* ================================================= */
@@ -900,16 +987,34 @@ $(function () {
         }
 
         if (idModal === "modalEstadoUsuario") {
-            $("#estadoUsuarioId").val(boton.attr("data-id-usuario") || "");
+            const reactivar = boton.hasClass("btnReactivarUsuario");
+            const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-trash-fill";
 
-            $("#nuevoEstadoUsuario").val("INACTIVO");
+            formulario.find('[name="accion"]').val(reactivar ? "reactivar_usuario" : "cambiar_estado_usuario");
+
+            $("#estadoUsuarioId").val(boton.attr("data-id-usuario") || "");
+            $("#nuevoEstadoUsuario").val(reactivar ? "ACTIVO" : "INACTIVO").prop("disabled", reactivar);
             $("#nombreEstadoUsuario").text(boton.attr("data-nombre") || "");
-            $("#tituloEstadoUsuario").text("Desactivar Usuario");
-            $("#preguntaEstadoUsuario").text("¿Deseas desactivar este usuario?");
+            $("#iconoEstadoUsuario").attr("class", "bi " + icono);
+            $("#tituloEstadoUsuario").text(reactivar ? "Reactivar Usuario" : "Desactivar Usuario");
+
+            $("#preguntaEstadoUsuario").text(
+                reactivar ? "¿Deseas reactivar este usuario?" : "¿Deseas desactivar este usuario?"
+            );
 
             $("#advertenciaEstadoUsuario").text(
-                "El usuario no podrá iniciar sesión mientras permanezca inactivo."
+                reactivar
+                    ? "La cuenta conservará sus datos y su contraseña. El rol asignado debe estar activo."
+                    : "El usuario no podrá iniciar sesión mientras permanezca inactivo. Podrá reactivarlo desde Inactivos."
             );
+
+            formulario.find('[type="submit"]')
+                .toggleClass("btn-templo-primary", reactivar)
+                .toggleClass("btn-templo-danger", !reactivar)
+                .empty().append(
+                    $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                    document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+                );
         }
 
         if (idModal === "modalEditarRol") {
@@ -920,9 +1025,37 @@ $(function () {
         }
 
         if (idModal === "modalEstadoRol") {
+            const reactivar = boton.hasClass("btnReactivarRol");
+            const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-trash-fill";
+
+            formulario.find('[name="accion"]').val(reactivar ? "reactivar_rol" : "cambiar_estado_rol");
+
             $("#estadoIdRol").val(boton.attr("data-id-rol") || "");
-            $("#nuevoEstadoRol").val("INACTIVO");
+            $("#nuevoEstadoRol").val(reactivar ? "ACTIVO" : "INACTIVO").prop("disabled", reactivar);
             $("#nombreEstadoRol").text(boton.attr("data-nombre-rol") || "");
+
+            $("#modalEstadoRolLabel").empty().append(
+                $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                document.createTextNode(reactivar ? " Reactivar Rol" : " Desactivar Rol")
+            );
+
+            modal.find(".status-question").text(
+                reactivar ? "¿Deseas reactivar este rol?" : "¿Deseas desactivar este rol?"
+            );
+
+            modal.find(".status-warning").text(
+                reactivar
+                    ? "El rol volverá a estar disponible. Las cuentas conservarán su estado individual."
+                    : "Las cuentas con este rol no podrán acceder al sistema mientras el rol permanezca inactivo."
+            );
+
+            formulario.find('[type="submit"]')
+                .toggleClass("btn-templo-primary", reactivar)
+                .toggleClass("btn-templo-danger", !reactivar)
+                .empty().append(
+                    $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                    document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+                );
         }
     });
 
@@ -982,7 +1115,7 @@ $(function () {
             if (operacionEnCurso || redirigiendo) return;
         }
 
-        const controles = formulario.find("input, select, textarea, button")
+        const controles = formulario.find("input, select, textarea, button").add(filtrosEstado)
             .map(function () {
                 const elemento = $(this);
 
@@ -996,11 +1129,13 @@ $(function () {
         const contenidoBoton = enviar.html();
 
         operacionEnCurso = true;
+        filtrosEstado.prop("disabled", true);
 
-        formulario.data("enviando", true);
+        formulario.data("enviando", true).attr("aria-busy", "true");
         enviar.prop("disabled", true).text("Procesando...");
 
         ++versionLista;
+        $("#tablaUsuarios, #tablaRoles").attr("aria-busy", "false");
 
         mensajeGeneral.prop("hidden", true);
 
@@ -1105,7 +1240,7 @@ $(function () {
 
             enviar.html(contenidoBoton);
 
-            formulario.data("enviando", false);
+            formulario.data("enviando", false).attr("aria-busy", "false");
 
             operacionEnCurso = false;
 

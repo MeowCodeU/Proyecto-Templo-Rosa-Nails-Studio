@@ -52,8 +52,8 @@
   --registro-activo-bg: var(--estado-realizada-bg);
   --registro-activo-text: var(--estado-realizada-text);
 
-  --registro-inactivo-bg: var(--estado-cancelada-bg);
-  --registro-inactivo-text: var(--estado-cancelada-text);
+  --registro-inactivo-bg: var(--rose-row-hover);
+  --registro-inactivo-text: #c40056;
 }
 
 /* ===================================================== */
@@ -1634,16 +1634,23 @@ body{
 /* Amarillo pastel del estado En espera */
 /* ===================================================== */
 
-.btn-history{
+.btn-history,
+.btn-reponer,
+.btnCambiarContactoProveedor,
+.btnInsumosServicio{
   background: var(--estado-en-espera-bg);
   color: #ffffff;
   border: 1px solid rgba(142,93,15,0.12);
 }
 
-.btn-history:hover{
+.btn-history:hover,
+.btn-reponer:hover,
+.btnCambiarContactoProveedor:hover,
+.btnInsumosServicio:hover{
   background: #e8d487;
   color: #ffffff;
 }
+
 /* Icono personalizado del historial */
 
 .cliente-historial-icono{
@@ -1743,16 +1750,26 @@ body{
 
 
 /* ===================================================== */
-/* DESACTIVAR */
+/* DESACTIVAR Y REACTIVAR */
 /* ===================================================== */
 
 .btn-deactivate{
-  background: #dc3545;
+  background: #c40056;
   color: white;
 }
 
 .btn-deactivate:hover{
-  background: #c82333;
+  background: #9e0046;
+  color: white;
+}
+
+.btn-reactivate{
+  background: var(--estado-realizada-text);
+  color: white;
+}
+
+.btn-reactivate:hover{
+  background: #3e6660;
   color: white;
 }
 
@@ -5090,8 +5107,9 @@ body{
 /* ===================================================== */
 
 
-/* Selector del estado de los clientes */
-.clientes-module #filtroEstadoClientes{
+/* Selectores del estado de los registros */
+.clientes-module #filtroEstadoClientes,
+.module-card .templo-filtro-estado.form-select{
   appearance: none;
   min-width: 116px;
   height: 40px;
@@ -5110,29 +5128,32 @@ body{
   cursor: pointer;
 }
 
-.clientes-module #filtroEstadoClientes:focus{
+.clientes-module #filtroEstadoClientes:focus,
+.module-card .templo-filtro-estado.form-select:focus{
   border-color: var(--rose-hover);
   box-shadow: 0 0 0 4px rgba(238,187,187,0.22);
 }
 
-.clientes-module #filtroEstadoClientes:disabled{
+.clientes-module #filtroEstadoClientes:disabled,
+.module-card .templo-filtro-estado.form-select:disabled{
   opacity: 0.65;
   cursor: not-allowed;
 }
 
 /* Conservar la flecha rosada en los menús personalizables */
 @supports (appearance: base-select) and selector(select::picker(select)){
-  .clientes-module #filtroEstadoClientes{
+  .clientes-module #filtroEstadoClientes,
+  .module-card .templo-filtro-estado.form-select{
     appearance: base-select;
     padding-inline-end: 12px;
     background-image: none;
   }
 
-  .clientes-module #filtroEstadoClientes::picker-icon{
+  .clientes-module #filtroEstadoClientes::picker-icon,
+  .module-card .templo-filtro-estado.form-select::picker-icon{
     color: var(--rose-pagination);
   }
 }
-
 
 /* ===================================================== */
 /* FONDO DOODLE - CARD INTERNA CLIENTES */

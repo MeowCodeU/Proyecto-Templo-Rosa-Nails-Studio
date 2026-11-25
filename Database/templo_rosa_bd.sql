@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 15-11-2026 a las 18:48:30
+-- Tiempo de generación: 25-11-2026 a las 06:32:29
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -160,6 +160,18 @@ CREATE TABLE `insumos` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `insumos_servicios`
+--
+
+CREATE TABLE `insumos_servicios` (
+  `id_servicio` int(10) UNSIGNED NOT NULL,
+  `id_insumo` int(10) UNSIGNED NOT NULL,
+  `cantidad` int(10) UNSIGNED NOT NULL
+) ;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `lotes_insumos`
 --
 
@@ -233,6 +245,26 @@ CREATE TABLE `proveedores_insumos` (
   `id_proveedor_insumo` int(10) UNSIGNED NOT NULL,
   `id_proveedor` int(10) UNSIGNED NOT NULL,
   `id_insumo` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `recuperaciones_clave`
+--
+
+CREATE TABLE `recuperaciones_clave` (
+  `id_usuario` int(10) UNSIGNED NOT NULL,
+  `solicitud_hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `codigo_hash` varchar(255) NOT NULL,
+  `correo_destino` varchar(100) NOT NULL,
+  `clave_vigente_hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `solicitado_en` datetime NOT NULL,
+  `vence_en` datetime NOT NULL,
+  `ventana_inicio` datetime NOT NULL,
+  `envios` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `intentos` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `estado` enum('PENDIENTE','ENVIADO','UTILIZADO','FALLIDO') NOT NULL DEFAULT 'PENDIENTE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -395,6 +427,13 @@ ALTER TABLE `insumos`
   ADD PRIMARY KEY (`id_insumo`);
 
 --
+-- Indices de la tabla `insumos_servicios`
+--
+ALTER TABLE `insumos_servicios`
+  ADD PRIMARY KEY (`id_servicio`,`id_insumo`),
+  ADD KEY `idx_insumos_servicios_insumo` (`id_insumo`);
+
+--
 -- Indices de la tabla `lotes_insumos`
 --
 ALTER TABLE `lotes_insumos`
@@ -436,6 +475,13 @@ ALTER TABLE `proveedores_insumos`
   ADD PRIMARY KEY (`id_proveedor_insumo`),
   ADD UNIQUE KEY `uq_proveedor_insumo` (`id_proveedor`,`id_insumo`),
   ADD KEY `idx_proveedores_insumos_insumo` (`id_insumo`);
+
+--
+-- Indices de la tabla `recuperaciones_clave`
+--
+ALTER TABLE `recuperaciones_clave`
+  ADD PRIMARY KEY (`id_usuario`),
+  ADD UNIQUE KEY `uk_recuperacion_solicitud` (`solicitud_hash`);
 
 --
 -- Indices de la tabla `roles`
@@ -621,6 +667,13 @@ ALTER TABLE `fotos_servicios`
   ADD CONSTRAINT `fk_fotos_servicios_detalles` FOREIGN KEY (`id_detalle_agendamiento`) REFERENCES `detalles_agendamientos` (`id_detalle_agendamiento`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Filtros para la tabla `insumos_servicios`
+--
+ALTER TABLE `insumos_servicios`
+  ADD CONSTRAINT `fk_insumos_servicios_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`),
+  ADD CONSTRAINT `fk_insumos_servicios_servicio` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`);
+
+--
 -- Filtros para la tabla `lotes_insumos`
 --
 ALTER TABLE `lotes_insumos`
@@ -647,6 +700,12 @@ ALTER TABLE `proveedores`
 ALTER TABLE `proveedores_insumos`
   ADD CONSTRAINT `fk_proveedores_insumos_insumos` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_proveedores_insumos_proveedores` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `recuperaciones_clave`
+--
+ALTER TABLE `recuperaciones_clave`
+  ADD CONSTRAINT `fk_recuperacion_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `usuarios`

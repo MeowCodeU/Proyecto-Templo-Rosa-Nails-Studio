@@ -9,6 +9,7 @@ $(document).ready(function () {
     "use strict";
 
     const tablaProveedores = $("#tablaProveedores");
+    const filtroEstado = $("#filtroEstadoProveedores");
     const modalesFormulario = $("#modalNuevoProveedor, #modalEditarProveedor, #modalCambiarContactoProveedor, #modalDesactivarProveedor");
     const formularios = modalesFormulario.find("form");
     const rutaProveedores = formularios.first().attr("action") || "Index.php?url=proveedores";
@@ -19,6 +20,8 @@ $(document).ready(function () {
     let guardando = false;
     let consultando = false;
     let redirigiendo = false;
+    let estadoListado = "ACTIVO";
+    let estadoConsulta = "ACTIVO";
     let habilitarTabla;
 
     const tablaPreparada = new Promise(resolve => {
@@ -248,7 +251,16 @@ $(document).ready(function () {
         const estadoProveedor = String(proveedor.estado_proveedor || "ACTIVO").trim().toUpperCase();
 
         $("<td>").text(proveedor.rif ?? "").appendTo(fila);
-        $("<td>", { class: "columna-empresa" }).text(proveedor.nombre_empresa ?? "").appendTo(fila);
+        const empresa = $("<td>", { class: "columna-empresa" })
+            .text(proveedor.nombre_empresa ?? "")
+            .appendTo(fila);
+
+        if (estadoProveedor === "INACTIVO") {
+            $("<span>", {
+                class: "badge rounded-pill estado-registro-inactivo ms-2",
+                text: "Inactivo"
+            }).appendTo(empresa);
+        }
         $("<td>", { class: "proveedores-contact-start" }).text(proveedor.nombre ?? "").appendTo(fila);
         $("<td>").text(proveedor.apellido ?? "").appendTo(fila);
         $("<td>").text(proveedor.telefono ?? "").appendTo(fila);
@@ -280,38 +292,52 @@ $(document).ready(function () {
             crearIconoDetalle()
         ));
 
-        acciones.append(crearBoton(
-            "btn-action btn-edit btnEditarProveedor",
-            "Editar proveedor",
-            "#modalEditarProveedor",
-            datos,
-            '<i class="bi bi-pencil-square" aria-hidden="true"></i>'
-        ));
+        if (estadoProveedor === "ACTIVO") {
+            acciones.append(crearBoton(
+                "btn-action btn-edit btnEditarProveedor",
+                "Editar proveedor",
+                "#modalEditarProveedor",
+                datos,
+                '<i class="bi bi-pencil-square" aria-hidden="true"></i>'
+            ));
 
-        acciones.append(crearBoton(
-            "btn-action btn-edit btnCambiarContactoProveedor",
-            "Cambiar persona de contacto",
-            "#modalCambiarContactoProveedor",
-            {
-                "data-id-proveedor": datos["data-id-proveedor"],
-                "data-id-persona-contacto": datos["data-id-persona-contacto"],
-                "data-empresa": datos["data-empresa"],
-                "data-cedula": datos["data-cedula"],
-                "data-nombre-completo": datos["data-nombre-completo"]
-            },
-            '<i class="bi bi-arrow-left-right" aria-hidden="true"></i>'
-        ));
+            acciones.append(crearBoton(
+                "btn-action btn-edit btnCambiarContactoProveedor",
+                "Cambiar persona de contacto",
+                "#modalCambiarContactoProveedor",
+                {
+                    "data-id-proveedor": datos["data-id-proveedor"],
+                    "data-id-persona-contacto": datos["data-id-persona-contacto"],
+                    "data-empresa": datos["data-empresa"],
+                    "data-cedula": datos["data-cedula"],
+                    "data-nombre-completo": datos["data-nombre-completo"]
+                },
+                '<i class="bi bi-arrow-left-right" aria-hidden="true"></i>'
+            ));
 
-        acciones.append(crearBoton(
-            "btn-action btn-delete btnDesactivarProveedor",
-            "Desactivar proveedor",
-            "#modalDesactivarProveedor",
-            {
-                "data-id-proveedor": datos["data-id-proveedor"],
-                "data-empresa": datos["data-empresa"]
-            },
-            '<i class="bi bi-trash-fill" aria-hidden="true"></i>'
-        ));
+            acciones.append(crearBoton(
+                "btn-action btn-deactivate btnDesactivarProveedor",
+                "Desactivar proveedor",
+                "#modalDesactivarProveedor",
+                {
+                    "data-id-proveedor": datos["data-id-proveedor"],
+                    "data-empresa": datos["data-empresa"]
+                },
+                '<i class="bi bi-trash-fill" aria-hidden="true"></i>'
+            ));
+
+        } else {
+            acciones.append(crearBoton(
+                "btn-action btn-reactivate btnReactivarProveedor",
+                "Reactivar proveedor",
+                "#modalDesactivarProveedor",
+                {
+                    "data-id-proveedor": datos["data-id-proveedor"],
+                    "data-empresa": datos["data-empresa"]
+                },
+                '<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>'
+            ));
+        }
 
         $("<td>", { class: "columna-acciones" }).append(acciones).appendTo(fila);
 
@@ -348,6 +374,8 @@ $(document).ready(function () {
     async function consultarProveedores(mensajeExito = "") {
         if (guardando || consultando || redirigiendo) return false;
 
+        const estadoSolicitado = String(filtroEstado.val() || "ACTIVO");
+        const filtroDeshabilitado = filtroEstado.prop("disabled");
         const botones = formularios.find(":submit");
 
         const estadosBotones = botones.map(function () {
@@ -355,19 +383,29 @@ $(document).ready(function () {
         }).get();
 
         consultando = true;
+        estadoConsulta = estadoSolicitado;
 
         botones.prop("disabled", true);
+        filtroEstado.prop("disabled", true);
+        tablaProveedores.attr("aria-busy", "true");
 
         mostrarMensaje(avisoListado, "Actualizando listado…", "info");
 
         try {
             await tablaPreparada;
 
-            const respuesta = await solicitarProveedores({ accion: "consultar" });
+            const respuesta = await solicitarProveedores({
+                accion: "consultar",
+                estado: estadoSolicitado
+            });
 
             const listaValida = respuesta && respuesta.ok === true &&
                 Array.isArray(respuesta.proveedores) &&
-                respuesta.proveedores.every(proveedor => $.isPlainObject(proveedor));
+                respuesta.proveedores.every(proveedor =>
+                    $.isPlainObject(proveedor) &&
+                    ["ACTIVO", "INACTIVO"].includes(proveedor.estado_proveedor) &&
+                    (estadoSolicitado === "TODOS" || proveedor.estado_proveedor === estadoSolicitado)
+                );
 
             if (!listaValida) {
                 throw new Error(
@@ -378,12 +416,15 @@ $(document).ready(function () {
             }
 
             actualizarTabla(respuesta.proveedores);
+            estadoListado = estadoSolicitado;
 
             mostrarMensaje(avisoListado, mensajeExito || "Listado actualizado.", "success");
 
             return true;
 
         } catch (error) {
+            filtroEstado.val(estadoListado);
+
             const mensaje = error.message || "No fue posible actualizar el listado.";
 
             mostrarMensaje(
@@ -398,14 +439,28 @@ $(document).ready(function () {
 
         } finally {
             consultando = false;
+            tablaProveedores.attr("aria-busy", "false");
 
             if (!redirigiendo) {
+                filtroEstado.prop("disabled", filtroDeshabilitado);
+
                 botones.each(function (indice) {
                     $(this).prop("disabled", estadosBotones[indice]);
                 });
             }
         }
     }
+
+
+    /* Consultar el filtro elegido sin superponer consultas ni escrituras */
+    filtroEstado.on("change", function () {
+        if (guardando || consultando || redirigiendo) {
+            filtroEstado.val(consultando ? estadoConsulta : estadoListado);
+            return;
+        }
+
+        consultarProveedores();
+    });
 
 
     /* ================================================= */
@@ -464,11 +519,45 @@ $(document).ready(function () {
     });
 
 
-    $(document).on("click", ".btnDesactivarProveedor", function () {
-        if (guardando || redirigiendo) return;
+    $("#modalDesactivarProveedor").on("show.bs.modal", function (evento) {
+        if (guardando || consultando || redirigiendo) {
+            evento.preventDefault();
+            return;
+        }
 
-        $("#desactivarIdProveedor").val($(this).attr("data-id-proveedor") || "");
-        $("#desactivarNombreProveedor").text($(this).attr("data-empresa") || "");
+        const modal = $(this);
+        const formulario = modal.find("form").first();
+        const boton = $(evento.relatedTarget);
+        const reactivar = boton.hasClass("btnReactivarProveedor");
+        const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-person-dash";
+
+        formulario.find('[name="accion"]').val(reactivar ? "reactivar" : "desactivar");
+
+        $("#desactivarIdProveedor").val(boton.attr("data-id-proveedor") || "");
+        $("#desactivarNombreProveedor").text(boton.attr("data-empresa") || "");
+
+        $("#modalDesactivarProveedorLabel").empty().append(
+            $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+            document.createTextNode(reactivar ? " Confirmar reactivación" : " Confirmar desactivación")
+        );
+
+        modal.find(".status-question").text(
+            reactivar ? "¿Deseas reactivar este proveedor?" : "¿Deseas desactivar este proveedor?"
+        );
+
+        modal.find(".status-warning").text(
+            reactivar
+                ? "El proveedor volverá a estar disponible conservando su contacto, sus insumos y su historial."
+                : "El proveedor no se borrará. Podrá consultarlo y reactivarlo desde Inactivos."
+        );
+
+        formulario.find('[type="submit"]')
+            .toggleClass("btn-templo-primary", reactivar)
+            .toggleClass("btn-templo-danger", !reactivar)
+            .empty().append(
+                $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+            );
     });
 
 
@@ -977,7 +1066,7 @@ $(document).ready(function () {
 
         try {
             const respuesta = await solicitarProveedores({
-                accion: "consultar_insumos",
+                accion: "consultar_insumos_detalle",
                 id_proveedor: idProveedor
             });
 
@@ -1293,7 +1382,10 @@ $(document).ready(function () {
         let mensajeExito = "Operación completada.";
         let primerCampo = null;
 
+        const filtroDeshabilitado = filtroEstado.prop("disabled");
+
         guardando = true;
+        filtroEstado.prop("disabled", true);
 
         formulario.attr("aria-busy", "true");
         controles.prop("disabled", true);
@@ -1344,6 +1436,8 @@ $(document).ready(function () {
             guardando = false;
 
             if (!redirigiendo) {
+                filtroEstado.prop("disabled", filtroDeshabilitado);
+
                 controles.each(function (indice) {
                     $(this).prop("disabled", estadosControles[indice]);
                 });
@@ -1380,7 +1474,7 @@ $(document).ready(function () {
     /* ================================================= */
 
     modalesFormulario.on("show.bs.modal", function (evento) {
-        if (guardando || redirigiendo) {
+        if (guardando || consultando || redirigiendo) {
             evento.preventDefault();
             return;
         }
@@ -1423,4 +1517,11 @@ $(document).ready(function () {
             $("#desactivarNombreProveedor").empty();
         }
     });
+
+
+    /* ================================================= */
+    /* CONSULTA INICIAL */
+    /* ================================================= */
+
+    consultarProveedores();
 });

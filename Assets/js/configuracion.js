@@ -32,6 +32,10 @@ $(function () {
             desactivar: "#modalEstadoServicio",
             botonEditar: "btnEditarServicio",
             botonDesactivar: "btnDesactivarServicio",
+            botonReactivar: "btnReactivarServicio",
+            filtro: "#filtroEstadoServicios",
+            accionDesactivar: "cambiar_estado_servicio",
+            accionReactivar: "reactivar_servicio",
             identificador: "id_servicio",
             nombre: "nombre_servicio",
             estado: "estado_servicio",
@@ -57,6 +61,10 @@ $(function () {
             desactivar: "#modalEstadoEstadoAgendamiento",
             botonEditar: "btnEditarEstadoAgendamiento",
             botonDesactivar: "btnDesactivarEstadoAgendamiento",
+            botonReactivar: "btnReactivarEstadoAgendamiento",
+            filtro: "#filtroEstadoEstadosAgendamiento",
+            accionDesactivar: "cambiar_estado_agendamiento",
+            accionReactivar: "reactivar_estado_agendamiento",
             identificador: "id_estado_agendamiento",
             nombre: "nombre_estado",
             estado: "estado_registro",
@@ -80,6 +88,10 @@ $(function () {
             desactivar: "#modalEstadoTipoAgendamiento",
             botonEditar: "btnEditarTipoAgendamiento",
             botonDesactivar: "btnDesactivarTipoAgendamiento",
+            botonReactivar: "btnReactivarTipoAgendamiento",
+            filtro: "#filtroEstadoTiposAgendamiento",
+            accionDesactivar: "cambiar_estado_tipo_agendamiento",
+            accionReactivar: "reactivar_tipo_agendamiento",
             identificador: "id_tipo_agendamiento",
             nombre: "nombre_tipo_agendamiento",
             estado: "estado_tipo_agendamiento",
@@ -103,6 +115,9 @@ $(function () {
         catalogo.elementoTabla = $(catalogo.tabla);
         catalogo.modales = $([catalogo.nuevo, catalogo.editar, catalogo.desactivar].join(", "));
         catalogo.versionLista = 0;
+        catalogo.filtro = $(catalogo.filtro);
+        catalogo.estadoMostrado = "ACTIVO";
+        catalogo.filtro.val(catalogo.estadoMostrado);
 
         catalogo.mensaje = $("<div>", {
             class: "alert alert-light border mb-3",
@@ -143,6 +158,25 @@ $(function () {
     $("#configTabs").on("shown.bs.tab", 'button[data-bs-toggle="tab"]', function () {
         $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
     });
+
+
+    /* Conservar el estado de los filtros durante una escritura */
+    function bloquearFiltros() {
+        const estados = catalogos.map(function (catalogo) {
+            const filtro = catalogo.filtro;
+            const deshabilitado = filtro.prop("disabled");
+
+            filtro.prop("disabled", true);
+
+            return { filtro, deshabilitado };
+        });
+
+        return function () {
+            estados.forEach(function (estado) {
+                estado.filtro.prop("disabled", estado.deshabilitado);
+            });
+        };
+    }
 
 
     /* ================================================= */
@@ -295,18 +329,23 @@ $(function () {
     /* BOTONES Y FILAS DEL LISTADO */
     /* ================================================= */
 
-    function crearBoton(catalogo, registro, desactivar = false) {
+    function crearBoton(catalogo, registro, accion = "editar") {
+        const reactivar = accion === "reactivar";
+        const cambiarEstado = accion !== "editar";
+        const texto = reactivar ? "Reactivar " : cambiarEstado ? "Desactivar " : "Editar ";
+        const clase = reactivar
+            ? "btn-reactivate " + catalogo.botonReactivar
+            : cambiarEstado
+                ? "btn-deactivate " + catalogo.botonDesactivar
+                : "btn-edit " + catalogo.botonEditar;
+
         const boton = $("<button>", {
             type: "button",
-            class: "btn-action " + (
-                desactivar
-                    ? "btn-deactivate " + catalogo.botonDesactivar
-                    : "btn-edit " + catalogo.botonEditar
-            ),
+            class: "btn-action " + clase,
             "data-bs-toggle": "modal",
-            "data-bs-target": desactivar ? catalogo.desactivar : catalogo.editar,
-            title: (desactivar ? "Desactivar " : "Editar ") + catalogo.registro,
-            "aria-label": (desactivar ? "Desactivar " : "Editar ") + catalogo.registro
+            "data-bs-target": cambiarEstado ? catalogo.desactivar : catalogo.editar,
+            title: texto + catalogo.registro,
+            "aria-label": texto + catalogo.registro
         });
 
         Object.entries(catalogo.atributos).forEach(function ([campo, atributo]) {
@@ -314,11 +353,10 @@ $(function () {
         });
 
         return boton.append($("<i>", {
-            class: desactivar ? "bi bi-trash-fill" : "bi bi-pencil-fill",
+            class: "bi " + (reactivar ? "bi-arrow-counterclockwise" : cambiarEstado ? "bi-trash-fill" : "bi-pencil-fill"),
             "aria-hidden": "true"
         }));
     }
-
 
     function crearFila(catalogo, registro) {
         const fila = $("<tr>");
@@ -337,12 +375,16 @@ $(function () {
 
         const acciones = $("<div>", { class: "btn-group-actions" });
 
-        acciones.append(
-            crearBoton(catalogo, registro),
-            crearBoton(catalogo, registro, true)
-        );
+        if (estado === "ACTIVO") {
+            acciones.append(
+                crearBoton(catalogo, registro),
+                crearBoton(catalogo, registro, "desactivar")
+            );
+        } else {
+            acciones.append(crearBoton(catalogo, registro, "reactivar"));
+        }
 
-        if (catalogo.clave === "servicios") {
+        if (catalogo.clave === "servicios" && estado === "ACTIVO") {
             $("<button>", {
                 type: "button",
                 class: "btn-action btn-detail btnInsumosServicio",
@@ -365,7 +407,7 @@ $(function () {
     /* ACTUALIZACIÓN DE LOS CATÁLOGOS */
     /* ================================================= */
 
-    async function actualizarLista(catalogo) {
+    async function actualizarLista(catalogo, estado = catalogo.filtro.val() || catalogo.estadoMostrado) {
         if (redirigiendo) return false;
 
         const turno = ++catalogo.versionLista;
@@ -379,7 +421,8 @@ $(function () {
 
             const respuesta = await solicitarConfiguracion({
                 accion: "consultar",
-                catalogo: catalogo.clave
+                catalogo: catalogo.clave,
+                estado: estado
             });
 
             if (redirigiendo || turno !== catalogo.versionLista) return false;
@@ -391,6 +434,26 @@ $(function () {
             ) {
                 throw new Error("La lista recibida no tiene un formato válido.");
             }
+
+            const identificadores = new Set();
+
+            respuesta.registros.forEach(function (registro) {
+                const id = Number(registro[catalogo.identificador]);
+                const estadoRegistro = registro[catalogo.estado];
+
+                if (
+                    !["number", "string"].includes(typeof registro[catalogo.identificador]) ||
+                    !Validaciones.validarEntero(String(registro[catalogo.identificador]), 1) ||
+                    identificadores.has(id) ||
+                    typeof registro[catalogo.nombre] !== "string" ||
+                    !["ACTIVO", "INACTIVO"].includes(estadoRegistro) ||
+                    (estado !== "TODOS" && estadoRegistro !== estado)
+                ) {
+                    throw new Error("La lista recibida contiene registros inválidos o repetidos.");
+                }
+
+                identificadores.add(id);
+            });
 
             const filas = respuesta.registros.map(registro => crearFila(catalogo, registro));
             const tabla = catalogo.instanciaTabla;
@@ -404,10 +467,17 @@ $(function () {
 
             if (paginaActual > ultimaPagina) tabla.page(ultimaPagina).draw("page");
 
+            catalogo.estadoMostrado = estado;
+            catalogo.filtro.val(estado);
+            catalogo.mensaje.prop("hidden", true);
+
             return true;
 
         } catch (error) {
-            if (turno === catalogo.versionLista) throw error;
+            if (turno === catalogo.versionLista) {
+                catalogo.filtro.val(catalogo.estadoMostrado);
+                throw error;
+            }
 
             return false;
 
@@ -417,6 +487,31 @@ $(function () {
             }
         }
     }
+
+
+    /* Cambiar el estado consultado de cada catálogo por separado */
+    catalogos.forEach(function (catalogo) {
+        catalogo.filtro.on("change", async function () {
+            if (operacionEnCurso || redirigiendo) {
+                catalogo.filtro.val(catalogo.estadoMostrado);
+                return;
+            }
+
+            const estado = $(this).val();
+
+            if (!["ACTIVO", "INACTIVO", "TODOS"].includes(estado)) {
+                catalogo.filtro.val(catalogo.estadoMostrado);
+                return;
+            }
+
+            try {
+                await actualizarLista(catalogo, estado);
+
+            } catch (error) {
+                mostrarMensaje(catalogo, error.message, true, true);
+            }
+        });
+    });
 
 
     /* ================================================= */
@@ -459,9 +554,39 @@ $(function () {
                 formulario.find('[name="' + catalogo.identificador + '"]')
                     .val(boton.attr("data-" + atributoId) ?? "");
 
-                formulario.find('[name="' + catalogo.estado + '"]').val("INACTIVO");
+                const reactivar = boton.hasClass(catalogo.botonReactivar);
+                const icono = reactivar ? "bi-arrow-counterclockwise" : "bi-trash-fill";
+
+                formulario.find('[name="accion"]').val(
+                    reactivar ? catalogo.accionReactivar : catalogo.accionDesactivar
+                );
+
+                formulario.find('[name="' + catalogo.estado + '"]').val(reactivar ? "ACTIVO" : "INACTIVO");
 
                 $(catalogo.nombreConfirmacion).text(boton.attr("data-" + atributoNombre) ?? "");
+
+                modal.find(".modal-title").empty().append(
+                    $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                    document.createTextNode(reactivar ? " Confirmar reactivación" : " Confirmar desactivación")
+                );
+
+                modal.find(".status-question").text(
+                    (reactivar ? "¿Deseas reactivar este " : "¿Deseas desactivar este ") + catalogo.registro + "?"
+                );
+
+                modal.find(".status-warning").text(
+                    reactivar
+                        ? "El registro volverá a estar disponible conservando sus datos y relaciones."
+                        : "El registro no se borrará. Podrá consultarlo y reactivarlo desde Inactivos."
+                );
+
+                formulario.find('[type="submit"]')
+                    .toggleClass("btn-templo-primary", reactivar)
+                    .toggleClass("btn-templo-danger", !reactivar)
+                    .empty().append(
+                        $("<i>", { class: "bi " + icono, "aria-hidden": "true" }),
+                        document.createTextNode(reactivar ? " Sí, reactivar" : " Sí, desactivar")
+                    );
             }
         });
 
@@ -490,7 +615,7 @@ $(function () {
 
 
         /* ================================================= */
-        /* REGISTRAR, MODIFICAR Y DESACTIVAR */
+        /* REGISTRAR, MODIFICAR Y CAMBIAR EL ESTADO */
         /* ================================================= */
 
         catalogo.modales.find("form").on("submit", async function (evento) {
@@ -543,7 +668,9 @@ $(function () {
             formulario.data("enviando", true).attr("aria-busy", "true");
 
             operacionEnCurso = true;
+            const restaurarFiltros = bloquearFiltros();
             ++catalogo.versionLista;
+            catalogo.filtro.val(catalogo.estadoMostrado);
 
             catalogo.elementoTabla.attr("aria-busy", "false");
             catalogo.mensaje.prop("hidden", true);
@@ -621,6 +748,7 @@ $(function () {
                 formulario.data("enviando", false).attr("aria-busy", "false");
 
                 operacionEnCurso = false;
+                restaurarFiltros();
 
                 if (primerCampo && !redirigiendo) primerCampo.focus();
             }
@@ -743,6 +871,7 @@ $(function () {
 
         guardandoReserva = true;
         operacionEnCurso = true;
+        const restaurarFiltros = bloquearFiltros();
 
         guardarReserva.prop("disabled", true);
         formularioReserva.attr("aria-busy", "true");
@@ -765,6 +894,7 @@ $(function () {
         } finally {
             guardandoReserva = false;
             operacionEnCurso = false;
+            restaurarFiltros();
 
             guardarReserva.prop("disabled", false);
             filasReserva.find("input").prop("disabled", false);

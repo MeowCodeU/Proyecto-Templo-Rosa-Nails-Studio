@@ -71,9 +71,12 @@ class InsumosM extends Database implements CrudInterface
     /* CONSULTAR INSUMOS */
     /* ================================================= */
 
-    public function consultar(): array
+    public function consultar(mixed $estado = 'ACTIVO'): array
     {
-        /* Consultar el vencimiento más próximo de los lotes disponibles */
+        $estado = $this->validarFiltroEstado($estado);
+        $condicionEstado = $estado === 'TODOS' ? '' : 'WHERE insumo.estado_insumo = :estado';
+
+        /* Consultar el estado elegido y el vencimiento más próximo de sus lotes */
         $sql = "SELECT
                     insumo.id_insumo,
                     insumo.nombre_insumo,
@@ -90,10 +93,15 @@ class InsumosM extends Database implements CrudInterface
                     ) AS fecha_vencimiento,
                     insumo.estado_insumo
                 FROM insumos AS insumo
-                WHERE insumo.estado_insumo = 'ACTIVO'
+                $condicionEstado
                 ORDER BY insumo.nombre_insumo ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
+
+        if ($estado !== 'TODOS') {
+            $stmt->bindValue(':estado', $estado, PDO::PARAM_STR);
+        }
+
         $stmt->execute();
 
         $insumos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -438,8 +446,12 @@ class InsumosM extends Database implements CrudInterface
                     proveedor.nombre_empresa AS nombre_proveedor
                 FROM lotes_insumos AS lote
                 LEFT JOIN movimientos_insumos AS entrada
-                    ON entrada.id_lote = lote.id_lote
-                        AND entrada.tipo_movimiento = 'INCREMENTO'
+                    ON entrada.id_movimiento = (
+                        SELECT MIN(ingreso.id_movimiento)
+                        FROM movimientos_insumos AS ingreso
+                        WHERE ingreso.id_lote = lote.id_lote
+                            AND ingreso.tipo_movimiento = 'INCREMENTO'
+                    )
                 LEFT JOIN proveedores AS proveedor
                     ON proveedor.id_proveedor = entrada.id_proveedor
                 WHERE lote.id_insumo = :id_insumo
@@ -519,13 +531,22 @@ class InsumosM extends Database implements CrudInterface
     /* MODIFICAR INSUMO */
     /* ================================================= */
 
-    public function modificar(): bool
+    public function modificar(mixed $idUsuario = null): bool
     {
         if (!$this->validarCatalogoInsumo(true)) return false;
 
         $idInsumo = $this->idInsumo;
         $stockOriginal = $this->stockOriginal;
         $stockCorregido = $this->stockActual;
+
+        /* Validar al responsable cuando se solicita una corrección de cantidades */
+        if ($stockCorregido !== $stockOriginal) {
+            $idUsuario = $this->validarIdentificador(
+                $idUsuario, 'id_usuario', 'El usuario responsable no es válido. Inicie sesión nuevamente.'
+            );
+
+            if ($idUsuario === null) return false;
+        }
 
         $this->conexionMD->beginTransaction();
 
@@ -591,6 +612,19 @@ class InsumosM extends Database implements CrudInterface
                 $stmtLote->bindValue(':id_lote', (int) $lote['id_lote'], PDO::PARAM_INT);
                 $stmtLote->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
                 $stmtLote->execute();
+
+                /* Identificar la corrección sin alterar el historial de ingresos */
+                $this->registrarMovimientoExistencias(
+                    $idInsumo,
+                    (int) $lote['id_lote'],
+                    null,
+                    $idUsuario,
+                    $diferencia > 0 ? 'INCREMENTO' : 'DECREMENTO',
+                    abs($diferencia),
+                    $stockActualBD,
+                    $stockCorregido,
+                    'Corrección manual de existencias'
+                );
             }
 
             /* Los datos generales no cambian el vencimiento de cada lote */
@@ -623,7 +657,9 @@ class InsumosM extends Database implements CrudInterface
             }
 
             $stmt->execute();
-            $this->conexionMD->commit();
+            if (!$this->conexionMD->commit()) {
+                throw new \RuntimeException('No fue posible confirmar la corrección del insumo.');
+            }
 
             return true;
 
@@ -805,41 +841,17 @@ class InsumosM extends Database implements CrudInterface
             $stmt->execute();
 
             /* Guardar la operación y su lote dentro de la misma transacción */
-            $sql = "INSERT INTO movimientos_insumos (
-                        id_insumo,
-                        id_lote,
-                        id_proveedor,
-                        id_usuario,
-                        tipo_movimiento,
-                        cantidad,
-                        stock_anterior,
-                        stock_resultante,
-                        motivo,
-                        fecha_movimiento
-                    ) VALUES (
-                        :id_insumo,
-                        :id_lote,
-                        :id_proveedor,
-                        :id_usuario,
-                        :tipo_movimiento,
-                        :cantidad,
-                        :stock_anterior,
-                        :stock_resultante,
-                        :motivo,
-                        NOW()
-                    )";
-
-            $stmt = $this->conexionMD->prepare($sql);
-            $stmt->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
-            $stmt->bindValue(':id_lote', $idLoteMovimiento, PDO::PARAM_INT);
-            $stmt->bindValue(':id_proveedor', $idProveedor, $idProveedor === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
-            $stmt->bindValue(':tipo_movimiento', $tipoMovimiento);
-            $stmt->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
-            $stmt->bindValue(':stock_anterior', $stockAnterior, PDO::PARAM_INT);
-            $stmt->bindValue(':stock_resultante', $stockResultante, PDO::PARAM_INT);
-            $stmt->bindValue(':motivo', $motivo);
-            $stmt->execute();
+            $this->registrarMovimientoExistencias(
+                $idInsumo,
+                $idLoteMovimiento,
+                $idProveedor,
+                $idUsuario,
+                $tipoMovimiento,
+                $cantidad,
+                $stockAnterior,
+                $stockResultante,
+                $motivo
+            );
 
             $this->conexionMD->commit();
 
@@ -864,23 +876,109 @@ class InsumosM extends Database implements CrudInterface
 
 
     /* ================================================= */
+    /* REGISTRAR EL MOVIMIENTO DE EXISTENCIAS */
+    /* ================================================= */
+
+    private function registrarMovimientoExistencias(
+        int $idInsumo,
+        int $idLote,
+        ?int $idProveedor,
+        int $idUsuario,
+        string $tipoMovimiento,
+        int $cantidad,
+        int $stockAnterior,
+        int $stockResultante,
+        string $motivo
+    ): void {
+        $sql = "INSERT INTO movimientos_insumos (
+                    id_insumo,
+                    id_lote,
+                    id_proveedor,
+                    id_usuario,
+                    tipo_movimiento,
+                    cantidad,
+                    stock_anterior,
+                    stock_resultante,
+                    motivo,
+                    fecha_movimiento
+                ) VALUES (
+                    :id_insumo,
+                    :id_lote,
+                    :id_proveedor,
+                    :id_usuario,
+                    :tipo_movimiento,
+                    :cantidad,
+                    :stock_anterior,
+                    :stock_resultante,
+                    :motivo,
+                    NOW()
+                )";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+        $stmt->bindValue(':id_lote', $idLote, PDO::PARAM_INT);
+        $stmt->bindValue(':id_proveedor', $idProveedor, $idProveedor === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(':tipo_movimiento', $tipoMovimiento);
+        $stmt->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
+        $stmt->bindValue(':stock_anterior', $stockAnterior, PDO::PARAM_INT);
+        $stmt->bindValue(':stock_resultante', $stockResultante, PDO::PARAM_INT);
+        $stmt->bindValue(':motivo', $motivo);
+
+        if (!$stmt->execute()) {
+            throw new \RuntimeException('No fue posible registrar el movimiento de existencias.');
+        }
+    }
+
+
+    /* ================================================= */
     /* DESACTIVAR INSUMO */
     /* ================================================= */
 
     public function eliminar(): bool
     {
+        return $this->cambiarEstadoInsumo('ACTIVO', 'INACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* REACTIVAR INSUMO */
+    /* ================================================= */
+
+    public function reactivar(): bool
+    {
+        return $this->cambiarEstadoInsumo('INACTIVO', 'ACTIVO');
+    }
+
+
+    /* ================================================= */
+    /* ACTUALIZAR EL ESTADO DEL INSUMO */
+    /* ================================================= */
+
+    private function cambiarEstadoInsumo(string $estadoActual, string $estadoNuevo): bool
+    {
         $this->idInsumo = $this->validarIdInsumo($this->idInsumo);
 
         if ($this->idInsumo === null) return false;
 
-        /* Cambiar el estado del insumo para conservar su registro */
+        /* Conservar las existencias, los lotes, los movimientos y las reservas */
         $sql = "UPDATE insumos
-                SET estado_insumo = 'INACTIVO'
-                WHERE id_insumo = :id_insumo";
+                SET estado_insumo = :estado_nuevo
+                WHERE id_insumo = :id_insumo
+                    AND estado_insumo = :estado_actual";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindParam(':id_insumo', $this->idInsumo);
+        $stmt->bindValue(':id_insumo', $this->idInsumo, PDO::PARAM_INT);
+        $stmt->bindValue(':estado_actual', $estadoActual, PDO::PARAM_STR);
+        $stmt->bindValue(':estado_nuevo', $estadoNuevo, PDO::PARAM_STR);
+        $stmt->execute();
 
-        return $stmt->execute();
+        if ($stmt->rowCount() !== 1) {
+            throw new \DomainException(
+                'El insumo ya no se encuentra en el estado esperado. Actualice la lista.'
+            );
+        }
+
+        return true;
     }
 }

@@ -41,28 +41,38 @@ class EstadoAgendamientoM extends Database implements CrudInterface
     /* CONSTRUCTOR */
     /* ================================================= */
 
-    public function __construct()
+    public function __construct(?PDO $conexion = null)
     {
-        $this->conexionMD = $this->getConnection();
+        $this->conexionMD = $conexion ?? $this->getConnection();
     }
 
     /* ================================================= */
     /* CONSULTAR ESTADOS DE AGENDAMIENTO */
     /* ================================================= */
 
-    public function consultar(): array
+    public function consultar(mixed $estado = 'ACTIVO'): array
     {
-        /* Obtener los estados del catálogo que permanecen activos */
+        $estado = $this->validarFiltroEstado($estado);
+
+        /* Obtener los estados del catálogo según el filtro seleccionado */
         $sql = "SELECT
                     id_estado_agendamiento,
                     nombre_estado,
                     descripcion,
                     estado_registro
-                FROM estados_agendamientos
-                WHERE estado_registro = 'ACTIVO'
-                ORDER BY nombre_estado ASC";
+                FROM estados_agendamientos";
+
+        if ($estado !== 'TODOS') {
+            $sql .= " WHERE estado_registro = :estado_registro";
+        }
+
+        $sql .= " ORDER BY nombre_estado ASC";
 
         $stmt = $this->conexionMD->prepare($sql);
+
+        if ($estado !== 'TODOS') {
+            $stmt->bindValue(':estado_registro', $estado, PDO::PARAM_STR);
+        }
 
         $stmt->execute();
 
@@ -76,6 +86,7 @@ class EstadoAgendamientoM extends Database implements CrudInterface
     public function registrar(): bool
     {
         if (!$this->validarDatosCatalogo(false)) return false;
+        if (!$this->comprobarNombreDisponible()) return false;
 
         /* Registrar un nuevo estado activo en el catálogo */
         $sql = "INSERT INTO estados_agendamientos
@@ -126,19 +137,57 @@ class EstadoAgendamientoM extends Database implements CrudInterface
     {
         if (!$this->validarDatosCatalogo(true)) return false;
 
-        /* Actualizar el nombre y la descripción del estado */
-        $sql = "UPDATE estados_agendamientos SET
-                    nombre_estado = :nombre_estado,
-                    descripcion = :descripcion
-                WHERE id_estado_agendamiento = :id_estado_agendamiento";
+        try {
+            $this->conexionMD->beginTransaction();
 
-        $stmt = $this->conexionMD->prepare($sql);
+            /* Comprobar que el estado de agendamiento siga activo antes de modificarlo */
+            $sqlBuscar = "SELECT id_estado_agendamiento
+                          FROM estados_agendamientos
+                          WHERE id_estado_agendamiento = :id_estado_agendamiento
+                            AND estado_registro = 'ACTIVO'
+                          LIMIT 1
+                          FOR UPDATE";
 
-        $stmt->bindParam(':id_estado_agendamiento', $this->idEstadoAgendamiento);
-        $stmt->bindParam(':nombre_estado', $this->nombreEstado);
-        $stmt->bindParam(':descripcion', $this->descripcion);
+            $stmtBuscar = $this->conexionMD->prepare($sqlBuscar);
+            $stmtBuscar->bindValue(':id_estado_agendamiento', $this->idEstadoAgendamiento, PDO::PARAM_INT);
+            $stmtBuscar->execute();
 
-        return $stmt->execute();
+            if ($stmtBuscar->fetchColumn() === false) {
+                $this->erroresValidacion['id_estado_agendamiento'] = 'El estado de agendamiento está inactivo o no se encuentra disponible. Actualice la lista.';
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            if (!$this->comprobarNombreDisponible($this->idEstadoAgendamiento)) {
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            /* Actualizar el nombre y la descripción conservando el identificador */
+            $sql = "UPDATE estados_agendamientos SET
+                        nombre_estado = :nombre_estado,
+                        descripcion = :descripcion
+                    WHERE id_estado_agendamiento = :id_estado_agendamiento
+                      AND estado_registro = 'ACTIVO'";
+
+            $stmt = $this->conexionMD->prepare($sql);
+            $stmt->bindValue(':id_estado_agendamiento', $this->idEstadoAgendamiento, PDO::PARAM_INT);
+            $stmt->bindParam(':nombre_estado', $this->nombreEstado);
+            $stmt->bindParam(':descripcion', $this->descripcion);
+            $stmt->execute();
+
+            if (!$this->conexionMD->commit()) {
+                throw new \RuntimeException('No fue posible confirmar la modificación del estado de agendamiento.');
+            }
+
+            return true;
+
+        } catch (\Throwable $e) {
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
+            throw $e;
+        }
     }
 
     /* ================================================= */
@@ -147,18 +196,78 @@ class EstadoAgendamientoM extends Database implements CrudInterface
 
     public function eliminar(): bool
     {
+        return $this->cambiarEstadoRegistro('ACTIVO', 'INACTIVO');
+    }
+
+    /* ================================================= */
+    /* REACTIVAR ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
+    public function reactivar(): bool
+    {
+        return $this->cambiarEstadoRegistro('INACTIVO', 'ACTIVO');
+    }
+
+    /* ================================================= */
+    /* CAMBIAR LA DISPONIBILIDAD DEL ESTADO EN EL CATÁLOGO */
+    /* ================================================= */
+
+    private function cambiarEstadoRegistro(string $estadoActual, string $estadoNuevo): bool
+    {
         if (!$this->validarIdentificacion()) return false;
 
-        /* Marcar el registro del catálogo como inactivo para conservarlo */
+        /* Cambiar únicamente la disponibilidad del registro en el catálogo */
         $sql = "UPDATE estados_agendamientos
-                SET estado_registro = 'INACTIVO'
-                WHERE id_estado_agendamiento = :id_estado_agendamiento";
+                SET estado_registro = :estado_nuevo
+                WHERE id_estado_agendamiento = :id_estado_agendamiento
+                  AND estado_registro = :estado_actual";
 
         $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindValue(':id_estado_agendamiento', $this->idEstadoAgendamiento, PDO::PARAM_INT);
+        $stmt->bindValue(':estado_actual', $estadoActual, PDO::PARAM_STR);
+        $stmt->bindValue(':estado_nuevo', $estadoNuevo, PDO::PARAM_STR);
+        $stmt->execute();
 
-        $stmt->bindParam(':id_estado_agendamiento', $this->idEstadoAgendamiento);
+        if ($stmt->rowCount() !== 1) {
+            throw new \DomainException('La disponibilidad del estado cambió o el registro no se encuentra disponible. Actualice la lista.');
+        }
 
-        return $stmt->execute();
+        return true;
+    }
+
+    /* ================================================= */
+    /* COMPROBAR QUE EL NOMBRE NO PERTENEZCA A OTRO ESTADO DE AGENDAMIENTO */
+    /* ================================================= */
+
+    private function comprobarNombreDisponible(?int $idExcluir = null): bool
+    {
+        $sql = "SELECT estado_registro
+                FROM estados_agendamientos
+                WHERE nombre_estado = :nombre_estado";
+
+        if ($idExcluir !== null) {
+            $sql .= " AND id_estado_agendamiento <> :id_estado_agendamiento";
+        }
+
+        $sql .= " LIMIT 1";
+
+        $stmt = $this->conexionMD->prepare($sql);
+        $stmt->bindParam(':nombre_estado', $this->nombreEstado);
+
+        if ($idExcluir !== null) {
+            $stmt->bindValue(':id_estado_agendamiento', $idExcluir, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        $estadoExistente = $stmt->fetchColumn();
+
+        if ($estadoExistente === false) return true;
+
+        $this->erroresValidacion['nombre_estado'] = $estadoExistente === 'INACTIVO'
+            ? 'Ya existe un estado de agendamiento inactivo con ese nombre. Reactívelo desde Inactivos.'
+            : 'Ya existe un estado de agendamiento con ese nombre.';
+
+        return false;
     }
 
     /* ================================================= */

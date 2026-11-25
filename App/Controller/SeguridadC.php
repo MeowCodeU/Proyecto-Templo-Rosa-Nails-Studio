@@ -67,7 +67,7 @@ try {
         }
 
         $accion = trim($accion);
-        $modeloOperacion = in_array($accion, ['registrar_rol', 'modificar_rol', 'cambiar_estado_rol'], true)
+        $modeloOperacion = in_array($accion, ['registrar_rol', 'modificar_rol', 'cambiar_estado_rol', 'reactivar_rol'], true)
             ? $modeloRol : $modeloSeguridad;
 
         switch ($accion) {
@@ -82,10 +82,16 @@ try {
                     throw new \InvalidArgumentException('La solicitud enviada no es válida.');
                 }
 
-                $listaUsuarios = $modeloSeguridad->consultar();
-                $listaRoles = $modeloRol->consultar();
+                $estadoUsuarios = $datosFormulario['estado_usuarios'] ?? 'ACTIVO';
+                $estadoRoles = $datosFormulario['estado_roles'] ?? 'ACTIVO';
 
-                if (!is_array($listaUsuarios) || !is_array($listaRoles)) {
+                $listaUsuarios = $modeloSeguridad->consultar($estadoUsuarios);
+                $listaRoles = $modeloRol->consultar($estadoRoles);
+
+                /* Los formularios siempre ofrecen únicamente roles activos */
+                $listaRolesActivos = $estadoRoles === 'ACTIVO' ? $listaRoles : $modeloRol->consultar();
+
+                if (!is_array($listaUsuarios) || !is_array($listaRoles) || !is_array($listaRolesActivos)) {
                     throw new \RuntimeException('No fue posible consultar los registros.');
                 }
 
@@ -103,7 +109,8 @@ try {
                     'nickname',
                     'id_rol',
                     'nombre_rol',
-                    'estado_usuario'
+                    'estado_usuario',
+                    'estado_rol'
                 ]);
 
                 $camposRol = array_flip([
@@ -127,7 +134,19 @@ try {
                     array_values($listaRoles)
                 );
 
-                $respuestaConsulta = ['ok' => true, 'usuarios' => $usuariosPublicos, 'roles' => $rolesPublicos];
+                $rolesActivosPublicos = array_map(
+                    static function (array $rol) use ($camposRol): array {
+                        return array_intersect_key($rol, $camposRol);
+                    },
+                    array_values($listaRolesActivos)
+                );
+
+                $respuestaConsulta = [
+                    'ok' => true,
+                    'usuarios' => $usuariosPublicos,
+                    'roles' => $rolesPublicos,
+                    'roles_activos' => $rolesActivosPublicos
+                ];
 
                 /* Recuperar el aviso de un registro enviado sin AJAX */
                 $avisoRegistro = $_SESSION['aviso_registro_usuario'] ?? null;
@@ -317,6 +336,19 @@ try {
                 break;
 
             /* ================================================= */
+            /* REACTIVAR USUARIO */
+            /* ================================================= */
+
+            case 'reactivar_usuario':
+
+                $modeloSeguridad->set_idUsuario($datosFormulario['id_usuario'] ?? null);
+
+                $resultado = $modeloSeguridad->reactivar();
+                $mensaje = 'Usuario reactivado correctamente.';
+
+                break;
+
+            /* ================================================= */
             /* DESACTIVAR ROL */
             /* ================================================= */
 
@@ -329,6 +361,19 @@ try {
 
                 break;
 
+            /* ================================================= */
+            /* REACTIVAR ROL */
+            /* ================================================= */
+
+            case 'reactivar_rol':
+
+                $modeloRol->set_idRol($datosFormulario['id_rol'] ?? null);
+
+                $resultado = $modeloRol->reactivar();
+                $mensaje = 'Rol reactivado correctamente.';
+
+                break;
+
             default:
                 throw new \InvalidArgumentException('La acción enviada no es válida.');
         }
@@ -337,7 +382,11 @@ try {
         $erroresValidacion = $modeloOperacion->obtenerErroresValidacion();
 
         if ($erroresValidacion !== []) {
-            throw new \InvalidArgumentException('Revise los campos señalados.');
+            $mensajeValidacion = in_array($accion, ['reactivar_usuario', 'reactivar_rol'], true)
+                ? (string) reset($erroresValidacion)
+                : 'Revise los campos señalados.';
+
+            throw new \InvalidArgumentException($mensajeValidacion);
         }
 
         /* Confirmar el resultado de la operación */
@@ -383,6 +432,7 @@ try {
     /* Consultar los usuarios y roles activos para la vista */
     $listaUsuarios = $modeloSeguridad->consultar();
     $listaRoles = $modeloRol->consultar();
+    $listaRolesActivos = $listaRoles;
 
 } catch (\Throwable $e) {
 
@@ -398,6 +448,10 @@ try {
 
     } elseif ($e instanceof \InvalidArgumentException) {
         $estadoRespuesta = 422;
+        $mensaje = $e->getMessage();
+
+    } elseif ($e instanceof \DomainException) {
+        $estadoRespuesta = 409;
         $mensaje = $e->getMessage();
 
     } elseif (

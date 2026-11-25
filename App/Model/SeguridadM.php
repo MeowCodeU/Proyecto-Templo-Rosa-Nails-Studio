@@ -72,9 +72,11 @@ class SeguridadM extends PersonasM implements CrudInterface
     /* CONSULTAR USUARIOS */
     /* ================================================= */
 
-    public function consultar(): array
+    public function consultar(mixed $estado = 'ACTIVO'): array
     {
-        /* Obtener los usuarios activos con sus datos personales y su rol */
+        $estado = $this->validarFiltroEstado($estado);
+
+        /* Obtener los usuarios con sus datos personales y el estado de su rol */
         $sql = "SELECT
                     u.id_usuario,
                     u.id_persona,
@@ -90,7 +92,8 @@ class SeguridadM extends PersonasM implements CrudInterface
                     p.direccion,
                     p.ciudad,
 
-                    r.nombre_rol
+                    r.nombre_rol,
+                    r.estado_rol
 
                 FROM usuarios u
 
@@ -98,15 +101,20 @@ class SeguridadM extends PersonasM implements CrudInterface
                     ON p.id_persona = u.id_persona
 
                 INNER JOIN roles r
-                    ON r.id_rol = u.id_rol
+                    ON r.id_rol = u.id_rol";
 
-                WHERE u.estado_usuario = 'ACTIVO'
+        if ($estado !== 'TODOS') {
+            $sql .= " WHERE u.estado_usuario = :estado_usuario";
+        }
 
-                ORDER BY
-                    p.nombre,
-                    p.apellido";
+        $sql .= " ORDER BY p.nombre, p.apellido";
 
         $stmt = $this->conexionMD->prepare($sql);
+
+        if ($estado !== 'TODOS') {
+            $stmt->bindValue(':estado_usuario', $estado, PDO::PARAM_STR);
+        }
+
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -172,7 +180,7 @@ class SeguridadM extends PersonasM implements CrudInterface
             $persona = $this->obtenerPersonaPorCedula((string) $this->cedula);
 
             if ($persona !== null) {
-                $sqlBuscarCuenta = "SELECT id_usuario
+                $sqlBuscarCuenta = "SELECT id_usuario, estado_usuario
                                     FROM usuarios
                                     WHERE id_persona = :id_persona
                                     LIMIT 1";
@@ -181,8 +189,12 @@ class SeguridadM extends PersonasM implements CrudInterface
                 $stmtBuscarCuenta->bindValue(':id_persona', (int) $persona['id_persona'], PDO::PARAM_INT);
                 $stmtBuscarCuenta->execute();
 
-                if ($stmtBuscarCuenta->fetchColumn() !== false) {
-                    $this->erroresValidacion['cedula'] = 'La persona seleccionada ya tiene una cuenta de usuario.';
+                $cuentaExistente = $stmtBuscarCuenta->fetch(PDO::FETCH_ASSOC);
+
+                if ($cuentaExistente !== false) {
+                    $this->erroresValidacion['cedula'] = $cuentaExistente['estado_usuario'] === 'INACTIVO'
+                        ? 'La persona ya tiene una cuenta inactiva. Reactívela desde Inactivos.'
+                        : 'La persona seleccionada ya tiene una cuenta de usuario.';
                     $this->conexionMD->rollBack();
                     return false;
                 }
@@ -272,6 +284,7 @@ class SeguridadM extends PersonasM implements CrudInterface
             $sqlBuscarPersona = "SELECT id_persona
                                  FROM usuarios
                                  WHERE id_usuario = :id_usuario
+                                   AND estado_usuario = 'ACTIVO'
                                  LIMIT 1
                                  FOR UPDATE";
 
@@ -368,12 +381,83 @@ class SeguridadM extends PersonasM implements CrudInterface
         /* Cambiar el estado del usuario sin eliminar su registro */
         $sql = "UPDATE usuarios
                 SET estado_usuario = 'INACTIVO'
-                WHERE id_usuario = :id_usuario";
+                WHERE id_usuario = :id_usuario
+                  AND estado_usuario = 'ACTIVO'";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindParam(':id_usuario', $this->idUsuario);
+        $stmt->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $stmt->execute();
+        if ($stmt->rowCount() !== 1) {
+            throw new \DomainException('El usuario ya está inactivo o no se encuentra disponible. Actualice la lista.');
+        }
+
+        return true;
+    }
+
+    /* ================================================= */
+    /* REACTIVAR USUARIO */
+    /* ================================================= */
+
+    public function reactivar(): bool
+    {
+        if (!$this->validarIdUsuarioSeguridad()) return false;
+
+        try {
+            $this->conexionMD->beginTransaction();
+
+            /* Consultar el rol que ya pertenece a la cuenta inactiva */
+            $sqlCuenta = "SELECT id_rol
+                          FROM usuarios
+                          WHERE id_usuario = :id_usuario
+                            AND estado_usuario = 'INACTIVO'
+                          LIMIT 1";
+
+            $stmtCuenta = $this->conexionMD->prepare($sqlCuenta);
+            $stmtCuenta->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
+            $stmtCuenta->execute();
+
+            $idRol = $stmtCuenta->fetchColumn();
+
+            if ($idRol === false) {
+                throw new \DomainException('El usuario ya está activo o no se encuentra disponible. Actualice la lista.');
+            }
+
+            /* Mantener el rol bloqueado hasta confirmar la reactivación */
+            if (!$this->comprobarRolActivo((int) $idRol)) {
+                $this->erroresValidacion['id_rol'] = 'El rol asignado está inactivo o no existe. Reactive primero el rol.';
+                $this->conexionMD->rollBack();
+                return false;
+            }
+
+            /* Conservar la contraseña, la persona y el rol de la cuenta */
+            $sql = "UPDATE usuarios
+                    SET estado_usuario = 'ACTIVO'
+                    WHERE id_usuario = :id_usuario
+                      AND id_rol = :id_rol
+                      AND estado_usuario = 'INACTIVO'";
+
+            $stmt = $this->conexionMD->prepare($sql);
+            $stmt->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
+            $stmt->bindValue(':id_rol', (int) $idRol, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() !== 1) {
+                throw new \DomainException('La cuenta cambió durante la operación. Actualice la lista antes de reactivarla.');
+            }
+
+            if (!$this->conexionMD->commit()) {
+                throw new \RuntimeException('No fue posible confirmar la reactivación del usuario.');
+            }
+
+            return true;
+
+        } catch (\Throwable $e) {
+            if ($this->conexionMD->inTransaction()) {
+                $this->conexionMD->rollBack();
+            }
+            throw $e;
+        }
     }
 
     /* ================================================= */
@@ -392,7 +476,7 @@ class SeguridadM extends PersonasM implements CrudInterface
     /* COMPROBAR EL ROL ASIGNADO DENTRO DE LA TRANSACCIÓN */
     /* ================================================= */
 
-    private function comprobarRolActivo(): bool
+    private function comprobarRolActivo(?int $idRol = null): bool
     {
         $sql = "SELECT id_rol
                 FROM roles
@@ -402,7 +486,7 @@ class SeguridadM extends PersonasM implements CrudInterface
                 FOR UPDATE";
 
         $stmt = $this->conexionMD->prepare($sql);
-        $stmt->bindValue(':id_rol', $this->idRol, PDO::PARAM_INT);
+        $stmt->bindValue(':id_rol', $idRol ?? $this->idRol, PDO::PARAM_INT);
         $stmt->execute();
 
         if ($stmt->fetchColumn() !== false) return true;

@@ -130,15 +130,28 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="config-tab-head">
                     <h5 class="config-title">Gestión de Servicios</h5>
 
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoServicio"
-                    >
-                        <i class="bi bi-plus-circle"></i>
-                        Nuevo Servicio
-                    </button>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <label for="filtroEstadoServicios" class="form-label fw-bold mb-0">Estado</label>
+
+                        <select
+                            id="filtroEstadoServicios"
+                            class="form-select templo-filtro-estado w-auto"
+                        >
+                            <option value="ACTIVO" selected>Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                            <option value="TODOS">Todos</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="btn-templo-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNuevoServicio"
+                        >
+                            <i class="bi bi-plus-circle"></i>
+                            Nuevo Servicio
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Listado de servicios -->
@@ -255,15 +268,28 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="config-tab-head">
                     <h5 class="config-title">Gestión de Estados de Agendamiento</h5>
 
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoEstadoAgendamiento"
-                    >
-                        <i class="bi bi-plus-circle"></i>
-                        Nuevo Estado
-                    </button>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <label for="filtroEstadoEstadosAgendamiento" class="form-label fw-bold mb-0">Estado</label>
+
+                        <select
+                            id="filtroEstadoEstadosAgendamiento"
+                            class="form-select templo-filtro-estado w-auto"
+                        >
+                            <option value="ACTIVO" selected>Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                            <option value="TODOS">Todos</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="btn-templo-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNuevoEstadoAgendamiento"
+                        >
+                            <i class="bi bi-plus-circle"></i>
+                            Nuevo Estado
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Listado de estados de agendamiento -->
@@ -359,15 +385,28 @@ require_once __DIR__ . '/Layout/Header.php';
                 <div class="config-tab-head">
                     <h5 class="config-title">Gestión de Tipos de Agendamiento</h5>
 
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoTipoAgendamiento"
-                    >
-                        <i class="bi bi-plus-circle"></i>
-                        Nuevo Tipo
-                    </button>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <label for="filtroEstadoTiposAgendamiento" class="form-label fw-bold mb-0">Estado</label>
+
+                        <select
+                            id="filtroEstadoTiposAgendamiento"
+                            class="form-select templo-filtro-estado w-auto"
+                        >
+                            <option value="ACTIVO" selected>Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                            <option value="TODOS">Todos</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="btn-templo-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNuevoTipoAgendamiento"
+                        >
+                            <i class="bi bi-plus-circle"></i>
+                            Nuevo Tipo
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Listado de tipos de agendamiento -->
@@ -1311,7 +1350,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 
-$scriptVista = 'Assets/js/configuracion.js?v=2';
+$scriptVista = 'Assets/js/configuracion.js?v=' . filemtime(__DIR__ . '/../../Assets/js/configuracion.js');
 $scriptVistaModulo = true;
 
 require_once __DIR__ . '/Layout/Footer.php';

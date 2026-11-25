@@ -98,7 +98,7 @@ try {
         $responderInsumos(
             [
                 'ok' => true,
-                'insumos' => $modeloInsumos->consultar()
+                'insumos' => $modeloInsumos->consultar($_GET['estado'] ?? 'ACTIVO')
             ]
         );
     }
@@ -113,7 +113,7 @@ try {
             !is_string($accionInsumos) ||
             !in_array(
                 $accionInsumos,
-                ['consultar', 'consultar_historial', 'consultar_proveedores', 'consultar_lotes', 'registrar', 'modificar', 'gestionar_existencias', 'desactivar'],
+                ['consultar', 'consultar_historial', 'consultar_proveedores', 'consultar_lotes', 'registrar', 'modificar', 'gestionar_existencias', 'desactivar', 'reactivar'],
                 true
             )
         ) {
@@ -122,13 +122,13 @@ try {
             );
         }
 
-        /* Consultar insumos activos */
+        /* Consultar los insumos del estado elegido */
         if ($accionInsumos === 'consultar') {
 
             $responderInsumos(
                 [
                     'ok' => true,
-                    'insumos' => $modeloInsumos->consultar()
+                    'insumos' => $modeloInsumos->consultar($datosInsumos['estado'] ?? 'ACTIVO')
                 ]
             );
         }
@@ -243,7 +243,7 @@ try {
 
 
         /* Obtener el usuario responsable de los movimientos de existencias */
-        if ($accionInsumos === 'gestionar_existencias') {
+        if (in_array($accionInsumos, ['modificar', 'gestionar_existencias'], true)) {
             $usuarioAutenticado = Session\obtenerUsuario();
 
             $idUsuario = filter_var(
@@ -323,7 +323,7 @@ try {
             $modeloInsumos->set_stockOriginal($datosInsumos['stock_original']);
             $modeloInsumos->set_stockMinimo($datosInsumos['stock_minimo'] ?? 0);
 
-            $resultadoInsumos = $modeloInsumos->modificar();
+            $resultadoInsumos = $modeloInsumos->modificar($idUsuario);
 
             $mensajeInsumos =
                 'Insumo actualizado correctamente.';
@@ -392,6 +392,22 @@ try {
 
 
         /* ================================================= */
+        /* REACTIVAR */
+        /* ================================================= */
+
+        /* Recuperar el mismo insumo con sus existencias, lotes e historial */
+        if ($accionInsumos === 'reactivar') {
+
+            $modeloInsumos->set_idInsumo($datosInsumos['id_insumo']);
+
+            $resultadoInsumos = $modeloInsumos->reactivar();
+
+            $mensajeInsumos =
+                'Insumo reactivado correctamente.';
+        }
+
+
+        /* ================================================= */
         /* CONFIRMAR OPERACIÓN */
         /* ================================================= */
 
@@ -452,7 +468,7 @@ try {
 
 } catch (DomainException $e) {
 
-    /* Informar si las existencias cambiaron durante la edición */
+    /* Informar cambios de existencias o conflictos con el estado del insumo */
     $respuestaInsumos = [
         'ok' => false,
         'mensaje' => $e->getMessage()

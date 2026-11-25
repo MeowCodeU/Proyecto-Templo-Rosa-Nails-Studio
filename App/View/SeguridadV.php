@@ -15,6 +15,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
 $listaUsuarios = (isset($listaUsuarios) && is_array($listaUsuarios)) ? $listaUsuarios : [];
 $listaRoles = (isset($listaRoles) && is_array($listaRoles)) ? $listaRoles : [];
+$listaRolesActivos = (isset($listaRolesActivos) && is_array($listaRolesActivos)) ? $listaRolesActivos : $listaRoles;
 
 $escaparSeguridad = static function ($valor): string {
     return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
@@ -541,15 +542,25 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                 <div class="config-tab-head">
                     <h5 class="config-title">Gestión de Usuarios</h5>
 
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoUsuario"
-                    >
-                        <i class="bi bi-person-plus"></i>
-                        Registrar Usuario
-                    </button>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <label for="filtroEstadoUsuarios" class="form-label mb-0">Estado</label>
+
+                        <select id="filtroEstadoUsuarios" class="form-select templo-filtro-estado w-auto">
+                            <option value="ACTIVO" selected>Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                            <option value="TODOS">Todos</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="btn-templo-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNuevoUsuario"
+                        >
+                            <i class="bi bi-person-plus"></i>
+                            Registrar Usuario
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tabla de usuarios -->
@@ -735,15 +746,25 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                 <div class="config-tab-head">
                     <h5 class="config-title">Gestión de Roles</h5>
 
-                    <button
-                        type="button"
-                        class="btn-templo-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNuevoRol"
-                    >
-                        <i class="bi bi-plus-circle"></i>
-                        Nuevo Rol
-                    </button>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <label for="filtroEstadoRoles" class="form-label mb-0">Estado</label>
+
+                        <select id="filtroEstadoRoles" class="form-select templo-filtro-estado w-auto">
+                            <option value="ACTIVO" selected>Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                            <option value="TODOS">Todos</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="btn-templo-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNuevoRol"
+                        >
+                            <i class="bi bi-plus-circle"></i>
+                            Nuevo Rol
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tabla de roles -->
@@ -1389,7 +1410,7 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             >
                                 <option value="">Seleccione un rol</option>
 
-                                <?php foreach ($listaRoles as $rol): ?>
+                                <?php foreach ($listaRolesActivos as $rol): ?>
 
                                     <option value="<?= $escaparSeguridad($rol['id_rol'] ?? ''); ?>">
                                         <?= $escaparSeguridad($rol['nombre_rol'] ?? ''); ?>
@@ -1683,7 +1704,7 @@ $mensajeRestablecimiento = $mensajesRestablecimiento[$resultadoRestablecimiento]
                             >
                                 <option value="">Seleccione un rol</option>
 
-                                <?php foreach ($listaRoles as $rol): ?>
+                                <?php foreach ($listaRolesActivos as $rol): ?>
 
                                     <option value="<?= $escaparSeguridad($rol['id_rol'] ?? ''); ?>">
                                         <?= $escaparSeguridad($rol['nombre_rol'] ?? ''); ?>
@@ -2282,7 +2303,7 @@ $scriptVista = 'Assets/js/seguridad.js';
 
 <?php
 
-$scriptVista = 'Assets/js/seguridad.js?v=2';
+$scriptVista = 'Assets/js/seguridad.js?v=' . filemtime(__DIR__ . '/../../Assets/js/seguridad.js');
 $scriptVistaModulo = true;
 
 require_once __DIR__ . '/Layout/Footer.php';

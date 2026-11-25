@@ -60,6 +60,14 @@ try {
     /* Crear el objeto del modelo */
     $modeloProveedores = new ProveedoresM();
 
+    /* Consultar el estado solicitado desde una petición asíncrona de lectura */
+    if ($metodoSolicitud === 'GET' && $esPeticionAjax) {
+        $responderJson([
+            'ok' => true,
+            'proveedores' => $modeloProveedores->consultar($_GET['estado'] ?? 'ACTIVO')
+        ]);
+    }
+
     /* Procesar las acciones enviadas por los formularios */
     if ($metodoSolicitud === 'POST' && isset($datosFormulario['accion'])) {
 
@@ -79,7 +87,7 @@ try {
                     throw new \InvalidArgumentException('La solicitud enviada no es válida.');
                 }
 
-                $listaProveedores = $modeloProveedores->consultar();
+                $listaProveedores = $modeloProveedores->consultar($datosFormulario['estado'] ?? 'ACTIVO');
 
                 if (!is_array($listaProveedores)) {
                     throw new \RuntimeException('No fue posible consultar los proveedores.');
@@ -222,13 +230,20 @@ try {
             /* ================================================= */
 
             case 'consultar_insumos':
+            case 'consultar_insumos_detalle':
 
                 if (!$esPeticionAjax) {
                     throw new \InvalidArgumentException('La solicitud enviada no es válida.');
                 }
 
                 $idProveedor = $datosFormulario['id_proveedor'] ?? null;
-                $insumosProveedor = $modeloProveedores->consultarInsumosProveedor($idProveedor);
+
+                /* La consulta de Detalles también permite revisar un proveedor inactivo */
+                $incluirInactivos = $datosFormulario['accion'] === 'consultar_insumos_detalle';
+                $insumosProveedor = $modeloProveedores->consultarInsumosProveedor(
+                    $idProveedor,
+                    $incluirInactivos
+                );
 
                 $responderJson([
                     'ok' => true,
@@ -280,6 +295,20 @@ try {
                 break;
 
 
+            /* ================================================= */
+            /* REACTIVAR PROVEEDOR */
+            /* ================================================= */
+
+            case 'reactivar':
+
+                $modeloProveedores->set_idProveedor($datosFormulario['id_proveedor'] ?? null);
+
+                $resultado = $modeloProveedores->reactivar();
+                $mensaje = 'Proveedor reactivado correctamente.';
+
+                break;
+
+
             default:
                 throw new \InvalidArgumentException('La acción enviada no es válida.');
         }
@@ -293,7 +322,7 @@ try {
         }
 
         /* Confirmar el resultado de la operación */
-        if ($resultado === false) {
+        if ($resultado !== true) {
             throw new \RuntimeException('No fue posible completar la operación.');
         }
 
@@ -334,9 +363,18 @@ try {
         $estadoRespuesta = 422;
         $mensaje = $e->getMessage();
 
+    } elseif ($e instanceof \DomainException) {
+        $estadoRespuesta = 409;
+        $mensaje = $e->getMessage();
+
     } elseif ($e instanceof \PDOException && (int) ($e->errorInfo[1] ?? 0) === 1062) {
         $estadoRespuesta = 409;
         $mensaje = 'Ya existe un registro con uno de los datos únicos ingresados. Revise los datos del formulario.';
+    }
+
+    /* Conservar el detalle técnico de un fallo interno únicamente en el servidor */
+    if ($estadoRespuesta === 500) {
+        error_log('Proveedores: ' . $e->getMessage());
     }
 
     if ($esPeticionAjax) {

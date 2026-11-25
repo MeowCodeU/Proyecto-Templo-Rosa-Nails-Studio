@@ -20,7 +20,14 @@ require_once __DIR__ . '/Layout/Header.php';
         </h2>
 
         <!-- Acciones disponibles -->
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <label for="filtroEstadoInsumos" class="form-label mb-0">Estado</label>
+
+            <select id="filtroEstadoInsumos" class="form-select templo-filtro-estado w-auto">
+                <option value="ACTIVO" selected>Activos</option>
+                <option value="INACTIVO">Inactivos</option>
+                <option value="TODOS">Todos</option>
+            </select>
 
             <button
                 type="button"
@@ -308,7 +315,7 @@ require_once __DIR__ . '/Layout/Header.php';
                                                 <!-- Botón Desactivar -->
                                                 <button
                                                     type="button"
-                                                    class="btn-action btn-delete btnDesactivarInsumo"
+                                                    class="btn-action btn-deactivate btnDesactivarInsumo"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalDesactivarInsumo"
                                                     data-id-insumo="<?php echo htmlspecialchars((string) ($insumo['id_insumo'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
@@ -1323,7 +1330,7 @@ require_once __DIR__ . '/Layout/Header.php';
                     <p class="status-client-name" id="desactivarNombreInsumo"></p>
 
                     <p class="status-warning">
-                        El insumo permanecerá guardado en la base de datos.
+                        El insumo no se borrará. Podrá consultarlo y reactivarlo desde Inactivos.
                     </p>
 
                 </div>
@@ -1363,7 +1370,7 @@ require_once __DIR__ . '/Layout/Header.php';
 
 <?php
 
-$scriptVista = 'Assets/js/insumos.js?v=2';
+$scriptVista = 'Assets/js/insumos.js?v=' . filemtime(__DIR__ . '/../../Assets/js/insumos.js');
 $scriptVistaModulo = true;
 
 require_once __DIR__ . '/Layout/Footer.php';

@@ -362,7 +362,7 @@ $(function () {
 
             if (campo === "nombre" && cliente.estado === "INACTIVO") {
                 $("<span>", {
-                    class: "badge rounded-pill bg-light text-body-secondary ms-2",
+                    class: "badge rounded-pill estado-registro-inactivo ms-2",
                     text: "Inactivo"
                 }).appendTo($celda);
             }
@@ -429,7 +429,7 @@ $(function () {
             $acciones.append(
                 crearBotonCliente(
                     cliente,
-                    "btn-detail btnReactivarCliente",
+                    "btn-reactivate btnReactivarCliente",
                     "#modalDesactivarCliente",
                     "Reactivar cliente",
                     $("<i>", {
