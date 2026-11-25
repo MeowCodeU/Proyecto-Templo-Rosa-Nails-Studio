@@ -356,7 +356,7 @@ function referenciaCampo(campo) {
     return campo.closest(".templo-password-field") || campo;
 }
 
-/* Muestra solamente texto bajo el campo, sin cambiar sus bordes ni fondos */
+/* Presenta el estado del campo y conserva la explicación de los errores */
 function mostrarCampo(campo, mensaje, marcarCorrecto = false) {
     if (!campo || campo.type === "hidden") return;
 
@@ -368,8 +368,11 @@ function mostrarCampo(campo, mensaje, marcarCorrecto = false) {
     }
 
     campo.removeAttribute("aria-invalid");
+    campo.removeAttribute("data-templo-validacion");
 
     if (!mensaje && (!marcarCorrecto || campo.readOnly || campo.disabled || !String(campo.value).trim())) return;
+
+    campo.setAttribute("data-templo-validacion", mensaje ? "invalido" : "valido");
 
     const texto = document.createElement("div");
 
@@ -381,9 +384,14 @@ function mostrarCampo(campo, mensaje, marcarCorrecto = false) {
     if (mensaje) campo.setAttribute("aria-invalid", "true");
 }
 
-/* Limpia los mensajes generados por el validador */
+/* Recupera el aspecto original de los campos y retira sus mensajes */
 function limpiarFormulario(formulario) {
     if (!formulario) return;
+
+    formulario.querySelectorAll("[data-templo-validacion]").forEach(function (campo) {
+        campo.removeAttribute("data-templo-validacion");
+        campo.removeAttribute("aria-invalid");
+    });
 
     formulario.querySelectorAll(".templo-validacion-feedback").forEach(function (mensaje) {
         const anterior = mensaje.previousElementSibling;
@@ -450,7 +458,7 @@ function mostrarErrores(formulario, errores) {
     return primero;
 }
 
-/* Activa la validación al salir y al corregir los campos */
+/* Activa la validación al escribir, seleccionar o salir de los campos */
 function activar(formulario, reglas = reglasClientes) {
     if (!formulario || formulario.dataset.validacionesActivas === "si") return;
 
@@ -468,13 +476,16 @@ function activar(formulario, reglas = reglasClientes) {
         const campo = evento.target;
 
         if (campo.disabled || !campo.name || !reglas[campo.name]) return;
-        if (!referenciaCampo(campo).nextElementSibling?.classList.contains("templo-validacion-feedback")) return;
 
         mostrarCampo(campo, validarValor(campo.name, campo.value, reglas), true);
     }
 
     formulario.addEventListener("input", actualizarCampo);
     formulario.addEventListener("change", actualizarCampo);
+
+    formulario.addEventListener("reset", function () {
+        limpiarFormulario(formulario);
+    });
 }
 
 /* Comparte las funciones con los demás módulos */

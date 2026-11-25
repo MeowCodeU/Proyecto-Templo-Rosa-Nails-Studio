@@ -1460,10 +1460,7 @@ $(function () {
         try {
             await actualizarAtencion(true, true);
 
-            mostrarMensaje(
-                "Datos actualizados. Revise la información antes de guardar sus cambios.",
-                "info"
-            );
+            limpiarMensaje();
 
         } catch (error) {
             mostrarMensaje(error.message, "danger", true);

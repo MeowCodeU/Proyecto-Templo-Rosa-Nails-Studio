@@ -111,8 +111,7 @@ $(document).ready(function () {
         if (
             !redirigiendo &&
             contenedor.is(avisoListado) &&
-            tipo !== "info" &&
-            (tipo !== "success" || mensaje !== "Listado actualizado.")
+            tipo !== "info"
         ) {
             window.Alertas?.notificar(mensaje, tipo);
         }
@@ -389,7 +388,7 @@ $(document).ready(function () {
         filtroEstado.prop("disabled", true);
         tablaProveedores.attr("aria-busy", "true");
 
-        mostrarMensaje(avisoListado, "Actualizando listado…", "info");
+        avisoListado.empty().addClass("d-none");
 
         try {
             await tablaPreparada;
@@ -418,7 +417,13 @@ $(document).ready(function () {
             actualizarTabla(respuesta.proveedores);
             estadoListado = estadoSolicitado;
 
-            mostrarMensaje(avisoListado, mensajeExito || "Listado actualizado.", "success");
+            if (mensajeExito) {
+                if (window.Alertas?.disponible()) {
+                    window.Alertas.notificar(mensajeExito, "success");
+                } else {
+                    mostrarMensaje(avisoListado, mensajeExito, "success");
+                }
+            }
 
             return true;
 

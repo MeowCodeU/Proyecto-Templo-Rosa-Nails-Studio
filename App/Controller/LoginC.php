@@ -390,4 +390,23 @@ try {
 /* CARGA DE LA VISTA */
 /* ===================================================== */
 
+/* Preparar los datos que presenta el modal de recuperación */
+$mensajeRecuperacion = is_string($mensajeRecuperacion ?? null) ? $mensajeRecuperacion : '';
+$tipoMensajeRecuperacion = in_array($tipoMensajeRecuperacion ?? '', ['info', 'success', 'warning', 'error'], true)
+    ? $tipoMensajeRecuperacion : 'info';
+$erroresRecuperacion = is_array($erroresRecuperacion ?? null)
+    ? array_filter($erroresRecuperacion, 'is_string') : [];
+$mostrarRecuperacion = ($mostrarRecuperacion ?? false) === true;
+$pasoRecuperacion = ($pasoRecuperacion ?? '') === 'restablecer' ? 'restablecer' : 'solicitar';
+$tokenRecuperacionClave = is_string($tokenRecuperacionClave ?? null) ? $tokenRecuperacionClave : '';
+
+$cedulaRecuperacion = is_string($datosRecuperacion['cedula'] ?? null) ? $datosRecuperacion['cedula'] : '';
+$correoRecuperacion = is_string($datosRecuperacion['correo'] ?? null) ? $datosRecuperacion['correo'] : '';
+
+/* Presentar la espera restante sin decidir la autorización del reenvío */
+$ultimoEnvioRecuperacion = $_SESSION['recuperacion_ultimo_envio'] ?? 0;
+$reintentarRecuperacion = is_int($ultimoEnvioRecuperacion)
+    ? max(0, $ultimoEnvioRecuperacion + 60 - time()) : 0;
+
+
 require_once __DIR__ . '/../View/LoginV.php';

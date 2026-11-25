@@ -268,7 +268,7 @@ $(function () {
 
                 try {
                     if (await actualizarLista(catalogo)) {
-                        mostrarMensaje(catalogo, "Lista actualizada correctamente.");
+                        catalogo.mensaje.empty().prop("hidden", true);
                     }
 
                 } catch (error) {

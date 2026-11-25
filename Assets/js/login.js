@@ -133,6 +133,8 @@ $(function () {
         let enviando = false;
         let preparandoEnvio = false;
         let redirigiendo = false;
+        let revisionCedula = 0;
+        let campoAvisoFormato = "";
 
 
         /* Utilizar el aviso reservado sin modificar la distribución del frasco */
@@ -149,13 +151,18 @@ $(function () {
 
 
         function limpiarMensajes() {
+            revisionCedula++;
+            campoAvisoFormato = "";
             aviso.empty().prop("hidden", true);
-            formulario.find("[aria-invalid]").removeAttr("aria-invalid");
+            formulario.find("[aria-invalid], [data-templo-validacion]")
+                .removeAttr("aria-invalid data-templo-validacion");
         }
 
 
         /* Mostrar los mensajes en el espacio reservado de la vista */
         function mostrarMensaje(mensaje, errores = null, campoError = "") {
+            revisionCedula++;
+            campoAvisoFormato = "";
             aviso.text(mensaje).prop("hidden", false);
 
             let primerCampo = null;
@@ -168,7 +175,7 @@ $(function () {
 
                     if (!campo.length || campo.prop("type") === "hidden") return;
 
-                    campo.attr("aria-invalid", "true");
+                    campo.attr({ "aria-invalid": "true", "data-templo-validacion": "invalido" });
 
                     if (!primerCampo) primerCampo = campo;
                 });
@@ -180,7 +187,7 @@ $(function () {
                 }).first();
 
                 if (campo.length && campo.prop("type") !== "hidden") {
-                    campo.attr("aria-invalid", "true");
+                    campo.attr({ "aria-invalid": "true", "data-templo-validacion": "invalido" });
                     primerCampo = campo;
                 }
             }
@@ -191,8 +198,52 @@ $(function () {
 
         /* Retirar el aviso anterior cuando se corrige la entrada */
         formulario.on("input change", "[name]", function () {
-            $(this).removeAttr("aria-invalid");
+            revisionCedula++;
+            campoAvisoFormato = "";
+            $(this).removeAttr("aria-invalid data-templo-validacion");
             aviso.empty().prop("hidden", true);
+        });
+
+
+        /* Presentar la validación del formato sin consultar las credenciales */
+        formulario.on("input change focusout", "input[name]:not([type='hidden'])", async function () {
+            const campo = $(this);
+            const nombre = campo.attr("name");
+            const revisionActual = ++revisionCedula;
+
+            if (enviando || preparandoEnvio || redirigiendo || campo.prop("disabled")) return;
+
+            const configuracion = await cargaValidaciones;
+
+            if (revisionActual !== revisionCedula || enviando || preparandoEnvio || redirigiendo) return;
+            if (!configuracion) return;
+
+            const reglas = esLogin ? configuracion.login : configuracion.universal;
+
+            if (!Object.prototype.hasOwnProperty.call(reglas, nombre)) return;
+
+            const mensaje = configuracion.validaciones.validarValor(nombre, campo.val(), reglas);
+
+            if (mensaje) {
+                campoAvisoFormato = nombre;
+                campo.attr({ "aria-invalid": "true", "data-templo-validacion": "invalido" });
+
+                aviso.attr("data-tipo-aviso", "error")
+                    .text(mensaje)
+                    .prop("hidden", false);
+
+            } else {
+                /* Respetar los errores del servidor hasta que se corrija el campo */
+                if (campo.attr("aria-invalid") !== "true" || campoAvisoFormato === nombre) {
+                    campo.removeAttr("aria-invalid")
+                        .attr("data-templo-validacion", "valido");
+                }
+
+                if (campoAvisoFormato === nombre) {
+                    campoAvisoFormato = "";
+                    aviso.empty().prop("hidden", true);
+                }
+            }
         });
 
 
@@ -209,6 +260,8 @@ $(function () {
                 if (!campo.length) return;
 
                 const mensaje = configuracion.validaciones.validarValor(nombre, campo.val(), reglas);
+
+                campo.attr("data-templo-validacion", mensaje ? "invalido" : "valido");
 
                 if (mensaje) errores[nombre] = mensaje;
             });

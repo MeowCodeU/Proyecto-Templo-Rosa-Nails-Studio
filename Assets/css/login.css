@@ -56,6 +56,13 @@ body{
   background-position: center;
 }
 
+/* Aplicar el rosado de la marca al seleccionar texto */
+::selection{
+  background: var(--rose-hover);
+  color: var(--brown-main);
+  text-shadow: none;
+}
+
 body::before{
   content: "";
 
@@ -514,6 +521,23 @@ body::before{
 .input-wrap input::placeholder{
   color: rgba(122, 101, 91, 0.58);
   font-weight: 500;
+}
+
+/* Mantener el autollenado rosado en el acceso y la clave universal */
+.input-wrap input:is(
+  :autofill,
+  :-webkit-autofill
+){
+  border-radius: inherit;
+
+  -webkit-text-fill-color: var(--brown-main);
+  caret-color: var(--brown-main);
+
+  -webkit-box-shadow:
+    0 0 0 1000px #fcecf0 inset;
+
+  box-shadow:
+    0 0 0 1000px #fcecf0 inset;
 }
 
 .input-wrap:hover,
@@ -1218,6 +1242,76 @@ body.login-modal-open{
   color: #4f7f78;
 }
 
+
+/* Colores y símbolos de los campos validados */
+body [data-templo-validacion="valido"],
+.input-wrap:has(input[data-templo-validacion="valido"]){
+  --templo-validacion-color: #4f7f78;
+  --templo-validacion-halo: rgba(79, 127, 120, 0.18);
+  --templo-validacion-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f7f78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.4 12.8a8.5 8.5 0 1 1-5.1-8.6'/%3E%3Cpath d='m8 11.5 3.5 3.5L21 5.5'/%3E%3C/svg%3E");
+}
+
+body [data-templo-validacion="invalido"],
+.input-wrap:has(input[data-templo-validacion="invalido"]){
+  --templo-validacion-color: #c40056;
+  --templo-validacion-halo: rgba(196, 0, 86, 0.14);
+  --templo-validacion-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c40056' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m9 9 6 6m0-6-6 6'/%3E%3C/svg%3E");
+}
+
+/* Aplicar el borde y el símbolo conservando el fondo original */
+body .login-recovery-input[data-templo-validacion]:not([type="hidden"]){
+  padding-right: 2.5rem;
+  border-color: var(--templo-validacion-color);
+
+  background-image: var(--templo-validacion-icono);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 18px 18px;
+
+  box-shadow: 0 0 0 3px var(--templo-validacion-halo);
+}
+
+/* Conservar el color del estado cuando el campo recibe el foco */
+body .login-recovery-input[data-templo-validacion]:not([type="hidden"]):not(:disabled):focus{
+  border-color: var(--templo-validacion-color);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--templo-validacion-halo);
+}
+
+/* Colorear el contorno completo del acceso y de la clave universal */
+.login-form .input-wrap:has(input[data-templo-validacion]){
+  border-color: var(--templo-validacion-color);
+  box-shadow: 0 0 0 3px var(--templo-validacion-halo);
+}
+
+/* Mantener el símbolo dentro de la casilla, separado del ojito */
+.input-wrap input[data-templo-validacion]{
+  padding-right: 1.75rem;
+  background-image: var(--templo-validacion-icono);
+  background-repeat: no-repeat;
+  background-position: right 0.25rem center;
+  background-size: 18px 18px;
+}
+
+/* Conservar la separación del ojito en la recuperación */
+body .login-recovery-password input[data-templo-validacion]:not([type="hidden"]){
+  padding-right: 4.5rem;
+  background-position: right 2.75rem center;
+}
+
+/* Conservar el fondo rosado habitual durante el autollenado */
+body .login-recovery-input:is(
+  :autofill,
+  :-webkit-autofill
+)[data-templo-validacion]{
+  -webkit-box-shadow:
+    0 0 0 1000px #fcecf0 inset,
+    0 0 0 3px var(--templo-validacion-halo);
+
+  box-shadow:
+    0 0 0 1000px #fcecf0 inset,
+    0 0 0 3px var(--templo-validacion-halo);
+}
 
 /* Respetar los pasos y avisos ocultos del modal */
 .login-recovery-card [hidden]{

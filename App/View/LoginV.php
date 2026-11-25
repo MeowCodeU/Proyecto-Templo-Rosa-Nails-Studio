@@ -8,24 +8,6 @@ $escaparLogin = static function ($valor): string {
     return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
 };
 
-/* Preparar los datos que presenta el modal de recuperación */
-$mensajeRecuperacion = is_string($mensajeRecuperacion ?? null) ? $mensajeRecuperacion : '';
-$tipoMensajeRecuperacion = in_array($tipoMensajeRecuperacion ?? '', ['info', 'success', 'warning', 'error'], true)
-    ? $tipoMensajeRecuperacion : 'info';
-$erroresRecuperacion = is_array($erroresRecuperacion ?? null)
-    ? array_filter($erroresRecuperacion, 'is_string') : [];
-$mostrarRecuperacion = ($mostrarRecuperacion ?? false) === true;
-$pasoRecuperacion = ($pasoRecuperacion ?? '') === 'restablecer' ? 'restablecer' : 'solicitar';
-$tokenRecuperacionClave = is_string($tokenRecuperacionClave ?? null) ? $tokenRecuperacionClave : '';
-
-$cedulaRecuperacion = is_string($datosRecuperacion['cedula'] ?? null) ? $datosRecuperacion['cedula'] : '';
-$correoRecuperacion = is_string($datosRecuperacion['correo'] ?? null) ? $datosRecuperacion['correo'] : '';
-
-/* Presentar la espera restante sin decidir la autorización del reenvío */
-$ultimoEnvioRecuperacion = $_SESSION['recuperacion_ultimo_envio'] ?? 0;
-$reintentarRecuperacion = is_int($ultimoEnvioRecuperacion)
-    ? max(0, $ultimoEnvioRecuperacion + 60 - time()) : 0;
-
 ?>
 
 <!DOCTYPE html>
@@ -873,3 +855,4 @@ $reintentarRecuperacion = is_int($ultimoEnvioRecuperacion)
     <script src="Assets/js/login.js?v=<?= filemtime(__DIR__ . '/../../Assets/js/login.js'); ?>"></script>
 
 </body>
+</html>

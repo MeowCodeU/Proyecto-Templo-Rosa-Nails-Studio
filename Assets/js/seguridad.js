@@ -190,7 +190,7 @@ $(function () {
 
                 try {
                     if (await actualizarListas()) {
-                        mostrarMensaje("Listas actualizadas correctamente.");
+                        mensajeGeneral.empty().prop("hidden", true);
                     }
 
                 } catch (error) {

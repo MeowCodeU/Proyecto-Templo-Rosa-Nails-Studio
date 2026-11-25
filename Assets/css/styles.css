@@ -2301,6 +2301,107 @@ body{
   color: var(--estado-realizada-text) !important;
 }
 
+/* Colores y símbolos de los campos validados */
+body [data-templo-validacion="valido"]{
+  --templo-validacion-color: #4f7f78;
+  --templo-validacion-halo: rgba(79, 127, 120, 0.18);
+  --templo-validacion-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f7f78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.4 12.8a8.5 8.5 0 1 1-5.1-8.6'/%3E%3Cpath d='m8 11.5 3.5 3.5L21 5.5'/%3E%3C/svg%3E");
+}
+
+body [data-templo-validacion="invalido"]{
+  --templo-validacion-color: #c40056;
+  --templo-validacion-halo: rgba(196, 0, 86, 0.14);
+  --templo-validacion-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c40056' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m9 9 6 6m0-6-6 6'/%3E%3C/svg%3E");
+}
+
+/* Aplicar el borde y el símbolo conservando el fondo original */
+body :is(
+  input,
+  textarea,
+  select
+)[data-templo-validacion]:not([type="hidden"]){
+  padding-right: 2.5rem;
+  border-color: var(--templo-validacion-color);
+
+  background-image: var(--templo-validacion-icono);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 18px 18px;
+
+  box-shadow: 0 0 0 3px var(--templo-validacion-halo);
+}
+
+/* Conservar el color del estado cuando el campo recibe el foco */
+body :is(
+  input,
+  textarea,
+  select
+)[data-templo-validacion]:not([type="hidden"]):not(:disabled):focus{
+  border-color: var(--templo-validacion-color);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--templo-validacion-halo);
+}
+
+/* Conservar la flecha del selector junto al símbolo de validación */
+body select:not([multiple])[data-templo-validacion]{
+  padding-right: 4rem;
+
+  background-image:
+    var(--templo-validacion-icono),
+    var(
+      --bs-form-select-bg-img,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%237a655b' stroke-width='2' d='m4 6 4 4 4-4'/%3E%3C/svg%3E")
+    );
+
+  background-position:
+    right 2.25rem center,
+    right 0.75rem center;
+
+  background-size:
+    18px 18px,
+    16px 12px;
+}
+
+/* Respetar la flecha propia del filtro del historial de insumos */
+.insumos-module .insumos-historial-filtros select.form-select[data-templo-validacion]{
+  padding-right: 4rem !important;
+
+  background-image:
+    var(--templo-validacion-icono),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a655b' d='M1 1l5 5 5-5' stroke='%237a655b' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+
+  background-repeat: no-repeat !important;
+
+  background-position:
+    right 2.25rem center,
+    right 11px center !important;
+
+  background-size:
+    18px 18px,
+    12px 8px !important;
+}
+
+/* Separar la validación del ojito cuando la contraseña es visible */
+body .templo-password-field input[data-templo-validacion]{
+  padding-right: 4.5rem;
+  background-position: right 2.75rem center;
+}
+
+/* Mantener una sola flecha en los selectores modernos del sistema */
+@supports (appearance: base-select) and selector(select::picker(select)){
+
+  body select:not([multiple]):not([size])[data-templo-validacion]{
+    padding-right: 0.75rem;
+    padding-inline-end: 0.75rem;
+    gap: 2.25rem;
+
+    background-image: var(--templo-validacion-icono);
+    background-position: right 2.25rem center;
+    background-size: 18px 18px;
+  }
+
+}
+
 /* Avisos de agendamiento y registro de servicio */
 .templo-modal .agendamiento-aviso.alert-danger,
 .registro-servicio-module #mensajeRegistroServicio.alert-danger {
@@ -6961,14 +7062,20 @@ body{
 }
 
 /* Mantener el halo rosado en los selectores */
-body select:not(.is-invalid):focus{
+body select:not(.is-invalid):not([data-templo-validacion]):focus{
   border-color: var(--rose-hover);
   outline: 2px solid transparent;
   box-shadow: 0 0 0 .2rem rgba(238,187,187,.30);
 }
 
 /* Aplicar el halo rosado a los campos sin estado de validación */
-body :is(.auth-input, .templo-input, .form-control):focus:not(.is-invalid):not(.is-valid):not([aria-invalid="true"]):not(.was-validated *){
+body :is(
+  .auth-input,
+  .templo-input,
+  .form-control
+):focus:not(.is-invalid):not(.is-valid):not(
+  [aria-invalid="true"]
+):not([data-templo-validacion]):not(.was-validated *){
   border-color: var(--rose-hover);
   outline: none;
   box-shadow: 0 0 0 4px rgba(238,187,187,0.22);
@@ -6981,32 +7088,51 @@ body :is(.auth-input, .templo-input, .form-control):focus:not(.is-invalid):not(.
 }
 
 /* Aplicar el fondo rosado al autollenado del navegador */
-body input:is(:autofill, :-webkit-autofill){
+body input:is(
+  :autofill,
+  :-webkit-autofill
+){
   --autollenado-fondo: var(--rose-row-hover);
   --autollenado-texto: var(--brown-main);
 
   -webkit-text-fill-color: var(--autollenado-texto);
   caret-color: var(--autollenado-texto);
 
-  -webkit-box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset !important;
-  box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset !important;
+  -webkit-box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset !important;
+
+  box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset !important;
 }
 
-/* Conservar el verde agua en los campos marcados como válidos */
-body input:is(:autofill, :-webkit-autofill).is-valid{
-  --autollenado-fondo: #cfe7e3;
-  --autollenado-texto: #4f7f78;
-}
+/* Conservar el fondo original al autocompletar campos validados */
+body input:is(
+  :autofill,
+  :-webkit-autofill
+)[data-templo-validacion]{
+  -webkit-box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset,
+    0 0 0 3px var(--templo-validacion-halo) !important;
 
-/* Conservar el rosado intenso en los campos marcados con error */
-body input:is(:autofill, :-webkit-autofill):is(.is-invalid, [aria-invalid="true"]){
-  --autollenado-texto: #c40056;
+  box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset,
+    0 0 0 3px var(--templo-validacion-halo) !important;
 }
 
 /* Mantener el halo rosado al enfocar un campo autollenado */
-body input:is(:autofill, :-webkit-autofill):focus:not(.is-invalid):not(.is-valid):not([aria-invalid="true"]):not(.was-validated *){
-  -webkit-box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset, 0 0 0 4px rgba(238,187,187,0.22) !important;
-  box-shadow: 0 0 0 1000px var(--autollenado-fondo) inset, 0 0 0 4px rgba(238,187,187,0.22) !important;
+body input:is(
+  :autofill,
+  :-webkit-autofill
+):focus:not(.is-invalid):not(.is-valid):not(
+  [aria-invalid="true"]
+):not([data-templo-validacion]):not(.was-validated *){
+  -webkit-box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset,
+    0 0 0 4px rgba(238,187,187,0.22) !important;
+
+  box-shadow:
+    0 0 0 1000px var(--autollenado-fondo) inset,
+    0 0 0 4px rgba(238,187,187,0.22) !important;
 }
 
 /* Conservar la tipografía del selector de cantidad de registros */

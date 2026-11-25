@@ -377,7 +377,7 @@ $(function () {
                     const actualizada = await actualizarLista();
 
                     if (actualizada) {
-                        mostrarMensajeGeneral("Lista de insumos actualizada.");
+                        $mensajeGeneral.empty().prop("hidden", true);
                     }
 
                 } catch (error) {
